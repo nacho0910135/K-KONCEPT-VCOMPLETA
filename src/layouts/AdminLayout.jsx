@@ -2,8 +2,8 @@ import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, Shie
 import AppShell from './AppShell.jsx';
 
 const navItems = [
-  { to: 'dashboard', label: 'Dashboard', icon: Gauge },
-  { to: 'tickets', label: 'Tickets', icon: FileText },
+  { to: 'dashboard', label: 'Inicio', icon: Gauge },
+  { to: 'tickets', label: 'Casos', icon: FileText },
   { to: 'users', label: 'Usuarios', icon: UsersRound },
   { to: 'categories', label: 'Categorias', icon: Tags },
   { to: 'slas', label: 'SLAs', icon: Clock3 },

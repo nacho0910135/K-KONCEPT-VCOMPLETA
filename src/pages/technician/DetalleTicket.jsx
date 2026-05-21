@@ -165,7 +165,7 @@ const DetalleTicket = () => {
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Informacion del caso</h2>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-              <div><dt className="font-semibold">Code</dt><dd>{ticket.code}</dd></div>
+              <div><dt className="font-semibold">Codigo</dt><dd>{ticket.code}</dd></div>
               <div><dt className="font-semibold">Fecha</dt><dd>{formatDate(ticket.createdAt)}</dd></div>
               <div><dt className="font-semibold">Categoria</dt><dd>{ticket.category}</dd></div>
               <div><dt className="font-semibold">Subcategoria</dt><dd>{ticket.subcategory}</dd></div>
@@ -180,7 +180,7 @@ const DetalleTicket = () => {
               <p>{ticket.client.company}</p>
               <div className="flex flex-wrap gap-2">
                 <a className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-3 py-2 font-semibold hover:bg-neutral-200" href={`tel:${ticket.client.phone}`}><Phone className="h-4 w-4" />{ticket.client.phone}</a>
-                <a className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-3 py-2 font-semibold hover:bg-neutral-200" href={`mailto:${ticket.client.email}`}><Mail className="h-4 w-4" />Email</a>
+                <a className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-3 py-2 font-semibold hover:bg-neutral-200" href={`mailto:${ticket.client.email}`}><Mail className="h-4 w-4" />Correo</a>
               </div>
             </div>
           </Card>

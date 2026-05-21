@@ -12,10 +12,10 @@ import { channels } from './adminMockData.js';
 import { simulateAction } from './adminUtils.jsx';
 
 const channelMeta = {
-  EMAIL: { icon: Mail, label: 'Email', description: 'Salidas SMTP para clientes y operaciones.' },
+  EMAIL: { icon: Mail, label: 'Correo', description: 'Salidas SMTP para clientes y operaciones.' },
   SMS: { icon: Smartphone, label: 'SMS', description: 'Mensajes transaccionales con Twilio.' },
   PUSH: { icon: MonitorSmartphone, label: 'Push', description: 'Notificaciones FCM para dispositivos.' },
-  IN_APP: { icon: MessageSquareText, label: 'In-App', description: 'Bandeja interna dentro de la plataforma.' }
+  IN_APP: { icon: MessageSquareText, label: 'En la plataforma', description: 'Bandeja interna dentro de la plataforma.' }
 };
 
 const fieldLabels = {
@@ -39,7 +39,7 @@ const Canales = () => {
   const toggle = async (channel) => {
     await simulateAction();
     setData((current) => current.map((item) => item.id === channel.id ? { ...item, enabled: !item.enabled } : item));
-    showToast({ type: 'success', title: `${channel.name} actualizado` });
+    showToast({ type: 'success', title: `${channelMeta[channel.id]?.label || channel.name} actualizado` });
   };
 
   const openConfig = (channel) => {
@@ -51,7 +51,7 @@ const Canales = () => {
     await simulateAction();
     setData((current) => current.map((item) => item.id === configuring.id ? { ...item, config: configValues } : item));
     setConfiguring(null);
-    showToast({ type: 'success', title: 'Configuracion guardada', message: `${configuring.name} quedo listo para operar.` });
+    showToast({ type: 'success', title: 'Configuracion guardada', message: `${channelMeta[configuring.id]?.label || configuring.name} quedo listo para operar.` });
   };
 
   return (
@@ -91,7 +91,7 @@ const Canales = () => {
         ))}
       </div>
 
-      <Modal isOpen={Boolean(configuring)} title={`Configurar ${configuring?.name || ''}`} onClose={() => setConfiguring(null)}>
+      <Modal isOpen={Boolean(configuring)} title={`Configurar ${channelMeta[configuring?.id]?.label || configuring?.name || ''}`} onClose={() => setConfiguring(null)}>
         <div className="grid gap-4">
           <div className="rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
             Los campos se ajustan al provider del canal seleccionado.

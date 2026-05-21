@@ -41,7 +41,7 @@ const Register = () => {
       <Card className="p-6">
         <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
           <FormInput label="Nombre" name="name" autoComplete="name" register={register} error={errors.name} />
-          <FormInput label="Email" name="email" type="email" autoComplete="email" register={register} error={errors.email} />
+          <FormInput label="Correo electronico" name="email" type="email" autoComplete="email" register={register} error={errors.email} />
           <FormInput label="Contrasena" name="password" type="password" autoComplete="new-password" register={register} error={errors.password} />
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput label="Telefono" name="phone" register={register} error={errors.phone} />

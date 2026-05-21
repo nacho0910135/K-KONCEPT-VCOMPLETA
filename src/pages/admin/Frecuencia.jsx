@@ -13,7 +13,7 @@ import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
 import { frequencyRules } from './adminMockData.js';
-import { simulateAction } from './adminUtils.jsx';
+import { eventLabel, simulateAction } from './adminUtils.jsx';
 
 const frequencySchema = z.object({
   event: z.string().min(1, 'Evento requerido'),
@@ -28,6 +28,8 @@ const frequencySchema = z.object({
     });
   }
 });
+
+const eventOptions = ['TICKET_CREATED', 'SLA_RISK', 'COMMENT_CREATED'].map((value) => ({ value, label: eventLabel[value] || value }));
 
 const Frecuencia = () => {
   const { data, setData, isLoading, error } = useAdminResource(() => frequencyRules, []);
@@ -79,7 +81,7 @@ const Frecuencia = () => {
         loading={isLoading}
         error={error}
         columns={[
-          { key: 'event', header: 'Evento', sortable: true },
+          { key: 'event', header: 'Evento', sortable: true, render: (row) => eventLabel[row.event] || row.event },
           { key: 'maxPerUserPerHour', header: 'Max/hora' },
           { key: 'maxPerUserPerDay', header: 'Max/dia' },
           { key: 'active', header: 'Estado', render: (row) => row.active ? <Badge tone="success">Activa</Badge> : <Badge>Inactiva</Badge> },
@@ -98,7 +100,7 @@ const Frecuencia = () => {
       />
       <Modal isOpen={Boolean(editing)} title="Regla de frecuencia" onClose={() => setEditing(null)}>
         <form className="grid gap-4" onSubmit={form.handleSubmit(save)}>
-          <FormSelect register={form.register} name="event" label="Evento" error={form.formState.errors.event} options={[{ value: 'TICKET_CREATED', label: 'TICKET_CREATED' }, { value: 'SLA_RISK', label: 'SLA_RISK' }, { value: 'COMMENT_CREATED', label: 'COMMENT_CREATED' }]} />
+          <FormSelect register={form.register} name="event" label="Evento" error={form.formState.errors.event} options={eventOptions} />
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput register={form.register} name="maxPerUserPerHour" type="number" label="Max por hora" error={form.formState.errors.maxPerUserPerHour} />
             <FormInput register={form.register} name="maxPerUserPerDay" type="number" label="Max por dia" error={form.formState.errors.maxPerUserPerDay} />
@@ -109,7 +111,7 @@ const Frecuencia = () => {
       <ConfirmDialog
         isOpen={Boolean(deleting)}
         title="Eliminar regla de frecuencia"
-        message={`Eliminar la regla ${deleting?.event}?`}
+        message={`Eliminar la regla ${eventLabel[deleting?.event] || deleting?.event}?`}
         onCancel={() => setDeleting(null)}
         onConfirm={remove}
       />

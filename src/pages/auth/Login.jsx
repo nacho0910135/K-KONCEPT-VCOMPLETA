@@ -28,7 +28,9 @@ const Login = () => {
   const onSubmit = async (values) => {
     try {
       const session = await login(values);
-      const destination = location.state?.from?.pathname || ROLE_HOME[session.user?.role] || '/';
+      const roleHome = ROLE_HOME[session.user?.role] || '/';
+      const fromPath = location.state?.from?.pathname;
+      const destination = fromPath?.startsWith(roleHome) ? fromPath : roleHome;
       navigate(destination, { replace: true });
     } catch (error) {
       showToast({ type: 'error', title: 'No pudimos iniciar sesion', message: getErrorMessage(error, 'Revisa tus credenciales.') });
@@ -36,24 +38,26 @@ const Login = () => {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-md gap-6">
-      <div className="text-center">
-        <div className="mx-auto px-5 py-4">
-          <img className="mx-auto h-auto w-36 max-w-full" src={kollabLogo} alt="Kollab Koncepts" />
+    <div className="mx-auto w-full max-w-md">
+      <Card className="border-neutral-200 bg-white p-8">
+        <div className="text-center">
+          <div className="mx-auto px-5 py-2">
+            <img className="mx-auto h-auto w-56 max-w-full" src={kollabLogo} alt="Kollab Koncepts" />
+          </div>
+          <h1 className="mt-5 text-2xl font-bold text-neutral-900">Bienvenido al Sistema</h1>
+          <p className="mt-1 text-sm text-neutral-700">Plataforma Digital de Reportes Tecnicos</p>
         </div>
-        <h1 className="mt-4 text-2xl font-bold text-neutral-900">Bienvenido al Sistema</h1>
-        <p className="mt-1 text-sm text-neutral-500">Plataforma Digital de Reportes Tecnicos</p>
-      </div>
-      <Card className="border-neutral-200/90 p-6">
-        <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
-          <FormInput label="Email" name="email" type="email" autoComplete="email" register={register} error={errors.email} />
+        <form className="mt-8 grid gap-4" onSubmit={handleSubmit(onSubmit)}>
+          <FormInput label="Correo electronico" name="email" type="email" autoComplete="email" register={register} error={errors.email} />
           <FormInput label="Contrasena" name="password" type="password" autoComplete="current-password" register={register} error={errors.password} />
-          <Button type="submit" isLoading={isSubmitting}>Iniciar Sesión</Button>
+          <Button type="submit" isLoading={isSubmitting} className="bg-[#e5232b] hover:bg-[#cf1f27] focus:ring-primary-100">
+            Iniciar Sesion
+          </Button>
         </form>
+        <p className="mt-6 text-center text-sm text-neutral-700">
+          No tienes cuenta? <Link className="font-semibold text-primary-600 hover:text-primary-700" to="/register">Registrate</Link>
+        </p>
       </Card>
-      <p className="text-center text-sm text-neutral-600">
-        No tienes cuenta? <Link className="font-semibold text-primary-600 hover:text-primary-700" to="/register">Registrate</Link>
-      </p>
     </div>
   );
 };

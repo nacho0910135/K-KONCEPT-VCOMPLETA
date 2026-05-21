@@ -52,11 +52,11 @@ const TicketsAsignados = () => {
         data={rows}
         loading={isLoading}
         error={error}
-        searchPlaceholder="Buscar por code o cliente"
+        searchPlaceholder="Buscar por codigo o cliente"
         emptyTitle="No se encontraron tickets"
         emptyDescription="No hay casos asignados que coincidan con la busqueda o filtros activos."
         columns={[
-          { key: 'code', header: 'Code', sortable: true },
+          { key: 'code', header: 'Codigo', sortable: true },
           { key: 'title', header: 'Titulo', sortable: true },
           { key: 'client', header: 'Cliente', render: (row) => row.client.company, sortable: true },
           { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge priority={row.priority} /> },

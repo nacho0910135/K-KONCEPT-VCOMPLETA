@@ -9,12 +9,12 @@ import { useToast } from '../../hooks/useToast.js';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
-  email: z.string().email('Email invalido'),
+  email: z.string().email('Correo invalido'),
   phone: z.string().min(8, 'Telefono requerido')
 });
 
 const passwordSchema = z.object({
-  currentPassword: z.string().min(6, 'Ingresa tu password actual'),
+  currentPassword: z.string().min(6, 'Ingresa tu contrasena actual'),
   newPassword: z.string().min(8, 'Minimo 8 caracteres')
 });
 
@@ -36,7 +36,7 @@ const Perfil = () => {
           <h2 className="text-sm font-semibold text-neutral-900">Datos del usuario</h2>
           <form className="mt-4 grid gap-4" onSubmit={profileForm.handleSubmit(() => showToast({ type: 'success', title: 'Perfil actualizado' }))}>
             <FormInput register={profileForm.register} name="name" label="Nombre" error={profileForm.formState.errors.name} />
-            <FormInput register={profileForm.register} name="email" label="Email" error={profileForm.formState.errors.email} />
+            <FormInput register={profileForm.register} name="email" label="Correo electronico" error={profileForm.formState.errors.email} />
             <FormInput register={profileForm.register} name="phone" label="Telefono" error={profileForm.formState.errors.phone} />
             <Button type="submit">Guardar perfil</Button>
           </form>
@@ -57,7 +57,7 @@ const Perfil = () => {
             label="Canales"
             value={channels}
             onChange={(value) => preferencesForm.setValue('channels', value)}
-            options={[{ value: 'EMAIL', label: 'Email' }, { value: 'IN_APP', label: 'In app' }, { value: 'SMS', label: 'SMS' }, { value: 'PUSH', label: 'Push' }]}
+            options={[{ value: 'EMAIL', label: 'Correo' }, { value: 'IN_APP', label: 'En la plataforma' }, { value: 'SMS', label: 'SMS' }, { value: 'PUSH', label: 'Push' }]}
           />
         </div>
       </Card>

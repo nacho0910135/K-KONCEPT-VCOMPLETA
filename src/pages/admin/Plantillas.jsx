@@ -12,7 +12,7 @@ import DataTable from '../../components/tables/DataTable.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
-import { simulateAction } from './adminUtils.jsx';
+import { channelLabel, eventLabel, simulateAction } from './adminUtils.jsx';
 import { templates } from './adminMockData.js';
 
 const templateSchema = z.object({
@@ -23,7 +23,7 @@ const templateSchema = z.object({
   active: z.boolean().optional()
 }).superRefine((value, ctx) => {
   if (value.channel === 'EMAIL' && !value.subject?.trim()) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['subject'], message: 'Subject es obligatorio para EMAIL' });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['subject'], message: 'El asunto es obligatorio para correos.' });
   }
 });
 
@@ -33,12 +33,14 @@ const sampleValues = {
   '{{ticketCode}}': 'KK-1025',
   '{{clientName}}': 'Industrias Sur',
   '{{technicianName}}': 'Andres Mora',
-  '{{priority}}': 'CRITICAL',
-  '{{status}}': 'IN_PROGRESS',
+  '{{priority}}': 'Critica',
+  '{{status}}': 'En progreso',
   '{{slaDueAt}}': '21/05/2026 16:00'
 };
 
 const renderPreview = (value = '') => variables.reduce((text, variable) => text.replaceAll(variable, sampleValues[variable]), value);
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'SLA_RISK'].map((value) => ({ value, label: eventLabel[value] || value }));
+const channelOptions = ['EMAIL', 'IN_APP', 'SMS', 'PUSH'].map((value) => ({ value, label: channelLabel[value] || value }));
 
 const Plantillas = () => {
   const { data, setData, isLoading, error } = useAdminResource(() => templates, []);
@@ -93,9 +95,9 @@ const Plantillas = () => {
         loading={isLoading}
         error={error}
         columns={[
-          { key: 'event', header: 'Evento', sortable: true },
-          { key: 'channel', header: 'Canal', sortable: true },
-          { key: 'subject', header: 'Subject' },
+          { key: 'event', header: 'Evento', sortable: true, render: (row) => eventLabel[row.event] || row.event },
+          { key: 'channel', header: 'Canal', sortable: true, render: (row) => channelLabel[row.channel] || row.channel },
+          { key: 'subject', header: 'Asunto' },
           { key: 'active', header: 'Estado', render: (row) => row.active ? <Badge tone="success">Activa</Badge> : <Badge>Inactiva</Badge> },
           {
             key: 'actions',
@@ -113,8 +115,8 @@ const Plantillas = () => {
       <Modal isOpen={Boolean(editing)} title="Editor de plantilla" onClose={() => setEditing(null)} maxWidth="max-w-5xl">
         <form className="grid gap-4" onSubmit={form.handleSubmit(save)}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormSelect register={form.register} name="event" label="Evento" error={form.formState.errors.event} options={[{ value: 'TICKET_CREATED', label: 'TICKET_CREATED' }, { value: 'TICKET_ASSIGNED', label: 'TICKET_ASSIGNED' }, { value: 'SLA_RISK', label: 'SLA_RISK' }]} />
-            <FormSelect register={form.register} name="channel" label="Canal" error={form.formState.errors.channel} options={[{ value: 'EMAIL', label: 'EMAIL' }, { value: 'IN_APP', label: 'IN_APP' }, { value: 'SMS', label: 'SMS' }, { value: 'PUSH', label: 'PUSH' }]} />
+            <FormSelect register={form.register} name="event" label="Evento" error={form.formState.errors.event} options={eventOptions} />
+            <FormSelect register={form.register} name="channel" label="Canal" error={form.formState.errors.channel} options={channelOptions} />
           </div>
           <Toggle
             checked={Boolean(preview.active)}
@@ -125,7 +127,7 @@ const Plantillas = () => {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.85fr)]">
             <div className="grid gap-4">
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700" htmlFor="subject">
-                <span>Subject</span>
+                <span>Asunto</span>
                 <input
                   id="subject"
                   className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
@@ -139,7 +141,7 @@ const Plantillas = () => {
                 {form.formState.errors.subject && <span className="text-xs font-medium text-danger">{form.formState.errors.subject.message}</span>}
               </label>
               <label className="grid gap-1.5 text-sm font-medium text-neutral-700" htmlFor="body">
-                <span>Body</span>
+                <span>Mensaje</span>
                 <textarea
                   id="body"
                   rows={9}
@@ -166,13 +168,13 @@ const Plantillas = () => {
             </div>
             <Card className="p-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-neutral-900">Preview en vivo</p>
+                <p className="text-sm font-semibold text-neutral-900">Vista previa en vivo</p>
                 <Badge tone={preview.active ? 'success' : 'neutral'}>{preview.active ? 'Activa' : 'Inactiva'}</Badge>
               </div>
               <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-                <p className="text-xs font-semibold uppercase text-neutral-500">Subject</p>
-                <p className="mt-1 min-h-6 text-sm font-semibold text-neutral-900">{renderPreview(preview.subject) || 'Sin subject'}</p>
-                <p className="mt-4 text-xs font-semibold uppercase text-neutral-500">Body</p>
+                <p className="text-xs font-semibold uppercase text-neutral-500">Asunto</p>
+                <p className="mt-1 min-h-6 text-sm font-semibold text-neutral-900">{renderPreview(preview.subject) || 'Sin asunto'}</p>
+                <p className="mt-4 text-xs font-semibold uppercase text-neutral-500">Mensaje</p>
                 <p className="mt-1 whitespace-pre-line text-sm leading-6 text-neutral-700">{renderPreview(preview.body) || 'Escribe un mensaje para previsualizar.'}</p>
               </div>
             </Card>

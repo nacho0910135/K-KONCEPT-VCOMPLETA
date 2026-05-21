@@ -15,8 +15,15 @@ import { priorityLabels, simulateClientAction, warrantyTone } from './clientUtil
 import { useToast } from '../../hooks/useToast.js';
 import { createTicket } from '../../services/tickets.service.js';
 
-const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'application/pdf'];
-const maxFileSize = 20 * 1024 * 1024;
+const limitsByType = {
+  'image/jpeg': 5 * 1024 * 1024,
+  'image/png': 5 * 1024 * 1024,
+  'image/webp': 5 * 1024 * 1024,
+  'video/mp4': 50 * 1024 * 1024,
+  'video/quicktime': 50 * 1024 * 1024,
+  'application/pdf': 10 * 1024 * 1024
+};
+const allowedTypes = Object.keys(limitsByType);
 
 const ticketSchema = z.object({
   title: z.string().min(5, 'Describe el problema en el titulo'),
@@ -30,8 +37,8 @@ const ticketSchema = z.object({
       if (!allowedTypes.includes(file.type)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: [index], message: `${file.name}: tipo no permitido` });
       }
-      if (file.size > maxFileSize) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [index], message: `${file.name}: supera 20 MB` });
+      if (file.size > limitsByType[file.type]) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [index], message: `${file.name}: supera el limite permitido` });
       }
     });
   })

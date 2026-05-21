@@ -6,7 +6,7 @@ import StatCard from '../../components/common/StatCard.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import DateRangePicker from '../../components/forms/DateRangePicker.jsx';
 import { auditLogs, categories, dashboard, priorities, technicians } from './adminMockData.js';
-import { optionize } from './adminUtils.jsx';
+import { eventLabel, optionize, priorityLabel } from './adminUtils.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { formatDateTime } from '../../utils/formatDate.js';
 
@@ -22,7 +22,7 @@ const Dashboard = () => {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Dashboard administrativo</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">Panel administrativo</h1>
           <p className="mt-1 text-sm text-neutral-500">KPIs operativos, SLA y actividad reciente.</p>
         </div>
       </div>
@@ -41,7 +41,7 @@ const Dashboard = () => {
             Prioridad
             <select className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 text-sm" value={filters.priority} onChange={(event) => setFilters({ ...filters, priority: event.target.value })}>
               <option value="">Todas</option>
-              {optionize(priorities).map((priority) => <option key={priority.value} value={priority.value}>{priority.label}</option>)}
+              {optionize(priorities, priorityLabel).map((priority) => <option key={priority.value} value={priority.value}>{priority.label}</option>)}
             </select>
           </label>
         </div>
@@ -113,7 +113,7 @@ const Dashboard = () => {
             columns={[
               { key: 'name', header: 'Tecnico', sortable: true },
               { key: 'resolutions', header: 'Resoluciones', sortable: true },
-              { key: 'rating', header: 'Rating', sortable: true }
+              { key: 'rating', header: 'Calificacion', sortable: true }
             ]}
           />
         </Card>
@@ -125,7 +125,7 @@ const Dashboard = () => {
           {(data?.auditLogs || []).slice(0, 10).map((log) => (
             <div key={log.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-100 px-3 py-2">
               <div>
-                <p className="text-sm font-semibold text-neutral-900">{log.action}</p>
+                <p className="text-sm font-semibold text-neutral-900">{eventLabel[log.action] || log.action}</p>
                 <p className="text-xs text-neutral-500">{log.user} sobre {log.entity} {log.entityId}</p>
               </div>
               <time className="text-xs text-neutral-500">{formatDateTime(log.createdAt)}</time>

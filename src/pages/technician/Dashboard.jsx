@@ -15,7 +15,7 @@ const Dashboard = () => {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Dashboard tecnico</h1>
+        <h1 className="text-2xl font-bold text-neutral-900">Panel tecnico</h1>
         <p className="mt-1 text-sm text-neutral-500">Prioriza casos, SLA y resoluciones del mes.</p>
       </div>
 
@@ -34,8 +34,8 @@ const Dashboard = () => {
             {tickets.slice(0, 5).map((ticket) => (
               <Link key={ticket.id} to={`/technician/tickets/${ticket.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-3 hover:bg-neutral-50">
                 <div>
-                  <p className="text-sm font-semibold text-neutral-900">{ticket.code} · {ticket.title}</p>
-                  <p className="text-xs text-neutral-500">{ticket.client.company} · {formatDate(ticket.createdAt)}</p>
+                  <p className="text-sm font-semibold text-neutral-900">{ticket.code} - {ticket.title}</p>
+                  <p className="text-xs text-neutral-500">{ticket.client.company} - {formatDate(ticket.createdAt)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <PriorityBadge priority={ticket.priority} />

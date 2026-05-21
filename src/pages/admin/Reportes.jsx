@@ -15,7 +15,7 @@ import EmailChipInput from '../../components/forms/EmailChipInput.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { dashboard, scheduledReports, tickets } from './adminMockData.js';
-import { PriorityBadge, simulateAction, StateBadge } from './adminUtils.jsx';
+import { eventLabel, frequencyLabel, PriorityBadge, priorityLabel, reportTypeLabel, resultLabel, simulateAction, StateBadge, statusLabel } from './adminUtils.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
 
@@ -37,7 +37,7 @@ const buildReportRows = (reportType, filters) => {
     return [
       { id: 'kpi-1', metric: 'Tickets abiertos', value: dashboard.summary.open },
       { id: 'kpi-2', metric: 'SLA cumplido', value: `${dashboard.summary.slaMet}%` },
-      { id: 'kpi-3', metric: 'Rating promedio', value: dashboard.summary.rating },
+      { id: 'kpi-3', metric: 'Calificacion promedio', value: dashboard.summary.rating },
       { id: 'kpi-4', metric: 'Tickets cerrados', value: dashboard.summary.closed }
     ];
   }
@@ -95,7 +95,7 @@ const Reportes = () => {
       setExporting(null);
       return;
     }
-    showToast({ type: 'success', title: `Export ${format}`, message: 'Archivo solicitado con filtros activos.' });
+    showToast({ type: 'success', title: `Exportacion ${format}`, message: 'Archivo solicitado con filtros activos.' });
     setExporting(null);
   };
 
@@ -156,7 +156,7 @@ const Reportes = () => {
             <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
               Tipo
               <select className="min-h-10 rounded-md border border-neutral-200 px-3" value={reportType} onChange={(event) => setReportType(event.target.value)}>
-                {reportTypes.map((type) => <option key={type}>{type}</option>)}
+                {reportTypes.map((type) => <option key={type} value={type}>{reportTypeLabel[type] || type}</option>)}
               </select>
             </label>
             <div className="md:col-span-2"><DateRangePicker value={dateRange} onChange={setDateRange} /></div>
@@ -164,20 +164,20 @@ const Reportes = () => {
               Estado
               <select className="min-h-10 rounded-md border border-neutral-200 px-3" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
                 <option value="ALL">Todos</option>
-                <option value="OPEN">OPEN</option>
-                <option value="IN_PROGRESS">IN_PROGRESS</option>
-                <option value="PENDING">PENDING</option>
-                <option value="RESOLVED">RESOLVED</option>
+                <option value="OPEN">{statusLabel.OPEN}</option>
+                <option value="IN_PROGRESS">{statusLabel.IN_PROGRESS}</option>
+                <option value="PENDING">{statusLabel.PENDING}</option>
+                <option value="RESOLVED">{statusLabel.RESOLVED}</option>
               </select>
             </label>
             <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
               Prioridad
               <select className="min-h-10 rounded-md border border-neutral-200 px-3" value={filters.priority} onChange={(event) => setFilters((current) => ({ ...current, priority: event.target.value }))}>
                 <option value="ALL">Todas</option>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="CRITICAL">CRITICAL</option>
+                <option value="LOW">{priorityLabel.LOW}</option>
+                <option value="MEDIUM">{priorityLabel.MEDIUM}</option>
+                <option value="HIGH">{priorityLabel.HIGH}</option>
+                <option value="CRITICAL">{priorityLabel.CRITICAL}</option>
               </select>
             </label>
             <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
@@ -248,7 +248,7 @@ const Reportes = () => {
                 columns={reportType === 'KPI Overview'
                   ? [{ key: 'metric', header: 'Metrica' }, { key: 'value', header: 'Valor' }]
                   : reportType === 'Auditoria'
-                    ? [{ key: 'action', header: 'Accion' }, { key: 'user', header: 'Usuario' }, { key: 'result', header: 'Resultado' }, { key: 'createdAt', header: 'Fecha' }]
+                    ? [{ key: 'action', header: 'Accion', render: (row) => eventLabel[row.action] || row.action }, { key: 'user', header: 'Usuario' }, { key: 'result', header: 'Resultado', render: (row) => resultLabel[row.result] || row.result }, { key: 'createdAt', header: 'Fecha' }]
                     : reportType === 'SLA'
                       ? [...ticketColumns, { key: 'slaStatus', header: 'SLA' }]
                       : ticketColumns}
@@ -267,8 +267,8 @@ const Reportes = () => {
             error={error}
             columns={[
               { key: 'name', header: 'Nombre', render: (row) => row.name || row.type },
-              { key: 'type', header: 'Tipo' },
-              { key: 'frequency', header: 'Frecuencia' },
+              { key: 'type', header: 'Tipo', render: (row) => reportTypeLabel[row.type] || row.type },
+              { key: 'frequency', header: 'Frecuencia', render: (row) => frequencyLabel[row.frequency] || row.frequency },
               { key: 'recipients', header: 'Destinatarios', render: (row) => row.recipients.join(', ') },
               { key: 'format', header: 'Formato' },
               { key: 'active', header: 'Estado', render: (row) => row.active ? <Badge tone="success">Activo</Badge> : <Badge>Inactivo</Badge> },
@@ -292,12 +292,12 @@ const Reportes = () => {
         <form className="grid gap-4" onSubmit={form.handleSubmit(saveScheduled)}>
           <FormInput register={form.register} name="name" label="Nombre" error={form.formState.errors.name} placeholder="Resumen gerencial semanal" />
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormSelect register={form.register} name="type" label="Tipo" error={form.formState.errors.type} options={reportTypes.map((type) => ({ value: type, label: type }))} />
+            <FormSelect register={form.register} name="type" label="Tipo" error={form.formState.errors.type} options={reportTypes.map((type) => ({ value: type, label: reportTypeLabel[type] || type }))} />
             <FormSelect register={form.register} name="frequency" label="Frecuencia" error={form.formState.errors.frequency} options={[{ value: 'DAILY', label: 'Diario' }, { value: 'WEEKLY', label: 'Semanal' }, { value: 'MONTHLY', label: 'Mensual' }]} />
           </div>
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700" htmlFor="parameters">
             <span>Parametros</span>
-            <textarea id="parameters" rows={4} className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder='{"status":"OPEN","priority":"HIGH"}' {...form.register('parameters')} />
+            <textarea id="parameters" rows={4} className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder='{"estado":"Abierto","prioridad":"Alta"}' {...form.register('parameters')} />
           </label>
           <Controller control={form.control} name="recipients" render={({ field, fieldState }) => <EmailChipInput label="Destinatarios" value={field.value} onChange={field.onChange} error={fieldState.error?.message} />} />
           <FormSelect register={form.register} name="format" label="Formato" error={form.formState.errors.format} options={[{ value: 'CSV', label: 'CSV' }, { value: 'Excel', label: 'Excel' }, { value: 'PDF', label: 'PDF' }]} />
@@ -305,7 +305,7 @@ const Reportes = () => {
         </form>
       </Modal>
 
-      <ConfirmDialog isOpen={Boolean(deleting)} title="Eliminar reporte programado" message={`Eliminar ${deleting?.type}?`} onCancel={() => setDeleting(null)} onConfirm={deleteScheduled} />
+      <ConfirmDialog isOpen={Boolean(deleting)} title="Eliminar reporte programado" message={`Eliminar ${reportTypeLabel[deleting?.type] || deleting?.type}?`} onCancel={() => setDeleting(null)} onConfirm={deleteScheduled} />
     </div>
   );
 };

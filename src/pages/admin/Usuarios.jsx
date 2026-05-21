@@ -12,12 +12,12 @@ import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
-import { RoleBadge, simulateAction } from './adminUtils.jsx';
+import { RoleBadge, roleLabel, simulateAction } from './adminUtils.jsx';
 import { users } from './adminMockData.js';
 
 const userSchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
-  email: z.string().email('Email invalido'),
+  email: z.string().email('Correo invalido'),
   password: z.string().min(8, 'Minimo 8 caracteres').optional().or(z.literal('')),
   phone: z.string().optional(),
   company: z.string().optional()
@@ -79,7 +79,7 @@ const Usuarios = () => {
   const changeRole = async ({ role }) => {
     await simulateAction();
     setData((current) => current.map((user) => user.id === roleUser.id ? { ...user, role } : user));
-    showToast({ type: 'warning', title: 'Rol cambiado', message: `${roleUser.email} ahora es ${role}.` });
+    showToast({ type: 'warning', title: 'Rol cambiado', message: `${roleUser.email} ahora es ${roleLabel[role] || role}.` });
     setRoleUser(null);
     roleForm.reset();
   };
@@ -97,9 +97,9 @@ const Usuarios = () => {
       <Card className="grid gap-3 p-4 md:grid-cols-2">
         <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.role} onChange={(event) => setFilters({ ...filters, role: event.target.value })}>
           <option value="">Todos los roles</option>
-          <option value="ADMIN">ADMIN</option>
-          <option value="TECHNICIAN">TECHNICIAN</option>
-          <option value="CLIENT">CLIENT</option>
+          <option value="ADMIN">Administrador</option>
+          <option value="TECHNICIAN">Tecnico</option>
+          <option value="CLIENT">Cliente</option>
         </select>
         <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.active} onChange={(event) => setFilters({ ...filters, active: event.target.value })}>
           <option value="">Activos e inactivos</option>
@@ -112,10 +112,10 @@ const Usuarios = () => {
         data={filteredUsers}
         loading={isLoading}
         error={error}
-        searchPlaceholder="Buscar por nombre o email"
+        searchPlaceholder="Buscar por nombre o correo"
         columns={[
           { key: 'name', header: 'Nombre', sortable: true },
-          { key: 'email', header: 'Email', sortable: true },
+          { key: 'email', header: 'Correo', sortable: true },
           { key: 'role', header: 'Rol', render: (row) => <RoleBadge value={row.role} /> },
           { key: 'active', header: 'Estado', render: (row) => row.active ? 'Activo' : 'Inactivo' },
           { key: 'company', header: 'Empresa' },
@@ -136,8 +136,8 @@ const Usuarios = () => {
       <Modal isOpen={creatingTech || Boolean(editingUser)} title={editingUser ? 'Editar usuario' : 'Crear tecnico'} onClose={() => { setCreatingTech(false); setEditingUser(null); }}>
         <form className="grid gap-4" onSubmit={userForm.handleSubmit(saveUser)}>
           <FormInput register={userForm.register} name="name" label="Nombre" error={userForm.formState.errors.name} />
-          <FormInput register={userForm.register} name="email" label="Email" error={userForm.formState.errors.email} />
-          <FormInput register={userForm.register} name="password" type="password" label="Password inicial" error={userForm.formState.errors.password} />
+          <FormInput register={userForm.register} name="email" label="Correo electronico" error={userForm.formState.errors.email} />
+          <FormInput register={userForm.register} name="password" type="password" label="Contrasena inicial" error={userForm.formState.errors.password} />
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput register={userForm.register} name="phone" label="Telefono" error={userForm.formState.errors.phone} />
             <FormInput register={userForm.register} name="company" label="Empresa" error={userForm.formState.errors.company} />
@@ -157,7 +157,7 @@ const Usuarios = () => {
       <Modal isOpen={Boolean(roleUser)} title="Cambiar rol con doble confirmacion" onClose={() => setRoleUser(null)}>
         <form className="grid gap-4" onSubmit={roleForm.handleSubmit(changeRole)}>
           <p className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm text-amber-800">Esta accion cambia permisos sensibles. Confirma el nuevo rol y escribe CAMBIAR ROL.</p>
-          <FormSelect register={roleForm.register} name="role" label="Nuevo rol" error={roleForm.formState.errors.role} options={[{ value: 'ADMIN', label: 'ADMIN' }, { value: 'TECHNICIAN', label: 'TECHNICIAN' }, { value: 'CLIENT', label: 'CLIENT' }]} />
+          <FormSelect register={roleForm.register} name="role" label="Nuevo rol" error={roleForm.formState.errors.role} options={[{ value: 'ADMIN', label: 'Administrador' }, { value: 'TECHNICIAN', label: 'Tecnico' }, { value: 'CLIENT', label: 'Cliente' }]} />
           <FormInput register={roleForm.register} name="confirmation" label="Confirmacion" error={roleForm.formState.errors.confirmation} />
           <Button variant="danger" type="submit" isLoading={roleForm.formState.isSubmitting}>Cambiar rol</Button>
         </form>

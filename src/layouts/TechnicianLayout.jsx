@@ -2,7 +2,7 @@ import { Bell, Boxes, Gauge, ClipboardCheck } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
-  { to: 'dashboard', label: 'Dashboard', icon: Gauge },
+  { to: 'dashboard', label: 'Inicio', icon: Gauge },
   { to: 'tickets', label: 'Asignados', icon: ClipboardCheck },
   { to: 'reemplazos', label: 'Reemplazos', icon: Boxes },
   { to: 'notifications', label: 'Notificaciones', icon: Bell }

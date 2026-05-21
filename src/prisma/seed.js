@@ -98,7 +98,7 @@ async function seedUsers() {
 
   const technician = await upsertUser({
     email: TECHNICIAN_EMAIL,
-    name: 'Tecnico Demo Kollab',
+    name: 'Tecnico Kollab',
     password: technicianPassword,
     role: 'TECHNICIAN',
     active: true
@@ -106,7 +106,7 @@ async function seedUsers() {
 
   const client = await upsertUser({
     email: CLIENT_EMAIL,
-    name: 'Cliente Demo Kollab',
+    name: 'Cliente Kollab',
     password: clientPassword,
     role: 'CLIENT',
     active: true

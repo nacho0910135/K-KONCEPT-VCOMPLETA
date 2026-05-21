@@ -21,6 +21,12 @@ export const roleTone = {
   CLIENT: 'neutral'
 };
 
+export const roleLabel = {
+  ADMIN: 'Administrador',
+  TECHNICIAN: 'Tecnico',
+  CLIENT: 'Cliente'
+};
+
 export const priorityLabel = {
   LOW: 'Baja',
   MEDIUM: 'Media',
@@ -32,15 +38,62 @@ export const statusLabel = {
   OPEN: 'Abierto',
   PENDING: 'Pendiente',
   IN_PROGRESS: 'En progreso',
+  WAITING_CUSTOMER: 'En espera del cliente',
   RESOLVED: 'Resuelto',
-  CLOSED: 'Cerrado'
+  CLOSED: 'Cerrado',
+  CANCELLED: 'Cancelado',
+  REOPENED: 'Reabierto'
+};
+
+export const eventLabel = {
+  TICKET_CREATED: 'Ticket creado',
+  TICKET_ASSIGNED: 'Ticket asignado',
+  TICKET_RESOLVED: 'Ticket resuelto',
+  TICKET_CLOSED: 'Ticket cerrado',
+  STATUS_CHANGED: 'Cambio de estado',
+  COMMENT_CREATED: 'Comentario creado',
+  SLA_RISK: 'Riesgo de SLA',
+  SLA_BREACH: 'SLA vencido',
+  EXPORT_REQUESTED: 'Exportacion solicitada',
+  SCHEDULED_REPORT_UPDATED: 'Reporte programado actualizado',
+  LOGIN_SUCCESS: 'Inicio de sesion correcto',
+  LOGIN_FAILURE: 'Inicio de sesion fallido',
+  TICKET_STATUS_CHANGED: 'Estado de ticket actualizado',
+  TICKET_PRIORITY_CHANGED: 'Prioridad actualizada',
+  PRIORITY_CHANGED: 'Prioridad actualizada',
+  USER_DEACTIVATED: 'Usuario desactivado'
+};
+
+export const channelLabel = {
+  EMAIL: 'Correo',
+  SMS: 'SMS',
+  PUSH: 'Push',
+  IN_APP: 'En la plataforma'
+};
+
+export const resultLabel = {
+  SUCCESS: 'Exito',
+  FAILURE: 'Error'
+};
+
+export const frequencyLabel = {
+  DAILY: 'Diario',
+  WEEKLY: 'Semanal',
+  MONTHLY: 'Mensual'
+};
+
+export const reportTypeLabel = {
+  'KPI Overview': 'Resumen KPI',
+  Tickets: 'Tickets',
+  SLA: 'SLA',
+  Auditoria: 'Auditoria'
 };
 
 export const StateBadge = ({ value }) => <Badge tone={statusTone[value] || 'neutral'}>{statusLabel[value] || value}</Badge>;
 export const PriorityBadge = ({ value }) => <Badge tone={priorityTone[value] || 'neutral'}>{priorityLabel[value] || value}</Badge>;
-export const RoleBadge = ({ value }) => <Badge tone={roleTone[value] || 'neutral'}>{value}</Badge>;
+export const RoleBadge = ({ value }) => <Badge tone={roleTone[value] || 'neutral'}>{roleLabel[value] || value}</Badge>;
 
-export const optionize = (items) => items.map((item) => ({ value: item, label: item }));
+export const optionize = (items, labels = {}) => items.map((item) => ({ value: item, label: labels[item] || item }));
 
 export const simulateAction = () => new Promise((resolve) => {
   window.setTimeout(resolve, 350);
