@@ -2,16 +2,16 @@ import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, Shie
 import AppShell from './AppShell.jsx';
 
 const navItems = [
-  { to: '', label: 'Dashboard', icon: Gauge },
+  { to: 'dashboard', label: 'Dashboard', icon: Gauge },
   { to: 'tickets', label: 'Tickets', icon: FileText },
-  { to: 'usuarios', label: 'Usuarios', icon: UsersRound },
-  { to: 'categorias', label: 'Categorias', icon: Tags },
+  { to: 'users', label: 'Usuarios', icon: UsersRound },
+  { to: 'categories', label: 'Categorias', icon: Tags },
   { to: 'slas', label: 'SLAs', icon: Clock3 },
-  { to: 'reportes', label: 'Reportes', icon: ChartNoAxesCombined },
-  { to: 'auditoria', label: 'Auditoria', icon: ShieldAlert },
-  { to: 'plantillas', label: 'Plantillas', icon: Layers3 },
-  { to: 'canales', label: 'Canales', icon: Mail },
-  { to: 'frecuencia', label: 'Frecuencia', icon: SlidersHorizontal },
+  { to: 'reports', label: 'Reportes', icon: ChartNoAxesCombined },
+  { to: 'audit', label: 'Auditoria', icon: ShieldAlert },
+  { to: 'notifications/templates', label: 'Plantillas', icon: Layers3 },
+  { to: 'notifications/channels', label: 'Canales', icon: Mail },
+  { to: 'notifications/frequency', label: 'Frecuencia', icon: SlidersHorizontal },
   { to: 'notificaciones', label: 'Notificaciones', icon: Bell }
 ];
 

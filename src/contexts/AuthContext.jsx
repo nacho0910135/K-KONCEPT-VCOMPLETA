@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { clearAccessToken, setAccessToken, setUnauthorizedHandler } from '../services/api.js';
 import { getCurrentUser, loginRequest, logoutRequest } from '../services/auth.client.service.js';
+import { NotificationProvider } from './NotificationContext.jsx';
 
 const AuthContext = createContext(null);
 
@@ -79,7 +80,13 @@ export const AuthProvider = ({ children }) => {
     [user, token, isLoading, login, logout, refreshUser]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      <NotificationProvider isAuthenticated={value.isAuthenticated}>
+        {children}
+      </NotificationProvider>
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuthContext = () => {

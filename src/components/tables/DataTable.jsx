@@ -1,9 +1,35 @@
 import { ArrowDownUp, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import EmptyState from '../common/EmptyState.jsx';
 import Input from '../common/Input.jsx';
 import Pagination from '../common/Pagination.jsx';
 
-const DataTable = ({ columns, data = [], pageSize = 10, searchable = true }) => {
+const SkeletonRows = ({ columns, pageSize }) => (
+  <>
+    {Array.from({ length: Math.min(pageSize, 6) }, (_, rowIndex) => (
+      <tr key={rowIndex}>
+        {columns.map((column) => (
+          <td key={column.key} className="px-4 py-3">
+            <div className="h-4 w-full max-w-32 animate-pulse rounded bg-neutral-100" />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
+
+const DataTable = ({
+  columns,
+  data = [],
+  pageSize = 10,
+  searchable = true,
+  searchPlaceholder = 'Buscar...',
+  loading = false,
+  error = null,
+  emptyTitle = 'Sin resultados',
+  emptyDescription = 'No encontramos datos para los filtros actuales.',
+  onRowClick
+}) => {
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState({ key: null, direction: 'asc' });
@@ -39,9 +65,10 @@ const DataTable = ({ columns, data = [], pageSize = 10, searchable = true }) => 
       {searchable && (
         <div className="relative max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-          <Input className="pl-10" placeholder="Buscar..." value={query} onChange={(event) => setQuery(event.target.value)} />
+          <Input className="pl-10" placeholder={searchPlaceholder} value={query} onChange={(event) => setQuery(event.target.value)} />
         </div>
       )}
+      {error && <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{error}</div>}
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-neutral-200 text-sm">
@@ -58,8 +85,14 @@ const DataTable = ({ columns, data = [], pageSize = 10, searchable = true }) => 
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {pageData.map((row, index) => (
-                <tr key={row.id || index} className="hover:bg-neutral-50">
+              {loading ? (
+                <SkeletonRows columns={columns} pageSize={pageSize} />
+              ) : pageData.map((row, index) => (
+                <tr
+                  key={row.id || index}
+                  className={onRowClick ? 'cursor-pointer hover:bg-neutral-50' : 'hover:bg-neutral-50'}
+                  onClick={() => onRowClick?.(row)}
+                >
                   {columns.map((column) => (
                     <td key={column.key} className="px-4 py-3 text-neutral-700">
                       {column.render ? column.render(row) : row[column.key]}
@@ -71,7 +104,8 @@ const DataTable = ({ columns, data = [], pageSize = 10, searchable = true }) => 
           </table>
         </div>
       </div>
-      <Pagination page={page} pageSize={pageSize} total={sortedData.length} onPageChange={setPage} />
+      {!loading && sortedData.length === 0 && <EmptyState title={emptyTitle} description={emptyDescription} />}
+      {!loading && sortedData.length > 0 && <Pagination page={page} pageSize={pageSize} total={sortedData.length} onPageChange={setPage} />}
     </div>
   );
 };

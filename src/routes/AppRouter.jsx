@@ -7,6 +7,7 @@ import Login from '../pages/auth/Login.jsx';
 import Register from '../pages/auth/Register.jsx';
 import AccessDenied from '../pages/shared/AccessDenied.jsx';
 import NotFound from '../pages/shared/NotFound.jsx';
+import ClientDashboard from '../pages/client/Dashboard.jsx';
 import ClientMisTickets from '../pages/client/MisTickets.jsx';
 import NuevoTicket from '../pages/client/NuevoTicket.jsx';
 import ClientDetalleTicket from '../pages/client/DetalleTicket.jsx';
@@ -51,36 +52,53 @@ const AppRouter = () => (
     <Route element={<ProtectedRoute />}>
       <Route element={<RoleRoute roles={['CLIENT']} />}>
         <Route path="/client" element={<ClientLayout />}>
-          <Route index element={<ClientMisTickets />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<ClientDashboard />} />
+          <Route path="tickets" element={<ClientMisTickets />} />
+          <Route path="tickets/new" element={<NuevoTicket />} />
           <Route path="nuevo-ticket" element={<NuevoTicket />} />
           <Route path="tickets/:id" element={<ClientDetalleTicket />} />
+          <Route path="warranties" element={<MisGarantias />} />
           <Route path="garantias" element={<MisGarantias />} />
+          <Route path="notifications" element={<ClientNotificaciones />} />
           <Route path="notificaciones" element={<ClientNotificaciones />} />
+          <Route path="profile" element={<Perfil />} />
           <Route path="perfil" element={<Perfil />} />
         </Route>
       </Route>
 
       <Route element={<RoleRoute roles={['TECHNICIAN']} />}>
         <Route path="/technician" element={<TechnicianLayout />}>
-          <Route index element={<TechnicianDashboard />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<TechnicianDashboard />} />
           <Route path="tickets" element={<TicketsAsignados />} />
           <Route path="tickets/:id" element={<TechnicianDetalleTicket />} />
           <Route path="reemplazos" element={<Reemplazos />} />
+          <Route path="notifications" element={<TechnicianNotificaciones />} />
           <Route path="notificaciones" element={<TechnicianNotificaciones />} />
         </Route>
       </Route>
 
       <Route element={<RoleRoute roles={['ADMIN']} />}>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="tickets" element={<AdminTickets />} />
+          <Route path="tickets/:id" element={<AdminTickets />} />
+          <Route path="users" element={<Usuarios />} />
           <Route path="usuarios" element={<Usuarios />} />
+          <Route path="categories" element={<Categorias />} />
           <Route path="categorias" element={<Categorias />} />
           <Route path="slas" element={<SLAs />} />
+          <Route path="reports" element={<Reportes />} />
           <Route path="reportes" element={<Reportes />} />
+          <Route path="audit" element={<Auditoria />} />
           <Route path="auditoria" element={<Auditoria />} />
+          <Route path="notifications/templates" element={<Plantillas />} />
           <Route path="plantillas" element={<Plantillas />} />
+          <Route path="notifications/channels" element={<Canales />} />
           <Route path="canales" element={<Canales />} />
+          <Route path="notifications/frequency" element={<Frecuencia />} />
           <Route path="frecuencia" element={<Frecuencia />} />
           <Route path="notificaciones" element={<ClientNotificaciones />} />
         </Route>

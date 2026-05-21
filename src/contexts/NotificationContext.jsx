@@ -1,11 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useAuthContext } from './AuthContext.jsx';
 import { getLatestNotifications, getUnreadNotificationCount } from '../services/notifications.service.js';
 
 const NotificationContext = createContext(null);
 
-export const NotificationProvider = ({ children }) => {
-  const { isAuthenticated } = useAuthContext();
+export const NotificationProvider = ({ children, isAuthenticated = false }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
 

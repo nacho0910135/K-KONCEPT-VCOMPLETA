@@ -6,6 +6,6 @@ export const ROLES = {
 
 export const ROLE_HOME = {
   ADMIN: '/admin',
-  TECHNICIAN: '/technician',
-  CLIENT: '/client'
+  TECHNICIAN: '/technician/dashboard',
+  CLIENT: '/client/dashboard'
 };
