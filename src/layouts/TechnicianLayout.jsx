@@ -1,0 +1,13 @@
+import { Bell, Boxes, Gauge, ClipboardCheck } from 'lucide-react';
+import AppShell from './AppShell.jsx';
+
+const navItems = [
+  { to: '', label: 'Dashboard', icon: Gauge },
+  { to: 'tickets', label: 'Asignados', icon: ClipboardCheck },
+  { to: 'reemplazos', label: 'Reemplazos', icon: Boxes },
+  { to: 'notificaciones', label: 'Notificaciones', icon: Bell }
+];
+
+const TechnicianLayout = () => <AppShell navItems={navItems} roleLabel="Tecnico" />;
+
+export default TechnicianLayout;
