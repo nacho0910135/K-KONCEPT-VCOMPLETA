@@ -1,0 +1,56 @@
+{
+  "name": "kollab-koncepts-reportes-backend",
+  "version": "1.0.0",
+  "description": "Backend para la Plataforma Digital de Administracion de Reportes Tecnicos de Kollab Koncepts.",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "seed": "prisma db seed"
+  },
+  "keywords": [
+    "kollab-koncepts",
+    "reports",
+    "tickets",
+    "express",
+    "prisma"
+  ],
+  "author": "Kollab Koncepts",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.5.1",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^8.0.7",
+    "pdfkit": "^0.18.0",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "pino-pretty": "^13.0.0",
+    "prisma": "^5.22.0"
+  },
+  "prisma": {
+    "schema": "src/prisma/schema.prisma",
+    "seed": "node src/prisma/seed.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
