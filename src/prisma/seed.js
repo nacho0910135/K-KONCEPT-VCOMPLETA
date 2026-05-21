@@ -4,6 +4,8 @@ const { prisma } = require('../config/database');
 const { logger } = require('../utils/logger');
 
 const ADMIN_EMAIL = 'admin@kollabkoncepts.com';
+const TECHNICIAN_EMAIL = 'tecnico@kollabkoncepts.com';
+const CLIENT_EMAIL = 'cliente@kollabkoncepts.com';
 const SYSTEM_EMAIL = 'system@kollabkoncepts.internal';
 
 const notificationEvents = [
@@ -82,6 +84,8 @@ async function upsertUser({ email, name, password, role, active }) {
 
 async function seedUsers() {
   const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'ChangeMe.Admin.2026!';
+  const technicianPassword = process.env.TECHNICIAN_INITIAL_PASSWORD || 'ChangeMe.Tech.2026!';
+  const clientPassword = process.env.CLIENT_INITIAL_PASSWORD || 'ChangeMe.Client.2026!';
   const systemPassword = process.env.SYSTEM_INITIAL_PASSWORD || 'system-account-disabled';
 
   const admin = await upsertUser({
@@ -89,6 +93,22 @@ async function seedUsers() {
     name: 'Administrador Kollab Koncepts',
     password: adminPassword,
     role: 'ADMIN',
+    active: true
+  });
+
+  const technician = await upsertUser({
+    email: TECHNICIAN_EMAIL,
+    name: 'Tecnico Demo Kollab',
+    password: technicianPassword,
+    role: 'TECHNICIAN',
+    active: true
+  });
+
+  const client = await upsertUser({
+    email: CLIENT_EMAIL,
+    name: 'Cliente Demo Kollab',
+    password: clientPassword,
+    role: 'CLIENT',
     active: true
   });
 
@@ -100,7 +120,12 @@ async function seedUsers() {
     active: false
   });
 
-  logger.info({ adminEmail: admin.email, systemEmail: system.email }, 'Usuarios iniciales creados o actualizados');
+  logger.info({
+    adminEmail: admin.email,
+    technicianEmail: technician.email,
+    clientEmail: client.email,
+    systemEmail: system.email
+  }, 'Usuarios iniciales creados o actualizados');
 }
 
 async function seedTicketCounter() {

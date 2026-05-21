@@ -1,8 +1,9 @@
 const { ticketRepository } = require('../repositories/ticket.repository');
 const { userRepository } = require('../repositories/user.repository');
 const { NotFoundError } = require('../utils/errors');
+const { canTransition } = require('../utils/ticketTransitions.util');
 
-const AUTO_CLOSE_COMMENT = 'Cierre automático por inactividad tras 5 días en RESOLVED';
+const AUTO_CLOSE_COMMENT = 'Cierre automatico por inactividad tras 5 dias en RESOLVED';
 const INACTIVITY_DAYS = 5;
 
 const ticketCleanupService = {
@@ -15,8 +16,9 @@ const ticketCleanupService = {
 
     const cutoffDate = new Date(Date.now() - INACTIVITY_DAYS * 24 * 60 * 60 * 1000);
     const tickets = await ticketRepository.findResolvedInactiveBefore(cutoffDate);
+    const transitionableTickets = tickets.filter((ticket) => canTransition(ticket.status, 'CLOSED', 'SYSTEM'));
     const closedTickets = await ticketRepository.closeResolvedTickets(
-      tickets.map((ticket) => ticket.id),
+      transitionableTickets.map((ticket) => ticket.id),
       systemUser.id,
       AUTO_CLOSE_COMMENT
     );
@@ -24,6 +26,7 @@ const ticketCleanupService = {
     return {
       cutoffDate,
       candidates: tickets.length,
+      skipped: tickets.length - transitionableTickets.length,
       closed: closedTickets.length
     };
   }

@@ -114,8 +114,8 @@ export const templates = [
 ];
 
 export const channels = [
-  { id: 'IN_APP', name: 'IN_APP', enabled: true, fields: ['retentionDays'] },
-  { id: 'EMAIL', name: 'EMAIL', enabled: true, fields: ['smtpHost', 'smtpPort', 'smtpUser'] },
+  { id: 'IN_APP', name: 'IN_APP', enabled: true, fields: ['retentionDays'], config: { retentionDays: '90' } },
+  { id: 'EMAIL', name: 'EMAIL', enabled: true, fields: ['smtpHost', 'smtpPort', 'smtpUser'], config: { smtpHost: 'smtp.kollab.com', smtpPort: '587', smtpUser: 'notificaciones@kollab.com' } },
   { id: 'SMS', name: 'SMS', enabled: false, fields: ['twilioSid', 'twilioToken', 'fromNumber'] },
   { id: 'PUSH', name: 'PUSH', enabled: false, fields: ['fcmKey', 'projectId'] }
 ];
@@ -127,6 +127,6 @@ export const frequencyRules = [
 ];
 
 export const scheduledReports = [
-  { id: 'rep-1', type: 'KPI Overview', frequency: 'WEEKLY', recipients: ['admin@kollab.com'], format: 'PDF', active: true },
-  { id: 'rep-2', type: 'SLA', frequency: 'MONTHLY', recipients: ['gerencia@kollab.com', 'ops@kollab.com'], format: 'Excel', active: true }
+  { id: 'rep-1', name: 'Resumen gerencial semanal', type: 'KPI Overview', parameters: '{"range":"last_7_days"}', frequency: 'WEEKLY', recipients: ['admin@kollab.com'], format: 'PDF', active: true },
+  { id: 'rep-2', name: 'SLA mensual operaciones', type: 'SLA', parameters: '{"slaMet":false}', frequency: 'MONTHLY', recipients: ['gerencia@kollab.com', 'ops@kollab.com'], format: 'Excel', active: true }
 ];

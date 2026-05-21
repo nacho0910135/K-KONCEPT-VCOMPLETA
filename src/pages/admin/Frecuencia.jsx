@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, Plus } from 'lucide-react';
+import { Edit, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import Button from '../../components/common/Button.jsx';
 import Badge from '../../components/common/Badge.jsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import Modal from '../../components/common/Modal.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
@@ -18,11 +19,20 @@ const frequencySchema = z.object({
   event: z.string().min(1, 'Evento requerido'),
   maxPerUserPerHour: z.coerce.number().min(1, 'Minimo 1'),
   maxPerUserPerDay: z.coerce.number().min(1, 'Minimo 1')
+}).superRefine((value, ctx) => {
+  if (value.maxPerUserPerHour > value.maxPerUserPerDay) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['maxPerUserPerHour'],
+      message: 'Max por hora no puede ser mayor que max por dia.'
+    });
+  }
 });
 
 const Frecuencia = () => {
   const { data, setData, isLoading, error } = useAdminResource(() => frequencyRules, []);
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const { showToast } = useToast();
   const form = useForm({ resolver: zodResolver(frequencySchema), defaultValues: { event: '', maxPerUserPerHour: 1, maxPerUserPerDay: 10 } });
 
@@ -48,6 +58,13 @@ const Frecuencia = () => {
     showToast({ type: 'info', title: 'Estado actualizado' });
   };
 
+  const remove = async () => {
+    await simulateAction();
+    setData((current) => current.filter((item) => item.id !== deleting.id));
+    setDeleting(null);
+    showToast({ type: 'success', title: 'Regla eliminada' });
+  };
+
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -69,7 +86,13 @@ const Frecuencia = () => {
           {
             key: 'actions',
             header: 'Acciones',
-            render: (row) => <div className="flex gap-2"><Button variant="ghost" onClick={() => open(row)}><Edit className="h-4 w-4" />Editar</Button><Button variant="ghost" onClick={() => toggle(row)}>{row.active ? 'Desactivar' : 'Activar'}</Button></div>
+            render: (row) => (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="ghost" onClick={() => open(row)}><Edit className="h-4 w-4" />Editar</Button>
+                <Button variant="ghost" onClick={() => toggle(row)}>{row.active ? 'Desactivar' : 'Activar'}</Button>
+                <Button variant="ghost" onClick={() => setDeleting(row)}><Trash2 className="h-4 w-4" />Eliminar</Button>
+              </div>
+            )
           }
         ]}
       />
@@ -83,6 +106,13 @@ const Frecuencia = () => {
           <Button type="submit" isLoading={form.formState.isSubmitting}>Guardar regla</Button>
         </form>
       </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(deleting)}
+        title="Eliminar regla de frecuencia"
+        message={`Eliminar la regla ${deleting?.event}?`}
+        onCancel={() => setDeleting(null)}
+        onConfirm={remove}
+      />
     </div>
   );
 };

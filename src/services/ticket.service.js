@@ -9,6 +9,7 @@ const { warrantyService } = require('./warranty.service');
 const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
 const { canTransition } = require('../utils/ticketTransitions.util');
+const { sanitizePayloadText, sanitizePlainText } = require('../utils/textSanitizer.util');
 
 const CLOSED_STATUSES = ['CLOSED', 'CANCELLED'];
 
@@ -51,8 +52,15 @@ const assertTechnicianAssigned = (ticket, user) => {
   }
 };
 
+const assertAllowedTransition = (ticket, nextStatus, role) => {
+  if (!canTransition(ticket.status, nextStatus, role)) {
+    throw new ForbiddenError(`Transicion no permitida de ${ticket.status} a ${nextStatus} para rol ${role}`);
+  }
+};
+
 const ticketService = {
   async preview(payload, user) {
+    const sanitizedPayload = sanitizePayloadText(payload, ['title', 'description']);
     return {
       requester: {
         id: user.id,
@@ -60,17 +68,18 @@ const ticketService = {
         email: user.email
       },
       ticket: {
-        title: payload.title,
-        description: payload.description,
-        priority: payload.priority || 'MEDIUM',
-        categoryId: payload.categoryId,
-        subcategoryId: payload.subcategoryId || null,
-        productId: payload.productId || null
+        title: sanitizedPayload.title,
+        description: sanitizedPayload.description,
+        priority: sanitizedPayload.priority || 'MEDIUM',
+        categoryId: sanitizedPayload.categoryId,
+        subcategoryId: sanitizedPayload.subcategoryId || null,
+        productId: sanitizedPayload.productId || null
       }
     };
   },
 
   async create(payload, user) {
+    const sanitizedPayload = sanitizePayloadText(payload, ['title', 'description']);
     let warrantyId = payload.warrantyId || null;
     let warrantyStatusAtCreation = null;
     let warrantyWarning = null;
@@ -96,15 +105,15 @@ const ticketService = {
       }
     }
 
-    const priority = payload.priority || 'MEDIUM';
-    const sla = await slaService.calculateDeadlineForTicket({ priority, categoryId: payload.categoryId, clientId: user.id });
+    const priority = sanitizedPayload.priority || 'MEDIUM';
+    const sla = await slaService.calculateDeadlineForTicket({ priority, categoryId: sanitizedPayload.categoryId, clientId: user.id });
 
     const ticket = await ticketCounterRepository.createTicketWithSequentialCode({
-      title: payload.title,
-      description: payload.description,
+      title: sanitizedPayload.title,
+      description: sanitizedPayload.description,
       priority,
-      categoryId: payload.categoryId,
-      subcategoryId: payload.subcategoryId || null,
+      categoryId: sanitizedPayload.categoryId,
+      subcategoryId: sanitizedPayload.subcategoryId || null,
       clientId: user.id,
       productId: payload.productId || null,
       warrantyId,
@@ -209,23 +218,21 @@ const ticketService = {
     const ticket = await ensureTicketExists(id);
     assertTechnicianAssigned(ticket, user);
 
-    if (!canTransition(ticket.status, payload.status, user.role)) {
-      throw new ForbiddenError(`Transicion no permitida de ${ticket.status} a ${payload.status} para rol ${user.role}`);
-    }
+    assertAllowedTransition(ticket, payload.status, user.role);
 
     const data = { status: payload.status };
-    let comment = payload.comment;
+    let comment = sanitizePlainText(payload.comment);
 
     if (payload.status === 'RESOLVED') {
       data.closeType = payload.closeType;
 
       if (payload.closeType === 'WITH_SOLUTION') {
-        data.diagnosis = payload.diagnosis;
-        data.solution = payload.solution;
+        data.diagnosis = sanitizePlainText(payload.diagnosis);
+        data.solution = sanitizePlainText(payload.solution);
       }
 
       if (payload.closeType === 'WITHOUT_SOLUTION') {
-        data.closeJustification = payload.closeJustification;
+        data.closeJustification = sanitizePlainText(payload.closeJustification);
       }
 
       if (payload.closeType === 'REPLACEMENT') {
@@ -267,15 +274,6 @@ const ticketService = {
       }
     });
 
-    await auditService.record({
-      userId: user.id,
-      action: 'TICKET_ASSIGNED',
-      entity: 'Ticket',
-      entityId: id,
-      previousValue: { assignedTechnicianId: ticket.assignedTechnicianId },
-      newValue: { assignedTechnicianId: technician.id }
-    });
-
     return updated;
   },
 
@@ -284,12 +282,13 @@ const ticketService = {
 
     if (ticket.clientId !== user.id) throw new ForbiddenError('Solo el cliente solicitante puede cerrar este ticket');
     if (ticket.status !== 'RESOLVED') throw new BadRequestError('Solo se pueden confirmar tickets en estado RESOLVED');
+    assertAllowedTransition(ticket, 'CLOSED', user.role);
 
     const comment = `Cierre confirmado por cliente con calificación ${payload.rating}/5`;
     const updated = await ticketRepository.updateStatusWithHistory(id, {
       status: 'CLOSED',
       rating: payload.rating,
-      ratingComment: payload.ratingComment || null
+      ratingComment: sanitizePlainText(payload.ratingComment) || null
     }, {
       previousStatus: ticket.status,
       newStatus: 'CLOSED',
@@ -325,6 +324,7 @@ const ticketService = {
 
     if (ticket.clientId !== user.id) throw new ForbiddenError('Solo el cliente solicitante puede rechazar la solucion');
     if (ticket.status !== 'RESOLVED') throw new BadRequestError('Solo se pueden rechazar tickets en estado RESOLVED');
+    assertAllowedTransition(ticket, 'REOPENED', user.role);
 
     const updated = await ticketRepository.updateStatusWithHistory(id, {
       status: 'REOPENED'
@@ -332,7 +332,7 @@ const ticketService = {
       previousStatus: ticket.status,
       newStatus: 'REOPENED',
       changedById: user.id,
-      comment: payload.reason
+      comment: sanitizePlainText(payload.reason)
     });
 
     await notificationService.notifyUsers({
@@ -351,7 +351,7 @@ const ticketService = {
     const ticket = await ensureTicketExists(id);
     assertTechnicianAssigned(ticket, user);
 
-    const updated = await ticketRepository.update(id, { diagnosis: payload.diagnosis });
+    const updated = await ticketRepository.update(id, { diagnosis: sanitizePlainText(payload.diagnosis) });
 
     await auditService.record({
       userId: user.id,
@@ -377,6 +377,9 @@ const ticketService = {
       createdAt: ticket.createdAt
     });
     const shouldMoveToPending = ticket.status === 'OPEN';
+    if (shouldMoveToPending) {
+      assertAllowedTransition(ticket, 'PENDING', user.role);
+    }
     const updated = await ticketRepository.assignTechnician(id, technician.id, shouldMoveToPending ? {
       previousStatus: ticket.status,
       newStatus: 'PENDING',
@@ -399,6 +402,15 @@ const ticketService = {
         ticketTitle: ticket.title,
         technicianName: technician.name
       }
+    });
+
+    await auditService.record({
+      userId: user.id,
+      action: 'TICKET_ASSIGNED',
+      entity: 'Ticket',
+      entityId: id,
+      previousValue: { assignedTechnicianId: ticket.assignedTechnicianId },
+      newValue: { assignedTechnicianId: technician.id }
     });
 
     return updated;

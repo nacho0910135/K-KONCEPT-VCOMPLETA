@@ -4,6 +4,7 @@ const { auditService } = require('./audit.service');
 const { notificationService } = require('./notification.service');
 const { ticketService } = require('./ticket.service');
 const { NotFoundError } = require('../utils/errors');
+const { sanitizePlainText } = require('../utils/textSanitizer.util');
 
 const ticketCommentService = {
   async create(ticketId, payload, user) {
@@ -11,11 +12,12 @@ const ticketCommentService = {
     if (!ticket) throw new NotFoundError('Ticket no encontrado');
 
     ticketService.ensureCanComment(ticket, user);
+    const commentText = sanitizePlainText(payload.comment);
 
     const comment = await ticketCommentRepository.create({
       ticketId,
       userId: user.id,
-      comment: payload.comment,
+      comment: commentText,
       isInternal: user.role === 'CLIENT' ? false : Boolean(payload.isInternal)
     });
 
@@ -38,7 +40,7 @@ const ticketCommentService = {
         ticketCode: ticket.code,
         ticketTitle: ticket.title,
         commentAuthor: user.name,
-        commentText: payload.comment
+        commentText
       }
     });
 

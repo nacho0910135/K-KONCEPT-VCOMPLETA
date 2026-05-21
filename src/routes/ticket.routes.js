@@ -6,6 +6,7 @@ const { validate } = require('../middlewares/validate.middleware');
 const { asyncHandler } = require('../utils/asyncHandler');
 const {
   createTicketSchema,
+  ticketIdParamSchema,
   ticketPreviewSchema,
   myTicketsQuerySchema,
   assignedTicketsQuerySchema,
@@ -32,14 +33,14 @@ router.get('/search', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(searchTick
 router.get('/', authorizeRoles('ADMIN'), validate(adminTicketsQuerySchema, 'query'), asyncHandler(ticketController.listAll));
 
 router.post('/', authorizeRoles('CLIENT'), validate(createTicketSchema), asyncHandler(ticketController.create));
-router.get('/:id', authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'), asyncHandler(ticketController.getById));
-router.get('/:id/history', authorizeRoles('TECHNICIAN', 'ADMIN'), asyncHandler(ticketController.getHistory));
-router.patch('/:id/status', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(changeStatusSchema), asyncHandler(ticketController.changeStatus));
-router.patch('/:id/diagnosis', authorizeRoles('TECHNICIAN'), validate(updateDiagnosisSchema), asyncHandler(ticketController.updateDiagnosis));
-router.patch('/:id/assign', authorizeRoles('ADMIN'), validate(assignTicketSchema), asyncHandler(ticketController.assignTechnician));
-router.patch('/:id/priority', authorizeRoles('ADMIN'), validate(updatePrioritySchema), asyncHandler(ticketController.updatePriority));
-router.post('/:id/confirm-solution', authorizeRoles('CLIENT'), validate(confirmSolutionSchema), asyncHandler(ticketController.confirmSolution));
-router.post('/:id/reject-solution', authorizeRoles('CLIENT'), validate(rejectSolutionSchema), asyncHandler(ticketController.rejectSolution));
-router.post('/:id/comments', authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'), validate(createTicketCommentSchema), asyncHandler(ticketCommentController.create));
+router.get('/:id', authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), asyncHandler(ticketController.getById));
+router.get('/:id/history', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), asyncHandler(ticketController.getHistory));
+router.patch('/:id/status', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), validate(changeStatusSchema), asyncHandler(ticketController.changeStatus));
+router.patch('/:id/diagnosis', authorizeRoles('TECHNICIAN'), validate(ticketIdParamSchema, 'params'), validate(updateDiagnosisSchema), asyncHandler(ticketController.updateDiagnosis));
+router.patch('/:id/assign', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), validate(assignTicketSchema), asyncHandler(ticketController.assignTechnician));
+router.patch('/:id/priority', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), validate(updatePrioritySchema), asyncHandler(ticketController.updatePriority));
+router.post('/:id/confirm-solution', authorizeRoles('CLIENT'), validate(ticketIdParamSchema, 'params'), validate(confirmSolutionSchema), asyncHandler(ticketController.confirmSolution));
+router.post('/:id/reject-solution', authorizeRoles('CLIENT'), validate(ticketIdParamSchema, 'params'), validate(rejectSolutionSchema), asyncHandler(ticketController.rejectSolution));
+router.post('/:id/comments', authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), validate(createTicketCommentSchema), asyncHandler(ticketCommentController.create));
 
 module.exports = router;

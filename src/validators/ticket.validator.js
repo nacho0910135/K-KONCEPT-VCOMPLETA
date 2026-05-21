@@ -7,6 +7,10 @@ const paginationQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional()
 });
 
+const ticketIdParamSchema = z.object({
+  id: z.string().uuid('ID de ticket invalido')
+});
+
 const createTicketSchema = z.object({
   title: z.string().trim().min(3),
   description: z.string().trim().min(10),
@@ -101,6 +105,7 @@ const searchTicketsQuerySchema = paginationQuerySchema.extend({
 
 module.exports = {
   createTicketSchema,
+  ticketIdParamSchema,
   ticketPreviewSchema,
   myTicketsQuerySchema,
   assignedTicketsQuerySchema,

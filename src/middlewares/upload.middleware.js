@@ -2,7 +2,7 @@ const multer = require('multer');
 
 const { auditService } = require('../services/audit.service');
 const { BadRequestError } = require('../utils/errors');
-const { ALLOWED_MIME_TYPES, validateUploadedFile } = require('../utils/fileValidation.util');
+const { validateUploadedFile } = require('../utils/fileValidation.util');
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -11,10 +11,6 @@ const upload = multer({
     files: 10
   },
   fileFilter(req, file, callback) {
-    if (!ALLOWED_MIME_TYPES[file.mimetype]) {
-      return callback(new BadRequestError(`Tipo de archivo no permitido: ${file.mimetype}`));
-    }
-
     return callback(null, true);
   }
 });
@@ -28,7 +24,10 @@ const validateEvidenceFiles = async (req, res, next) => {
     }
 
     req.files.forEach((file) => {
-      file.validatedFileType = validateUploadedFile(file).fileType;
+      const validation = validateUploadedFile(file);
+      file.validatedFileType = validation.fileType;
+      file.validatedMimeType = validation.mimeType;
+      file.sanitizedOriginalName = validation.sanitizedName;
     });
 
     return next();

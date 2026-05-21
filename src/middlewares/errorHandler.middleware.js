@@ -10,7 +10,7 @@ const normalizeError = (error) => {
 
   if (error instanceof ZodError) {
     return new BadRequestError('Validacion fallida', error.issues.map((issue) => ({
-      path: issue.path.join('.'),
+      field: issue.path.join('.'),
       message: issue.message
     })));
   }

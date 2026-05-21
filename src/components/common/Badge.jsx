@@ -5,7 +5,7 @@ const tones = {
   primary: 'bg-primary-50 text-primary-700',
   success: 'bg-green-50 text-green-700',
   warning: 'bg-amber-50 text-amber-700',
-  danger: 'bg-red-50 text-red-700',
+  danger: 'bg-[#f7e8eb] text-danger',
   purple: 'bg-violet-50 text-violet-700'
 };
 

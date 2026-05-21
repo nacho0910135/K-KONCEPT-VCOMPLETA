@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Download, Edit, Plus, Trash2 } from 'lucide-react';
+import { Download, Edit, Eye, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { z } from 'zod';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
@@ -11,6 +12,7 @@ import Badge from '../../components/common/Badge.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import DateRangePicker from '../../components/forms/DateRangePicker.jsx';
 import EmailChipInput from '../../components/forms/EmailChipInput.jsx';
+import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { dashboard, scheduledReports, tickets } from './adminMockData.js';
 import { PriorityBadge, simulateAction, StateBadge } from './adminUtils.jsx';
@@ -18,34 +20,83 @@ import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
 
 const scheduledSchema = z.object({
+  name: z.string().min(1, 'Nombre requerido'),
   type: z.string().min(1, 'Tipo requerido'),
+  parameters: z.string().optional(),
   frequency: z.string().min(1, 'Frecuencia obligatoria'),
   recipients: z.array(z.string().email()).min(1, 'Agrega al menos un destinatario'),
   format: z.string().min(1, 'Formato requerido')
 });
 
+const reportTypes = ['KPI Overview', 'Tickets', 'SLA', 'Auditoria'];
+const chartColors = ['#2563eb', '#14b8a6', '#f59e0b', '#ef4444'];
+
+const buildReportRows = (reportType, filters) => {
+  if (filters.client === 'EMPTY') return [];
+  if (reportType === 'KPI Overview') {
+    return [
+      { id: 'kpi-1', metric: 'Tickets abiertos', value: dashboard.summary.open },
+      { id: 'kpi-2', metric: 'SLA cumplido', value: `${dashboard.summary.slaMet}%` },
+      { id: 'kpi-3', metric: 'Rating promedio', value: dashboard.summary.rating },
+      { id: 'kpi-4', metric: 'Tickets cerrados', value: dashboard.summary.closed }
+    ];
+  }
+  if (reportType === 'SLA') {
+    return tickets
+      .filter((ticket) => filters.priority === 'ALL' || ticket.priority === filters.priority)
+      .map((ticket) => ({ ...ticket, slaStatus: ticket.slaMet ? 'Cumplido' : 'En riesgo' }));
+  }
+  if (reportType === 'Auditoria') {
+    return [
+      { id: 'aud-1', action: 'TICKET_ASSIGNED', user: 'Admin Kollab', result: 'SUCCESS', createdAt: '2026-05-20T10:05:00' },
+      { id: 'aud-2', action: 'EXPORT_REQUESTED', user: 'Admin Kollab', result: 'SUCCESS', createdAt: '2026-05-20T11:15:00' },
+      { id: 'aud-3', action: 'SCHEDULED_REPORT_UPDATED', user: 'Admin Kollab', result: 'SUCCESS', createdAt: '2026-05-21T08:20:00' }
+    ];
+  }
+  return tickets.filter((ticket) => (
+    (filters.status === 'ALL' || ticket.status === filters.status)
+    && (filters.priority === 'ALL' || ticket.priority === filters.priority)
+    && (filters.client === 'ALL' || ticket.client === filters.client)
+  ));
+};
+
 const Reportes = () => {
   const [tab, setTab] = useState('generate');
   const [reportType, setReportType] = useState('KPI Overview');
   const [dateRange, setDateRange] = useState({ from: '2026-05-01', to: '2026-05-21' });
+  const [filters, setFilters] = useState({ status: 'ALL', priority: 'ALL', client: 'ALL' });
   const [visualized, setVisualized] = useState(false);
+  const [isVisualizing, setIsVisualizing] = useState(false);
+  const [exporting, setExporting] = useState(null);
+  const [reportAlert, setReportAlert] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const { data, setData, isLoading, error } = useAdminResource(() => scheduledReports, []);
   const { showToast } = useToast();
-  const form = useForm({ resolver: zodResolver(scheduledSchema), defaultValues: { type: 'KPI Overview', frequency: 'WEEKLY', recipients: [], format: 'PDF' } });
+  const form = useForm({ resolver: zodResolver(scheduledSchema), defaultValues: { name: '', type: 'KPI Overview', parameters: '', frequency: 'WEEKLY', recipients: [], format: 'PDF' } });
 
-  const reportRows = useMemo(() => (reportType === 'KPI Overview'
-    ? [{ id: 'kpi-1', metric: 'SLA cumplido', value: `${dashboard.summary.slaMet}%` }, { id: 'kpi-2', metric: 'Rating promedio', value: dashboard.summary.rating }]
-    : tickets
-  ), [reportType]);
+  const reportRows = useMemo(() => buildReportRows(reportType, filters), [reportType, filters]);
 
-  const exportReport = (format) => {
+  const visualize = async () => {
+    setIsVisualizing(true);
+    setReportAlert(null);
+    await simulateAction(450);
+    setVisualized(true);
+    setIsVisualizing(false);
+  };
+
+  const exportReport = async (format) => {
+    setExporting(format);
+    setReportAlert(null);
+    await simulateAction(500);
     if (!visualized || reportRows.length === 0) {
-      showToast({ type: 'warning', title: 'Sin datos para exportar', message: 'Visualiza un reporte antes de exportarlo.' });
+      setReportAlert('No hay datos para exportar con los filtros seleccionados. Ajusta el rango o los filtros y vuelve a intentar.');
+      showToast({ type: 'warning', title: 'No hay datos', message: 'El servicio respondio 400 para esta exportacion.' });
+      setExporting(null);
       return;
     }
     showToast({ type: 'success', title: `Export ${format}`, message: 'Archivo solicitado con filtros activos.' });
+    setExporting(null);
   };
 
   const saveScheduled = async (values) => {
@@ -61,7 +112,9 @@ const Reportes = () => {
 
   const openScheduled = (row = null) => {
     setEditing(row || { mode: 'new' });
-    form.reset(row || { type: 'KPI Overview', frequency: 'WEEKLY', recipients: [], format: 'PDF' });
+    form.reset(row
+      ? { name: row.name || row.type, parameters: row.parameters || '', type: row.type, frequency: row.frequency, recipients: row.recipients, format: row.format }
+      : { name: '', type: 'KPI Overview', parameters: '', frequency: 'WEEKLY', recipients: [], format: 'PDF' });
   };
 
   const deleteScheduled = async () => {
@@ -70,6 +123,20 @@ const Reportes = () => {
     setDeleting(null);
     showToast({ type: 'success', title: 'Reporte eliminado' });
   };
+
+  const toggleScheduled = async (row) => {
+    await simulateAction();
+    setData((current) => current.map((item) => item.id === row.id ? { ...item, active: !item.active } : item));
+    showToast({ type: 'info', title: 'Estado actualizado' });
+  };
+
+  const ticketColumns = [
+    { key: 'code', header: 'Codigo' },
+    { key: 'title', header: 'Titulo' },
+    { key: 'status', header: 'Estado', render: (row) => <StateBadge value={row.status} /> },
+    { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge value={row.priority} /> },
+    { key: 'client', header: 'Cliente' }
+  ];
 
   return (
     <div className="grid gap-6">
@@ -89,29 +156,104 @@ const Reportes = () => {
             <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
               Tipo
               <select className="min-h-10 rounded-md border border-neutral-200 px-3" value={reportType} onChange={(event) => setReportType(event.target.value)}>
-                <option>KPI Overview</option>
-                <option>Tickets</option>
-                <option>SLA</option>
+                {reportTypes.map((type) => <option key={type}>{type}</option>)}
               </select>
             </label>
             <div className="md:col-span-2"><DateRangePicker value={dateRange} onChange={setDateRange} /></div>
+            <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+              Estado
+              <select className="min-h-10 rounded-md border border-neutral-200 px-3" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
+                <option value="ALL">Todos</option>
+                <option value="OPEN">OPEN</option>
+                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                <option value="PENDING">PENDING</option>
+                <option value="RESOLVED">RESOLVED</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+              Prioridad
+              <select className="min-h-10 rounded-md border border-neutral-200 px-3" value={filters.priority} onChange={(event) => setFilters((current) => ({ ...current, priority: event.target.value }))}>
+                <option value="ALL">Todas</option>
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+                <option value="CRITICAL">CRITICAL</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+              Cliente
+              <select className="min-h-10 rounded-md border border-neutral-200 px-3" value={filters.client} onChange={(event) => setFilters((current) => ({ ...current, client: event.target.value }))}>
+                <option value="ALL">Todos</option>
+                <option value="Grupo Norte">Grupo Norte</option>
+                <option value="Industrias Sur">Industrias Sur</option>
+                <option value="EMPTY">Sin datos</option>
+              </select>
+            </label>
             <div className="flex flex-wrap gap-2 md:col-span-3">
-              <Button onClick={() => setVisualized(true)}>Visualizar</Button>
-              {['CSV', 'Excel', 'PDF'].map((format) => <Button key={format} variant="ghost" onClick={() => exportReport(format)}><Download className="h-4 w-4" />{format}</Button>)}
+              <Button onClick={visualize} isLoading={isVisualizing}><Eye className="h-4 w-4" />Visualizar</Button>
+              {['CSV', 'Excel', 'PDF'].map((format) => (
+                <Button key={format} variant="ghost" onClick={() => exportReport(format)} isLoading={exporting === format}>
+                  <Download className="h-4 w-4" />
+                  Exportar a {format}
+                </Button>
+              ))}
             </div>
           </Card>
+          {reportAlert && <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{reportAlert}</div>}
           {visualized ? (
-            <DataTable
-              data={reportRows}
-              columns={reportType === 'KPI Overview'
-                ? [{ key: 'metric', header: 'Metrica' }, { key: 'value', header: 'Valor' }]
-                : [
-                  { key: 'code', header: 'Codigo' },
-                  { key: 'title', header: 'Titulo' },
-                  { key: 'status', header: 'Estado', render: (row) => <StateBadge value={row.status} /> },
-                  { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge value={row.priority} /> }
-                ]}
-            />
+            <div className="grid gap-6">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card className="p-4">
+                  <h2 className="text-sm font-semibold text-neutral-900">Tendencia mensual</h2>
+                  <div className="mt-4 h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={dashboard.monthly}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                        <YAxis tickLine={false} axisLine={false} />
+                        <Tooltip />
+                        <Line type="monotone" dataKey="tickets" stroke="#2563eb" strokeWidth={2} dot={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+                <Card className="p-4">
+                  <h2 className="text-sm font-semibold text-neutral-900">Distribucion por prioridad</h2>
+                  <div className="mt-4 h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      {reportType === 'KPI Overview' ? (
+                        <PieChart>
+                          <Pie data={dashboard.categoryDistribution} dataKey="value" nameKey="name" outerRadius={90} label>
+                            {dashboard.categoryDistribution.map((entry, index) => <Cell key={entry.name} fill={chartColors[index % chartColors.length]} />)}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      ) : (
+                        <BarChart data={dashboard.byPriority}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                          <YAxis tickLine={false} axisLine={false} />
+                          <Tooltip />
+                          <Bar dataKey="value" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      )}
+                    </ResponsiveContainer>
+                  </div>
+                </Card>
+              </div>
+              <DataTable
+                data={reportRows}
+                emptyTitle="No hay datos"
+                emptyDescription="No hay datos para los filtros seleccionados."
+                columns={reportType === 'KPI Overview'
+                  ? [{ key: 'metric', header: 'Metrica' }, { key: 'value', header: 'Valor' }]
+                  : reportType === 'Auditoria'
+                    ? [{ key: 'action', header: 'Accion' }, { key: 'user', header: 'Usuario' }, { key: 'result', header: 'Resultado' }, { key: 'createdAt', header: 'Fecha' }]
+                    : reportType === 'SLA'
+                      ? [...ticketColumns, { key: 'slaStatus', header: 'SLA' }]
+                      : ticketColumns}
+              />
+            </div>
           ) : (
             <Card className="p-6 text-sm text-neutral-600">Selecciona filtros y visualiza el reporte para ver tablas y graficos.</Card>
           )}
@@ -124,21 +266,39 @@ const Reportes = () => {
             loading={isLoading}
             error={error}
             columns={[
+              { key: 'name', header: 'Nombre', render: (row) => row.name || row.type },
               { key: 'type', header: 'Tipo' },
               { key: 'frequency', header: 'Frecuencia' },
               { key: 'recipients', header: 'Destinatarios', render: (row) => row.recipients.join(', ') },
               { key: 'format', header: 'Formato' },
               { key: 'active', header: 'Estado', render: (row) => row.active ? <Badge tone="success">Activo</Badge> : <Badge>Inactivo</Badge> },
-              { key: 'actions', header: 'Acciones', render: (row) => <div className="flex gap-2"><Button variant="ghost" onClick={() => openScheduled(row)}><Edit className="h-4 w-4" />Editar</Button><Button variant="ghost" onClick={() => setDeleting(row)}><Trash2 className="h-4 w-4" />Eliminar</Button></div> }
+              {
+                key: 'actions',
+                header: 'Acciones',
+                render: (row) => (
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="ghost" onClick={() => toggleScheduled(row)}>{row.active ? 'Desactivar' : 'Activar'}</Button>
+                    <Button variant="ghost" onClick={() => openScheduled(row)}><Edit className="h-4 w-4" />Editar</Button>
+                    <Button variant="ghost" onClick={() => setDeleting(row)}><Trash2 className="h-4 w-4" />Eliminar</Button>
+                  </div>
+                )
+              }
             ]}
           />
         </div>
       )}
 
-      <Modal isOpen={Boolean(editing)} title="Programar reporte" onClose={() => setEditing(null)}>
+      <Modal isOpen={Boolean(editing)} title="Programar reporte" onClose={() => setEditing(null)} maxWidth="max-w-2xl">
         <form className="grid gap-4" onSubmit={form.handleSubmit(saveScheduled)}>
-          <FormSelect register={form.register} name="type" label="Tipo" error={form.formState.errors.type} options={[{ value: 'KPI Overview', label: 'KPI Overview' }, { value: 'Tickets', label: 'Tickets' }, { value: 'SLA', label: 'SLA' }]} />
-          <FormSelect register={form.register} name="frequency" label="Frecuencia" error={form.formState.errors.frequency} options={[{ value: 'DAILY', label: 'Diario' }, { value: 'WEEKLY', label: 'Semanal' }, { value: 'MONTHLY', label: 'Mensual' }]} />
+          <FormInput register={form.register} name="name" label="Nombre" error={form.formState.errors.name} placeholder="Resumen gerencial semanal" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormSelect register={form.register} name="type" label="Tipo" error={form.formState.errors.type} options={reportTypes.map((type) => ({ value: type, label: type }))} />
+            <FormSelect register={form.register} name="frequency" label="Frecuencia" error={form.formState.errors.frequency} options={[{ value: 'DAILY', label: 'Diario' }, { value: 'WEEKLY', label: 'Semanal' }, { value: 'MONTHLY', label: 'Mensual' }]} />
+          </div>
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700" htmlFor="parameters">
+            <span>Parametros</span>
+            <textarea id="parameters" rows={4} className="rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder='{"status":"OPEN","priority":"HIGH"}' {...form.register('parameters')} />
+          </label>
           <Controller control={form.control} name="recipients" render={({ field, fieldState }) => <EmailChipInput label="Destinatarios" value={field.value} onChange={field.onChange} error={fieldState.error?.message} />} />
           <FormSelect register={form.register} name="format" label="Formato" error={form.formState.errors.format} options={[{ value: 'CSV', label: 'CSV' }, { value: 'Excel', label: 'Excel' }, { value: 'PDF', label: 'PDF' }]} />
           <Button type="submit" isLoading={form.formState.isSubmitting}>Guardar programacion</Button>

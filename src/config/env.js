@@ -8,7 +8,7 @@ const envSchema = z.object({
   API_PREFIX: z.string().default('/api'),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
   DATABASE_URL: z.string().min(1),
-  JWT_SECRET: z.string().min(16),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener al menos 32 caracteres'),
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   JWT_EXPIRES_IN: z.string().optional(),
@@ -30,6 +30,22 @@ const envSchema = z.object({
   TICKET_CLEANUP_CRON: z.string().default('0 3 * * *'),
   SLA_CHECK_CRON: z.string().default('*/15 * * * *'),
   SCHEDULED_REPORTS_CRON: z.string().default('0 * * * *')
+}).superRefine((values, ctx) => {
+  if (values.NODE_ENV === 'production' && values.JWT_SECRET.length < 48) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['JWT_SECRET'],
+      message: 'JWT_SECRET debe tener al menos 48 caracteres en produccion'
+    });
+  }
+
+  if (values.NODE_ENV === 'production' && values.CORS_ORIGINS.includes('*')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['CORS_ORIGINS'],
+      message: 'CORS_ORIGINS no debe usar comodines en produccion'
+    });
+  }
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -1,4 +1,5 @@
 const { prisma } = require('../config/database');
+const { publicUserSelect } = require('./auth.repository');
 
 const refreshTokenRepository = {
   create({ userId, tokenHash, expiresAt }) {
@@ -20,8 +21,15 @@ const refreshTokenRepository = {
           gt: new Date()
         }
       },
-      include: {
-        user: true
+      select: {
+        id: true,
+        userId: true,
+        tokenHash: true,
+        expiresAt: true,
+        revoked: true,
+        user: {
+          select: publicUserSelect
+        }
       }
     });
   },

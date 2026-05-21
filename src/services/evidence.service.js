@@ -61,7 +61,7 @@ const evidenceService = {
     const uploaded = [];
 
     for (const file of files) {
-      const cloudinaryResult = await uploadStream(file.buffer, 'evidence', 'auto', file.originalname);
+      const cloudinaryResult = await uploadStream(file.buffer, 'evidence', 'auto', file.sanitizedOriginalName);
 
       uploaded.push({
         ticketId,
@@ -71,7 +71,7 @@ const evidenceService = {
         fileType: file.validatedFileType,
         fileName: cloudinaryResult.fileName,
         fileSize: cloudinaryResult.bytes || file.size,
-        mimeType: file.mimetype
+        mimeType: file.validatedMimeType
       });
     }
 

@@ -9,6 +9,7 @@ import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 import { loginSchema } from '../../utils/validators.js';
 import { ROLE_HOME } from '../../utils/constants.js';
+import kollabLogo from '../../assets/kollab-logo.png';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -37,15 +38,17 @@ const Login = () => {
   return (
     <div className="mx-auto grid w-full max-w-md gap-6">
       <div className="text-center">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-primary-600 text-lg font-bold text-white">K</div>
-        <h1 className="mt-4 text-2xl font-bold text-neutral-900">Iniciar sesion</h1>
-        <p className="mt-1 text-sm text-neutral-500">Accede a la plataforma de reportes tecnicos.</p>
+        <div className="mx-auto px-5 py-4">
+          <img className="mx-auto h-auto w-36 max-w-full" src={kollabLogo} alt="Kollab Koncepts" />
+        </div>
+        <h1 className="mt-4 text-2xl font-bold text-neutral-900">Bienvenido al Sistema</h1>
+        <p className="mt-1 text-sm text-neutral-500">Plataforma Digital de Reportes Tecnicos</p>
       </div>
-      <Card className="p-6">
+      <Card className="border-neutral-200/90 p-6">
         <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
           <FormInput label="Email" name="email" type="email" autoComplete="email" register={register} error={errors.email} />
           <FormInput label="Contrasena" name="password" type="password" autoComplete="current-password" register={register} error={errors.password} />
-          <Button type="submit" isLoading={isSubmitting}>Entrar</Button>
+          <Button type="submit" isLoading={isSubmitting}>Iniciar Sesión</Button>
         </form>
       </Card>
       <p className="text-center text-sm text-neutral-600">
