@@ -22,6 +22,33 @@ const notificationEvents = [
 
 const channels = ['EMAIL', 'SMS', 'PUSH', 'IN_APP'];
 
+const initialCategories = [
+  {
+    name: 'Impresoras',
+    description: 'Equipos de impresion, toner, papel y mantenimiento.',
+    subcategories: [
+      { name: 'Atasco de papel', description: 'Papel trabado, bandejas o rodillos.' },
+      { name: 'Consumibles', description: 'Toner, tinta, tambor y otros insumos.' }
+    ]
+  },
+  {
+    name: 'Redes',
+    description: 'Conectividad, switches, routers y puntos de red.',
+    subcategories: [
+      { name: 'WiFi', description: 'Problemas de senal, acceso o cobertura.' },
+      { name: 'Switch / cableado', description: 'Puertos, enlaces y cableado fisico.' }
+    ]
+  },
+  {
+    name: 'CCTV',
+    description: 'Camaras, NVR, grabacion y monitoreo.',
+    subcategories: [
+      { name: 'Camara offline', description: 'Camara sin conexion o sin imagen.' },
+      { name: 'NVR / Grabacion', description: 'Grabacion, almacenamiento y reproduccion.' }
+    ]
+  }
+];
+
 const templateCopy = {
   TICKET_CREATED: {
     subject: 'Ticket {{ticketCode}} creado',
@@ -144,6 +171,46 @@ async function seedTicketCounter() {
   logger.info({ year }, 'TicketCounter inicial creado o validado');
 }
 
+async function seedCategories() {
+  for (const category of initialCategories) {
+    const savedCategory = await prisma.category.upsert({
+      where: { name: category.name },
+      update: {
+        description: category.description,
+        active: true
+      },
+      create: {
+        name: category.name,
+        description: category.description,
+        active: true
+      }
+    });
+
+    for (const subcategory of category.subcategories) {
+      await prisma.subcategory.upsert({
+        where: {
+          name_categoryId: {
+            name: subcategory.name,
+            categoryId: savedCategory.id
+          }
+        },
+        update: {
+          description: subcategory.description,
+          active: true
+        },
+        create: {
+          categoryId: savedCategory.id,
+          name: subcategory.name,
+          description: subcategory.description,
+          active: true
+        }
+      });
+    }
+  }
+
+  logger.info({ count: initialCategories.length }, 'Categorias iniciales creadas o actualizadas');
+}
+
 async function seedNotificationTemplates() {
   const templates = notificationEvents.flatMap((event) => (
     ['EMAIL', 'IN_APP'].map((channel) => ({
@@ -214,6 +281,7 @@ async function seedNotificationFrequencyRules() {
 async function main() {
   await seedUsers();
   await seedTicketCounter();
+  await seedCategories();
   await seedNotificationTemplates();
   await seedNotificationChannelsConfig();
   await seedNotificationFrequencyRules();

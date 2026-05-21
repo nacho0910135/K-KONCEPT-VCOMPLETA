@@ -80,6 +80,27 @@ const categoryService = {
     });
 
     return updated;
+  },
+
+  async delete(id, actor) {
+    const previous = await this.getById(id);
+    const [tickets, products, slas, subcategoriesWithTickets] = await categoryRepository.usageCounts(id);
+
+    if (tickets || products || slas || subcategoriesWithTickets) {
+      throw new ConflictError('No se puede eliminar porque la categoria tiene tickets, productos, SLAs o subcategorias con tickets asociados. Desactivala para conservar el historial.');
+    }
+
+    const deleted = await categoryRepository.delete(id);
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'CATEGORY_DELETED',
+      entity: 'Category',
+      entityId: id,
+      previousValue: previous
+    });
+
+    return deleted;
   }
 };
 

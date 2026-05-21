@@ -15,13 +15,13 @@ const AppShell = ({ navItems, roleLabel }) => {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-[#dedede]/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
         <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
           <button className="rounded-md p-2 text-neutral-600 hover:bg-neutral-100 lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Abrir navegacion">
             <Menu className="h-5 w-5" />
           </button>
           <NavLink to="/" className="flex items-center gap-2 font-bold text-neutral-900" aria-label="Kollab Koncepts">
-            <span className="grid h-10 w-32 place-items-center rounded-md bg-[#dedede] px-2">
+            <span className="grid h-10 w-32 place-items-center rounded-md bg-white px-2">
               <img className="max-h-8 w-full object-contain" src={kollabLogo} alt="Kollab Koncepts" />
             </span>
           </NavLink>
@@ -35,7 +35,7 @@ const AppShell = ({ navItems, roleLabel }) => {
               {unreadCount > 0 && <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">{unreadCount}</span>}
             </button>
             {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 rounded-lg border border-neutral-200 bg-[#dedede] p-2 shadow-soft">
+              <div className="absolute right-0 mt-2 w-80 rounded-lg border border-neutral-200 bg-white p-2 shadow-soft">
                 <div className="px-2 py-2 text-sm font-semibold text-neutral-900">Notificaciones</div>
                 <div className="grid gap-1">
                   {notifications.slice(0, 5).map((item) => (
@@ -62,7 +62,7 @@ const AppShell = ({ navItems, roleLabel }) => {
         </div>
       </header>
 
-      <aside className={clsx('fixed inset-y-0 left-0 z-40 w-72 border-r border-neutral-200 bg-[#dedede] p-4 transition lg:top-16 lg:z-20 lg:block lg:translate-x-0', sidebarOpen ? 'translate-x-0' : '-translate-x-full')}>
+      <aside className={clsx('fixed inset-y-0 left-0 z-40 w-72 border-r border-neutral-200 bg-white p-4 transition lg:top-16 lg:z-20 lg:block lg:translate-x-0', sidebarOpen ? 'translate-x-0' : '-translate-x-full')}>
         <div className="mb-4 flex items-center justify-between lg:hidden">
           <span className="font-semibold text-neutral-900">Menu</span>
           <button className="rounded-md p-2 hover:bg-neutral-100" onClick={() => setSidebarOpen(false)} aria-label="Cerrar navegacion">
@@ -90,9 +90,9 @@ const AppShell = ({ navItems, roleLabel }) => {
       <main className="px-4 py-6 pb-24 lg:ml-72 lg:px-8">
         <Outlet />
       </main>
-      <footer className="border-t border-neutral-200 bg-[#dedede] px-4 py-4 text-center text-xs text-neutral-500 lg:ml-72">Kollab Koncepts</footer>
+      <footer className="border-t border-neutral-200 bg-white px-4 py-4 text-center text-xs text-neutral-500 lg:ml-72">Kollab Koncepts</footer>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-[#dedede] lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-white lg:hidden">
         {navItems.slice(0, 4).map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === ''} className={({ isActive }) => clsx('grid place-items-center gap-1 px-2 py-2 text-[11px] font-semibold', isActive ? 'text-primary-700' : 'text-neutral-500')}>
             <Icon className="h-5 w-5" />

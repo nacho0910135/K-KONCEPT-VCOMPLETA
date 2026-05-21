@@ -3,6 +3,7 @@ import axios from 'axios';
 let accessToken = null;
 let unauthorizedHandler = null;
 let refreshPromise = null;
+const refreshTokenStorageKey = 'kollab_refresh_token';
 
 const apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -14,6 +15,20 @@ export const getAccessToken = () => accessToken;
 
 export const clearAccessToken = () => {
   accessToken = null;
+};
+
+export const setStoredRefreshToken = (token) => {
+  if (token) {
+    window.localStorage.setItem(refreshTokenStorageKey, token);
+  } else {
+    window.localStorage.removeItem(refreshTokenStorageKey);
+  }
+};
+
+export const getStoredRefreshToken = () => window.localStorage.getItem(refreshTokenStorageKey);
+
+export const clearStoredRefreshToken = () => {
+  window.localStorage.removeItem(refreshTokenStorageKey);
 };
 
 export const setUnauthorizedHandler = (handler) => {
@@ -46,11 +61,16 @@ const isExpiredAccessTokenError = (error) => {
 
 const refreshAccessToken = async () => {
   if (!refreshPromise) {
+    const refreshToken = getStoredRefreshToken();
+    if (!refreshToken) return Promise.reject(new Error('Refresh token no disponible'));
+
     refreshPromise = axios
-      .post(`${apiBaseURL}/auth/refresh`, null, { withCredentials: true })
+      .post(`${apiBaseURL}/auth/refresh`, { refreshToken }, { withCredentials: true })
       .then((response) => {
-        const nextToken = response.data?.accessToken;
+        const nextToken = response.data?.data?.accessToken || response.data?.accessToken;
+        const nextRefreshToken = response.data?.data?.refreshToken || response.data?.refreshToken;
         setAccessToken(nextToken);
+        setStoredRefreshToken(nextRefreshToken);
         return nextToken;
       })
       .finally(() => {
@@ -91,6 +111,7 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         clearAccessToken();
+        clearStoredRefreshToken();
         unauthorizedHandler?.();
         return Promise.reject(refreshError);
       }

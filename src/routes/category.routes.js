@@ -10,7 +10,7 @@ const { subcategoryMutationSchema } = require('../validators/subcategory.validat
 
 const router = Router();
 
-router.get('/', verifyToken, authorizeRoles('ADMIN'), validate(categoryQuerySchema, 'query'), asyncHandler(categoryController.list));
+router.get('/', verifyToken, authorizeRoles('ADMIN', 'CLIENT', 'TECHNICIAN'), validate(categoryQuerySchema, 'query'), asyncHandler(categoryController.list));
 router.get('/:id', verifyToken, authorizeRoles('ADMIN'), asyncHandler(categoryController.getById));
 router.get('/:categoryId/subcategories', verifyToken, asyncHandler(subcategoryController.listByCategory));
 
@@ -18,6 +18,7 @@ router.post('/', verifyToken, authorizeRoles('ADMIN'), validate(categoryMutation
 router.put('/:id', verifyToken, authorizeRoles('ADMIN'), validate(categoryMutationSchema), asyncHandler(categoryController.update));
 router.patch('/:id/deactivate', verifyToken, authorizeRoles('ADMIN'), asyncHandler(categoryController.deactivate));
 router.patch('/:id/activate', verifyToken, authorizeRoles('ADMIN'), asyncHandler(categoryController.activate));
+router.delete('/:id', verifyToken, authorizeRoles('ADMIN'), asyncHandler(categoryController.remove));
 router.post('/:categoryId/subcategories', verifyToken, authorizeRoles('ADMIN'), validate(subcategoryMutationSchema), asyncHandler(subcategoryController.create));
 
 module.exports = router;

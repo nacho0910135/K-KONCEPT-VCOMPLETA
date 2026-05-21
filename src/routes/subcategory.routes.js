@@ -10,5 +10,7 @@ const router = Router();
 
 router.put('/:id', verifyToken, authorizeRoles('ADMIN'), validate(subcategoryMutationSchema), asyncHandler(subcategoryController.update));
 router.patch('/:id/deactivate', verifyToken, authorizeRoles('ADMIN'), asyncHandler(subcategoryController.deactivate));
+router.patch('/:id/activate', verifyToken, authorizeRoles('ADMIN'), asyncHandler(subcategoryController.activate));
+router.delete('/:id', verifyToken, authorizeRoles('ADMIN'), asyncHandler(subcategoryController.remove));
 
 module.exports = router;

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import Badge from '../../components/common/Badge.jsx';
@@ -10,10 +10,12 @@ import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import FileDropzone from '../../components/forms/FileDropzone.jsx';
-import { clientCategories, clientProducts } from './clientMockData.js';
+import { clientProducts } from './clientMockData.js';
 import { priorityLabels, simulateClientAction, warrantyTone } from './clientUtils.jsx';
 import { useToast } from '../../hooks/useToast.js';
 import { createTicket } from '../../services/tickets.service.js';
+import { listCategories } from '../../services/category.client.service.js';
+import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const limitsByType = {
   'image/jpeg': 5 * 1024 * 1024,
@@ -48,6 +50,9 @@ const NuevoTicket = () => {
   const [step, setStep] = useState(1);
   const [serial, setSerial] = useState('');
   const [warranty, setWarranty] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState('');
   const { showToast } = useToast();
   const form = useForm({
     resolver: zodResolver(ticketSchema),
@@ -56,7 +61,36 @@ const NuevoTicket = () => {
   const selectedCategoryId = useWatch({ control: form.control, name: 'categoryId' });
   const description = useWatch({ control: form.control, name: 'description' }) || '';
   const files = useWatch({ control: form.control, name: 'files' }) || [];
-  const selectedCategory = clientCategories.find((category) => category.id === selectedCategoryId);
+  const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setCategoriesLoading(true);
+      setCategoriesError('');
+      try {
+        const result = await listCategories({ active: true, limit: 100, sortBy: 'name', sortOrder: 'asc' });
+        if (!mounted) return;
+        setCategories(Array.isArray(result) ? result : result?.items || result?.data || []);
+      } catch (error) {
+        if (!mounted) return;
+        const message = getErrorMessage(error, 'No pudimos cargar las categorias.');
+        setCategoriesError(message);
+        showToast({ type: 'error', title: 'Categorias no disponibles', message });
+      } finally {
+        if (mounted) setCategoriesLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [showToast]);
+
+  useEffect(() => {
+    form.setValue('subcategoryId', '');
+  }, [form, selectedCategoryId]);
 
   const validateWarranty = async () => {
     await simulateClientAction();
@@ -93,7 +127,7 @@ const NuevoTicket = () => {
   };
 
   const values = form.getValues();
-  const categoryName = clientCategories.find((category) => category.id === values.categoryId)?.name;
+  const categoryName = categories.find((category) => category.id === values.categoryId)?.name;
   const subcategoryName = selectedCategory?.subcategories.find((subcategory) => subcategory.id === values.subcategoryId)?.name;
   const productName = clientProducts.find((product) => product.id === values.productId)?.name || 'Sin producto asociado';
 
@@ -136,7 +170,16 @@ const NuevoTicket = () => {
           <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); goConfirmation(); }}>
             <FormInput register={form.register} name="title" label="Titulo" error={form.formState.errors.title} />
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormSelect register={form.register} name="categoryId" label="Categoria" error={form.formState.errors.categoryId} options={clientCategories.map((category) => ({ value: category.id, label: category.name }))} />
+              <FormSelect
+                register={form.register}
+                name="categoryId"
+                label="Categoria"
+                error={form.formState.errors.categoryId}
+                disabled={categoriesLoading}
+                placeholder={categoriesLoading ? 'Cargando categorias' : 'Seleccionar'}
+                options={categories.map((category) => ({ value: category.id, label: category.name }))}
+              />
+              {categoriesError && <p className="text-xs font-semibold text-danger">{categoriesError}</p>}
               <FormSelect register={form.register} name="subcategoryId" label="Subcategoria" error={form.formState.errors.subcategoryId} options={(selectedCategory?.subcategories || []).map((subcategory) => ({ value: subcategory.id, label: subcategory.name }))} />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

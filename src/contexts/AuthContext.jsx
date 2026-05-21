@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { clearAccessToken, setAccessToken, setUnauthorizedHandler } from '../services/api.js';
-import { getCurrentUser, loginRequest, logoutRequest } from '../services/auth.client.service.js';
+import { clearAccessToken, clearStoredRefreshToken, getStoredRefreshToken, setAccessToken, setStoredRefreshToken, setUnauthorizedHandler } from '../services/api.js';
+import { getCurrentUser, loginRequest, logoutRequest, refreshRequest } from '../services/auth.client.service.js';
 import { NotificationProvider } from './NotificationContext.jsx';
 
 const AuthContext = createContext(null);
@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     const data = await loginRequest(credentials);
     const nextToken = data?.accessToken;
     persistAccessToken(nextToken);
+    setStoredRefreshToken(data?.refreshToken);
     setUser(data?.user || null);
     return data;
   }, [persistAccessToken]);
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       persistAccessToken(null);
       clearAccessToken();
+      clearStoredRefreshToken();
     }
   }, [persistAccessToken]);
 
@@ -51,6 +53,13 @@ export const AuthProvider = ({ children }) => {
 
     const hydrate = async () => {
       try {
+        if (!getStoredRefreshToken()) {
+          setUser(null);
+          return;
+        }
+        const session = await refreshRequest();
+        persistAccessToken(session?.accessToken);
+        setStoredRefreshToken(session?.refreshToken);
         const data = await getCurrentUser();
         if (!mounted) return;
         setUser(data?.user || data);

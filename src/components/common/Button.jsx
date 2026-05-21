@@ -12,7 +12,7 @@ const Button = ({ children, className, isLoading = false, variant = 'primary', t
   <button
     type={type}
     className={clsx(
-      'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60',
+      'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-75',
       variants[variant],
       className
     )}

@@ -38,6 +38,14 @@ const subcategoryRepository = {
       where: { id },
       data
     });
+  },
+
+  ticketCount(id) {
+    return prisma.ticket.count({ where: { subcategoryId: id } });
+  },
+
+  delete(id) {
+    return prisma.subcategory.delete({ where: { id } });
   }
 };
 

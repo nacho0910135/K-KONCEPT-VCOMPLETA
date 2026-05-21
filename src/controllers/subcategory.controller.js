@@ -21,4 +21,14 @@ const deactivate = async (req, res) => successResponse(res, {
   message: 'Subcategoria desactivada correctamente'
 });
 
-module.exports = { create, listByCategory, update, deactivate };
+const activate = async (req, res) => successResponse(res, {
+  data: { subcategory: await subcategoryService.activate(req.params.id, req.user) },
+  message: 'Subcategoria activada correctamente'
+});
+
+const remove = async (req, res) => successResponse(res, {
+  data: { subcategory: await subcategoryService.delete(req.params.id, req.user) },
+  message: 'Subcategoria eliminada correctamente'
+});
+
+module.exports = { create, listByCategory, update, deactivate, activate, remove };

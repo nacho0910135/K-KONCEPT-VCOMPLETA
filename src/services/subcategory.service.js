@@ -77,6 +77,46 @@ const subcategoryService = {
     });
 
     return updated;
+  },
+
+  async activate(id, actor) {
+    const subcategory = await subcategoryRepository.findById(id);
+    if (!subcategory) throw new NotFoundError('Subcategoria no encontrada');
+
+    const updated = await subcategoryRepository.update(id, { active: true });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'SUBCATEGORY_ACTIVATED',
+      entity: 'Subcategory',
+      entityId: id,
+      previousValue: { active: subcategory.active },
+      newValue: { active: updated.active }
+    });
+
+    return updated;
+  },
+
+  async delete(id, actor) {
+    const subcategory = await subcategoryRepository.findById(id);
+    if (!subcategory) throw new NotFoundError('Subcategoria no encontrada');
+
+    const tickets = await subcategoryRepository.ticketCount(id);
+    if (tickets) {
+      throw new ConflictError('No se puede eliminar porque la subcategoria tiene tickets asociados. Desactivala para conservar el historial.');
+    }
+
+    const deleted = await subcategoryRepository.delete(id);
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'SUBCATEGORY_DELETED',
+      entity: 'Subcategory',
+      entityId: id,
+      previousValue: subcategory
+    });
+
+    return deleted;
   }
 };
 
