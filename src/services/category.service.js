@@ -1,16 +1,27 @@
 const { categoryRepository } = require('../repositories/category.repository');
+const { auditService } = require('./audit.service');
 const { ConflictError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
 
 const categoryService = {
-  async create(payload) {
+  async create(payload, actor) {
     const existing = await categoryRepository.findByName(payload.name);
     if (existing) throw new ConflictError('Ya existe una categoria con ese nombre');
 
-    return categoryRepository.create({
+    const category = await categoryRepository.create({
       name: payload.name,
       description: payload.description || null
     });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'CATEGORY_CREATED',
+      entity: 'Category',
+      entityId: category.id,
+      newValue: category
+    });
+
+    return category;
   },
 
   async list(query) {
@@ -36,17 +47,39 @@ const categoryService = {
     return category;
   },
 
-  async update(id, payload) {
-    await this.getById(id);
-    return categoryRepository.update(id, {
+  async update(id, payload, actor) {
+    const previous = await this.getById(id);
+    const updated = await categoryRepository.update(id, {
       name: payload.name,
       description: payload.description || null
     });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'CATEGORY_UPDATED',
+      entity: 'Category',
+      entityId: id,
+      previousValue: previous,
+      newValue: updated
+    });
+
+    return updated;
   },
 
-  async setActive(id, active) {
-    await this.getById(id);
-    return categoryRepository.update(id, { active });
+  async setActive(id, active, actor) {
+    const previous = await this.getById(id);
+    const updated = await categoryRepository.update(id, { active });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: active ? 'CATEGORY_ACTIVATED' : 'CATEGORY_DEACTIVATED',
+      entity: 'Category',
+      entityId: id,
+      previousValue: { active: previous.active },
+      newValue: { active: updated.active }
+    });
+
+    return updated;
   }
 };
 

@@ -1,6 +1,6 @@
-const { auditLogRepository } = require('../repositories/auditLog.repository');
 const { authRepository } = require('../repositories/auth.repository');
 const { refreshTokenRepository } = require('../repositories/refreshToken.repository');
+const { auditService } = require('./audit.service');
 const { BadRequestError, ConflictError, UnauthorizedError } = require('../utils/errors');
 const {
   signAccessToken,
@@ -31,7 +31,7 @@ const buildTokenPair = async (user) => {
 };
 
 const auditLogin = async ({ userId = null, email, success, ipAddress, userAgent, reason }) => {
-  await auditLogRepository.create({
+  await auditService.logEvent({
     userId,
     action: success ? 'LOGIN_SUCCESS' : 'LOGIN_FAILURE',
     entity: 'Auth',
@@ -47,7 +47,7 @@ const auditLogin = async ({ userId = null, email, success, ipAddress, userAgent,
 };
 
 const authService = {
-  async registerClient(payload) {
+  async registerClient(payload, context = {}) {
     const existingUser = await authRepository.findByEmail(payload.email);
 
     if (existingUser) {
@@ -56,7 +56,7 @@ const authService = {
 
     const password = await hashPassword(payload.password);
 
-    return authRepository.createClientUser({
+    const user = await authRepository.createClientUser({
       name: payload.name,
       email: payload.email,
       password,
@@ -64,6 +64,19 @@ const authService = {
       company: payload.company || null,
       active: true
     });
+
+    await auditService.record({
+      userId: user.id,
+      action: 'USER_CREATED',
+      entity: 'User',
+      entityId: user.id,
+      newValue: user,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      details: { source: 'SELF_REGISTRATION' }
+    });
+
+    return user;
   },
 
   async login({ email, password }, context) {

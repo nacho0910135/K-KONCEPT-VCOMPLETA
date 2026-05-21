@@ -110,6 +110,7 @@ const ticketService = {
       warrantyId,
       warrantyStatusAtCreation,
       warrantyWarning,
+      slaId: sla.slaId,
       slaDeadline: sla.slaDeadline,
       slaSource: sla.slaSource
     });
@@ -120,6 +121,19 @@ const ticketService = {
       entity: 'Ticket',
       entityId: ticket.id,
       newValue: { code: ticket.code }
+    });
+
+    const admins = await userRepository.findActiveAdmins();
+    await notificationService.notifyUsers({
+      event: 'TICKET_CREATED',
+      recipients: [...admins, ticket.client],
+      entityType: 'Ticket',
+      entityId: ticket.id,
+      payload: {
+        userName: user.name,
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title
+      }
     });
 
     return ticket;
@@ -240,6 +254,28 @@ const ticketService = {
       newValue: { status: payload.status }
     });
 
+    await notificationService.dispatchNotification({
+      userId: ticket.clientId,
+      event: payload.status === 'RESOLVED' ? 'TICKET_RESOLVED' : 'STATUS_CHANGED',
+      entityType: 'Ticket',
+      entityId: id,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title,
+        previousStatus: ticket.status,
+        newStatus: payload.status
+      }
+    });
+
+    await auditService.record({
+      userId: user.id,
+      action: 'TICKET_ASSIGNED',
+      entity: 'Ticket',
+      entityId: id,
+      previousValue: { assignedTechnicianId: ticket.assignedTechnicianId },
+      newValue: { assignedTechnicianId: technician.id }
+    });
+
     return updated;
   },
 
@@ -263,11 +299,22 @@ const ticketService = {
 
     await notificationService.notifyUsers({
       event: 'TICKET_CLOSED',
-      title: 'Ticket cerrado',
-      message: `El ticket ${ticket.code} fue cerrado por el cliente.`,
-      recipients: [ticket.assignedTechnician],
+      recipients: [ticket.client],
       entityType: 'Ticket',
-      entityId: ticket.id
+      entityId: ticket.id,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title
+      }
+    });
+
+    await auditService.record({
+      userId: user.id,
+      action: 'TICKET_CLOSED',
+      entity: 'Ticket',
+      entityId: id,
+      previousValue: { status: ticket.status },
+      newValue: { status: 'CLOSED', rating: payload.rating }
     });
 
     return updated;
@@ -304,7 +351,18 @@ const ticketService = {
     const ticket = await ensureTicketExists(id);
     assertTechnicianAssigned(ticket, user);
 
-    return ticketRepository.update(id, { diagnosis: payload.diagnosis });
+    const updated = await ticketRepository.update(id, { diagnosis: payload.diagnosis });
+
+    await auditService.record({
+      userId: user.id,
+      action: 'TICKET_UPDATED',
+      entity: 'Ticket',
+      entityId: id,
+      previousValue: { diagnosis: ticket.diagnosis },
+      newValue: { diagnosis: updated.diagnosis }
+    });
+
+    return updated;
   },
 
   async assignTechnician(id, payload, user) {
@@ -312,21 +370,35 @@ const ticketService = {
     const technician = await userRepository.findActiveTechnicianById(payload.technicianId);
     if (!technician) throw new BadRequestError('El usuario destino no es un tecnico activo');
 
+    const sla = await slaService.calculateDeadlineForTicket({
+      priority: ticket.priority,
+      categoryId: ticket.categoryId,
+      clientId: ticket.clientId,
+      createdAt: ticket.createdAt
+    });
     const shouldMoveToPending = ticket.status === 'OPEN';
     const updated = await ticketRepository.assignTechnician(id, technician.id, shouldMoveToPending ? {
       previousStatus: ticket.status,
       newStatus: 'PENDING',
       changedById: user.id,
       comment: `Ticket asignado a ${technician.name}`
-    } : null, shouldMoveToPending ? 'PENDING' : undefined);
+    } : null, shouldMoveToPending ? 'PENDING' : undefined, {
+      slaId: sla.slaId,
+      slaDeadline: sla.slaDeadline,
+      slaSource: sla.slaSource,
+      slaBreached: false
+    });
 
     await notificationService.notifyUsers({
       event: 'TICKET_ASSIGNED',
-      title: 'Ticket asignado',
-      message: `Se le asigno el ticket ${ticket.code}.`,
       recipients: [technician],
       entityType: 'Ticket',
-      entityId: ticket.id
+      entityId: ticket.id,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title,
+        technicianName: technician.name
+      }
     });
 
     return updated;
@@ -337,11 +409,13 @@ const ticketService = {
     const sla = await slaService.calculateDeadlineForTicket({
       priority: payload.priority,
       categoryId: ticket.categoryId,
-      clientId: ticket.clientId
+      clientId: ticket.clientId,
+      createdAt: ticket.createdAt
     });
 
     const updated = await ticketRepository.update(id, {
       priority: payload.priority,
+      slaId: sla.slaId,
       slaDeadline: sla.slaDeadline,
       slaSource: sla.slaSource,
       slaBreached: false

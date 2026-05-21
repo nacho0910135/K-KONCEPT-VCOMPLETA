@@ -57,11 +57,14 @@ const replacementService = {
     const admins = await userRepository.findActiveAdmins();
     await notificationService.notifyUsers({
       event: 'REPLACEMENT_APPROVED',
-      title: 'Solicitud de reemplazo pendiente',
-      message: `El ticket ${ticket.code} tiene una solicitud de reemplazo pendiente de validacion.`,
       recipients: admins,
       entityType: 'Replacement',
-      entityId: replacement.id
+      entityId: replacement.id,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title,
+        replacementStatus: replacement.status
+      }
     });
 
     await auditService.record({
@@ -102,13 +105,15 @@ const replacementService = {
 
     await notificationService.notifyUsers({
       event: payload.approved ? 'REPLACEMENT_APPROVED' : 'STATUS_CHANGED',
-      title: payload.approved ? 'Reemplazo aprobado' : 'Reemplazo rechazado',
-      message: payload.approved
-        ? `El reemplazo del ticket ${replacement.ticket.code} fue aprobado.`
-        : `El reemplazo del ticket ${replacement.ticket.code} fue rechazado.`,
-      recipients: [replacement.requestedBy, replacement.ticket.client],
+      recipients: [replacement.ticket.client],
       entityType: 'Replacement',
-      entityId: id
+      entityId: id,
+      payload: {
+        ticketCode: replacement.ticket.code,
+        ticketTitle: replacement.ticket.title,
+        newStatus: nextStatus,
+        replacementStatus: nextStatus
+      }
     });
 
     return updated;
@@ -204,11 +209,14 @@ const replacementService = {
 
     await notificationService.notifyUsers({
       event: 'REPLACEMENT_APPROVED',
-      title: 'Reemplazo entregado',
-      message: `El reemplazo del ticket ${replacement.ticket.code} fue entregado correctamente.`,
       recipients: [replacement.ticket.client],
       entityType: 'Replacement',
-      entityId: id
+      entityId: id,
+      payload: {
+        ticketCode: replacement.ticket.code,
+        ticketTitle: replacement.ticket.title,
+        replacementStatus: 'DELIVERED'
+      }
     });
 
     await auditService.record({

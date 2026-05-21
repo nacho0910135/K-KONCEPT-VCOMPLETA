@@ -7,7 +7,7 @@ const getRequestContext = (req) => ({
 });
 
 const register = async (req, res) => {
-  const user = await authService.registerClient(req.body);
+  const user = await authService.registerClient(req.body, getRequestContext(req));
 
   return successResponse(res, {
     statusCode: 201,

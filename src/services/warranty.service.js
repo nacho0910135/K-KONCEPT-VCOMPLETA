@@ -1,6 +1,7 @@
 const { productRepository } = require('../repositories/product.repository');
 const { userRepository } = require('../repositories/user.repository');
 const { warrantyRepository } = require('../repositories/warranty.repository');
+const { auditService } = require('./audit.service');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
 const { calculateWarrantyStatus, buildWarrantyValidationResponse } = require('../utils/warranty.util');
@@ -17,7 +18,7 @@ const enrichWarranty = (warranty) => {
 };
 
 const warrantyService = {
-  async create(payload) {
+  async create(payload, actor) {
     const product = await productRepository.findById(payload.productId);
     if (!product) throw new NotFoundError('Producto no encontrado');
 
@@ -26,7 +27,7 @@ const warrantyService = {
 
     const calculated = calculateWarrantyStatus(payload.startDate, payload.endDate);
 
-    return warrantyRepository.create({
+    const warranty = await warrantyRepository.create({
       productId: payload.productId,
       clientId: payload.clientId,
       startDate: payload.startDate,
@@ -34,6 +35,16 @@ const warrantyService = {
       notes: payload.notes || null,
       status: calculated.status
     });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'WARRANTY_CREATED',
+      entity: 'Warranty',
+      entityId: warranty.id,
+      newValue: warranty
+    });
+
+    return warranty;
   },
 
   async list(query) {
@@ -62,7 +73,7 @@ const warrantyService = {
     return warranties.map(enrichWarranty);
   },
 
-  async update(id, payload) {
+  async update(id, payload, actor) {
     const warranty = await warrantyRepository.findById(id);
     if (!warranty) throw new NotFoundError('Garantia no encontrada');
 
@@ -75,12 +86,23 @@ const warrantyService = {
 
     const calculated = calculateWarrantyStatus(startDate, endDate);
 
-    return warrantyRepository.update(id, {
+    const updated = await warrantyRepository.update(id, {
       startDate,
       endDate,
       notes: payload.notes !== undefined ? payload.notes : warranty.notes,
       status: calculated.status
     });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'WARRANTY_UPDATED',
+      entity: 'Warranty',
+      entityId: id,
+      previousValue: warranty,
+      newValue: updated
+    });
+
+    return updated;
   },
 
   async delete(id) {
@@ -104,7 +126,22 @@ const warrantyService = {
       clientId: user.id
     });
 
-    return buildWarrantyValidationResponse(warranty, product);
+    const result = buildWarrantyValidationResponse(warranty, product);
+
+    await auditService.record({
+      userId: user.id,
+      action: 'WARRANTY_VALIDATED',
+      entity: 'Warranty',
+      entityId: warranty?.id || null,
+      details: {
+        productId: product.id,
+        productSerial,
+        isValid: result.isValid,
+        status: result.status
+      }
+    });
+
+    return result;
   },
 
   async validateProductForTicket({ productId, clientId }) {

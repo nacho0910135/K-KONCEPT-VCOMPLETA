@@ -1,19 +1,29 @@
-const { asyncHandler } = require('../utils/asyncHandler');
-const { auditLogRepository } = require('../repositories/auditLog.repository');
+const { auditService } = require('../services/audit.service');
 
-const auditLogger = (action, entity) => asyncHandler(async (req, res, next) => {
-  await auditLogRepository.create({
-    action,
-    entity,
-    entityId: req.params.id || null,
-    userId: req.user?.id || null,
-    metadata: {
-      method: req.method,
-      path: req.originalUrl
-    }
+const auditLog = (action, entityExtractor) => (req, res, next) => {
+  res.on('finish', () => {
+    if (res.statusCode < 200 || res.statusCode >= 300) return;
+
+    const extracted = typeof entityExtractor === 'function'
+      ? entityExtractor(req, res) || {}
+      : { entity: entityExtractor };
+
+    auditService.logEvent({
+      userId: req.user?.id || null,
+      action,
+      entity: extracted.entity || entityExtractor || 'Unknown',
+      entityId: extracted.entityId || req.params.id || null,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') || null,
+      details: {
+        method: req.method,
+        path: req.originalUrl,
+        ...extracted.details
+      }
+    });
   });
 
   next();
-});
+};
 
-module.exports = { auditLogger };
+module.exports = { auditLog, auditLogger: auditLog };

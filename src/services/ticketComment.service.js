@@ -21,7 +21,7 @@ const ticketCommentService = {
 
     await auditService.record({
       userId: user.id,
-      action: 'TICKET_COMMENT_CREATED',
+      action: 'COMMENT_ADDED',
       entity: 'Ticket',
       entityId: ticketId,
       newValue: { commentId: comment.id }
@@ -31,11 +31,15 @@ const ticketCommentService = {
 
     await notificationService.notifyUsers({
       event: 'NEW_COMMENT',
-      title: 'Nuevo comentario',
-      message: `Hay un nuevo comentario en el ticket ${ticket.code}.`,
       recipients,
       entityType: 'Ticket',
-      entityId: ticketId
+      entityId: ticketId,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title,
+        commentAuthor: user.name,
+        commentText: payload.comment
+      }
     });
 
     return comment;

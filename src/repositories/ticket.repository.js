@@ -50,10 +50,11 @@ const ticketRepository = {
     });
   },
 
-  assignTechnician(id, technicianId, history, status) {
+  assignTechnician(id, technicianId, history, status, extraData = {}) {
     return prisma.ticket.update({
       where: { id },
       data: {
+        ...extraData,
         assignedTechnicianId: technicianId,
         ...(status ? { status } : {}),
         statusHistories: history ? { create: history } : undefined
@@ -212,6 +213,23 @@ const ticketRepository = {
       },
       data: {
         slaBreached: true
+      }
+    });
+  },
+
+  findOpenTicketsForSlaRecalculation() {
+    return prisma.ticket.findMany({
+      where: {
+        status: {
+          notIn: ['CLOSED', 'CANCELLED']
+        }
+      },
+      select: {
+        id: true,
+        priority: true,
+        categoryId: true,
+        clientId: true,
+        createdAt: true
       }
     });
   }

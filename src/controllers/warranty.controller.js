@@ -3,7 +3,7 @@ const { successResponse } = require('../utils/responseHelper');
 
 const create = async (req, res) => successResponse(res, {
   statusCode: 201,
-  data: { warranty: await warrantyService.create(req.body) },
+  data: { warranty: await warrantyService.create(req.body, req.user) },
   message: 'Garantia creada correctamente'
 });
 
@@ -21,7 +21,7 @@ const validate = async (req, res) => successResponse(res, {
 });
 
 const update = async (req, res) => successResponse(res, {
-  data: { warranty: await warrantyService.update(req.params.id, req.body) },
+  data: { warranty: await warrantyService.update(req.params.id, req.body, req.user) },
   message: 'Garantia actualizada correctamente'
 });
 

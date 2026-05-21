@@ -17,7 +17,7 @@ const getById = async (req, res) => successResponse(res, {
 });
 
 const update = async (req, res) => successResponse(res, {
-  data: { user: await userService.update(req.params.id, req.body) },
+  data: { user: await userService.update(req.params.id, req.body, req.user) },
   message: 'Usuario actualizado correctamente'
 });
 
@@ -27,12 +27,12 @@ const updateRole = async (req, res) => successResponse(res, {
 });
 
 const deactivate = async (req, res) => successResponse(res, {
-  data: { user: await userService.setActive(req.params.id, false) },
+  data: { user: await userService.setActive(req.params.id, false, req.user) },
   message: 'Usuario desactivado correctamente'
 });
 
 const activate = async (req, res) => successResponse(res, {
-  data: { user: await userService.setActive(req.params.id, true) },
+  data: { user: await userService.setActive(req.params.id, true, req.user) },
   message: 'Usuario activado correctamente'
 });
 

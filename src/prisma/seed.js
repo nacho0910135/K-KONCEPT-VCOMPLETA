@@ -35,7 +35,7 @@ const templateCopy = {
   },
   NEW_COMMENT: {
     subject: 'Nuevo comentario en {{ticketCode}}',
-    body: '{{authorName}} agrego un comentario al ticket {{ticketCode}}.'
+    body: '{{commentAuthor}} agrego un comentario al ticket {{ticketCode}}: {{commentText}}'
   },
   TICKET_RESOLVED: {
     subject: 'Ticket {{ticketCode}} resuelto',
@@ -169,11 +169,29 @@ async function seedNotificationChannelsConfig() {
   logger.info({ channels }, 'Configuracion inicial de canales de notificacion creada o actualizada');
 }
 
+async function seedNotificationFrequencyRules() {
+  for (const event of notificationEvents) {
+    await prisma.notificationFrequencyRule.upsert({
+      where: { event },
+      update: {},
+      create: {
+        event,
+        maxPerUserPerHour: 20,
+        maxPerUserPerDay: 100,
+        active: true
+      }
+    });
+  }
+
+  logger.info({ count: notificationEvents.length }, 'Reglas de frecuencia de notificacion creadas o validadas');
+}
+
 async function main() {
   await seedUsers();
   await seedTicketCounter();
   await seedNotificationTemplates();
   await seedNotificationChannelsConfig();
+  await seedNotificationFrequencyRules();
 }
 
 main()

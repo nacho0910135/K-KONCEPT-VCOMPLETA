@@ -82,7 +82,7 @@ const appointmentService = {
 
     await auditService.record({
       userId: user.id,
-      action: 'APPOINTMENT_SCHEDULED',
+      action: 'APPOINTMENT_CREATED',
       entity: 'Appointment',
       entityId: appointment.id,
       newValue: { ticketId, appointmentDate: payload.appointmentDate }
@@ -118,11 +118,15 @@ const appointmentService = {
 
     await notificationService.notifyUsers({
       event: 'APPOINTMENT_RESCHEDULED',
-      title: 'Cita reprogramada',
-      message: `La cita del ticket ${ticket.code} fue reprogramada.`,
       recipients: [ticket.client, appointment.technician],
       entityType: 'Appointment',
-      entityId: appointment.id
+      entityId: appointment.id,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title,
+        appointmentDate: payload.newDate,
+        previousAppointmentDate: appointment.appointmentDate
+      }
     });
 
     await auditService.record({

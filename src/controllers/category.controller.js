@@ -3,7 +3,7 @@ const { successResponse } = require('../utils/responseHelper');
 
 const create = async (req, res) => successResponse(res, {
   statusCode: 201,
-  data: { category: await categoryService.create(req.body) },
+  data: { category: await categoryService.create(req.body, req.user) },
   message: 'Categoria creada correctamente'
 });
 
@@ -17,17 +17,17 @@ const getById = async (req, res) => successResponse(res, {
 });
 
 const update = async (req, res) => successResponse(res, {
-  data: { category: await categoryService.update(req.params.id, req.body) },
+  data: { category: await categoryService.update(req.params.id, req.body, req.user) },
   message: 'Categoria actualizada correctamente'
 });
 
 const deactivate = async (req, res) => successResponse(res, {
-  data: { category: await categoryService.setActive(req.params.id, false) },
+  data: { category: await categoryService.setActive(req.params.id, false, req.user) },
   message: 'Categoria desactivada correctamente'
 });
 
 const activate = async (req, res) => successResponse(res, {
-  data: { category: await categoryService.setActive(req.params.id, true) },
+  data: { category: await categoryService.setActive(req.params.id, true, req.user) },
   message: 'Categoria activada correctamente'
 });
 

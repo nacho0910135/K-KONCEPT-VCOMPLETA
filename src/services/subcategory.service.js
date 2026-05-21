@@ -1,20 +1,31 @@
 const { categoryRepository } = require('../repositories/category.repository');
 const { subcategoryRepository } = require('../repositories/subcategory.repository');
+const { auditService } = require('./audit.service');
 const { ConflictError, NotFoundError } = require('../utils/errors');
 
 const subcategoryService = {
-  async create(categoryId, payload) {
+  async create(categoryId, payload, actor) {
     const category = await categoryRepository.findById(categoryId);
     if (!category) throw new NotFoundError('Categoria no encontrada');
 
     const existing = await subcategoryRepository.findByNameAndCategory(payload.name, categoryId);
     if (existing) throw new ConflictError('Ya existe una subcategoria con ese nombre en la categoria');
 
-    return subcategoryRepository.create({
+    const subcategory = await subcategoryRepository.create({
       categoryId,
       name: payload.name,
       description: payload.description || null
     });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'SUBCATEGORY_CREATED',
+      entity: 'Subcategory',
+      entityId: subcategory.id,
+      newValue: subcategory
+    });
+
+    return subcategory;
   },
 
   async listByCategory(categoryId) {
@@ -24,7 +35,7 @@ const subcategoryService = {
     return subcategoryRepository.listByCategory(categoryId);
   },
 
-  async update(id, payload) {
+  async update(id, payload, actor) {
     const subcategory = await subcategoryRepository.findById(id);
     if (!subcategory) throw new NotFoundError('Subcategoria no encontrada');
 
@@ -33,17 +44,39 @@ const subcategoryService = {
       if (existing) throw new ConflictError('Ya existe una subcategoria con ese nombre en la categoria');
     }
 
-    return subcategoryRepository.update(id, {
+    const updated = await subcategoryRepository.update(id, {
       name: payload.name,
       description: payload.description || null
     });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'SUBCATEGORY_UPDATED',
+      entity: 'Subcategory',
+      entityId: id,
+      previousValue: subcategory,
+      newValue: updated
+    });
+
+    return updated;
   },
 
-  async deactivate(id) {
+  async deactivate(id, actor) {
     const subcategory = await subcategoryRepository.findById(id);
     if (!subcategory) throw new NotFoundError('Subcategoria no encontrada');
 
-    return subcategoryRepository.update(id, { active: false });
+    const updated = await subcategoryRepository.update(id, { active: false });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'SUBCATEGORY_DEACTIVATED',
+      entity: 'Subcategory',
+      entityId: id,
+      previousValue: { active: subcategory.active },
+      newValue: { active: updated.active }
+    });
+
+    return updated;
   }
 };
 

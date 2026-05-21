@@ -3,7 +3,7 @@ const { successResponse } = require('../utils/responseHelper');
 
 const create = async (req, res) => successResponse(res, {
   statusCode: 201,
-  data: { subcategory: await subcategoryService.create(req.params.categoryId, req.body) },
+  data: { subcategory: await subcategoryService.create(req.params.categoryId, req.body, req.user) },
   message: 'Subcategoria creada correctamente'
 });
 
@@ -12,12 +12,12 @@ const listByCategory = async (req, res) => successResponse(res, {
 });
 
 const update = async (req, res) => successResponse(res, {
-  data: { subcategory: await subcategoryService.update(req.params.id, req.body) },
+  data: { subcategory: await subcategoryService.update(req.params.id, req.body, req.user) },
   message: 'Subcategoria actualizada correctamente'
 });
 
 const deactivate = async (req, res) => successResponse(res, {
-  data: { subcategory: await subcategoryService.deactivate(req.params.id) },
+  data: { subcategory: await subcategoryService.deactivate(req.params.id, req.user) },
   message: 'Subcategoria desactivada correctamente'
 });
 

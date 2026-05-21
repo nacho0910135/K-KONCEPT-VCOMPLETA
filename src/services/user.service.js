@@ -59,9 +59,20 @@ const userService = {
     return user;
   },
 
-  async update(id, payload) {
-    await this.getById(id);
-    return userRepository.update(id, payload);
+  async update(id, payload, actor) {
+    const previous = await this.getById(id);
+    const updated = await userRepository.update(id, payload);
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: 'USER_UPDATED',
+      entity: 'User',
+      entityId: id,
+      previousValue: previous,
+      newValue: updated
+    });
+
+    return updated;
   },
 
   async updateRole(id, role, actor) {
@@ -80,9 +91,20 @@ const userService = {
     return updated;
   },
 
-  async setActive(id, active) {
-    await this.getById(id);
-    return userRepository.update(id, { active });
+  async setActive(id, active, actor) {
+    const previous = await this.getById(id);
+    const updated = await userRepository.update(id, { active });
+
+    await auditService.record({
+      userId: actor?.id || null,
+      action: active ? 'USER_ACTIVATED' : 'USER_DEACTIVATED',
+      entity: 'User',
+      entityId: id,
+      previousValue: { active: previous.active },
+      newValue: { active: updated.active }
+    });
+
+    return updated;
   }
 };
 
