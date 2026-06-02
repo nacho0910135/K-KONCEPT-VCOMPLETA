@@ -26,6 +26,7 @@ const limitsByType = {
   'application/pdf': 10 * 1024 * 1024
 };
 const allowedTypes = Object.keys(limitsByType);
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const ticketSchema = z.object({
   title: z.string().min(5, 'Describe el problema en el titulo'),
@@ -112,18 +113,39 @@ const NuevoTicket = () => {
     setStep(3);
   });
 
-  const submit = async () => {
-    const code = `KK-${Math.floor(1100 + Math.random() * 800)}`;
-    try {
-      await createTicket({ ...form.getValues(), warrantySerial: serial || null });
-    } catch {
-      await simulateClientAction();
+  const buildTicketPayload = () => {
+    const values = form.getValues();
+    const payload = {
+      title: values.title,
+      description: values.description,
+      priority: values.priority,
+      categoryId: values.categoryId,
+      subcategoryId: values.subcategoryId
+    };
+
+    if (uuidPattern.test(values.productId || '')) {
+      payload.productId = values.productId;
     }
-    showToast({ type: 'success', title: `Ticket ${code} registrado`, message: 'Enviamos un correo de confirmacion al email registrado.' });
-    form.reset();
-    setStep(1);
-    setWarranty(null);
-    setSerial('');
+
+    return payload;
+  };
+
+  const submit = async () => {
+    try {
+      const response = await createTicket(buildTicketPayload());
+      const ticket = response?.data?.ticket || response?.ticket;
+      showToast({
+        type: 'success',
+        title: `Ticket ${ticket?.code || ''} registrado`.trim(),
+        message: 'Registramos la solicitud y las notificaciones del sistema.'
+      });
+      form.reset();
+      setStep(1);
+      setWarranty(null);
+      setSerial('');
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo crear el ticket', message: getErrorMessage(error) });
+    }
   };
 
   const values = form.getValues();

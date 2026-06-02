@@ -1,9 +1,9 @@
 
 > kollab-koncepts-reportes-backend@1.0.0 dev:web
-> vite --host 0.0.0.0 --port 5173
+> vite --host 0.0.0.0 --port 5173 --strictPort
 
 
-  [32m[1mVITE[22m v8.0.14[39m  [2mready in [0m[1m240[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v8.0.14[39m  [2mready in [0m[1m231[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.10:[1m5173[22m/[39m

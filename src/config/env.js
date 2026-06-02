@@ -2,6 +2,16 @@ require('dotenv').config();
 
 const { z } = require('zod');
 
+const booleanFromEnv = z.preprocess((value) => {
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
+  }
+
+  return value;
+}, z.boolean());
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -17,12 +27,12 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().optional().default(''),
   SMTP_HOST: z.string().optional().default(''),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_SECURE: z.coerce.boolean().default(false),
+  SMTP_SECURE: booleanFromEnv.default(false),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
   MAIL_FROM: z.string().default('Kollab Koncepts <no-reply@kollabkoncepts.com>'),
-  ENABLE_CRON_JOBS: z.coerce.boolean().default(true),
-  BLOCK_TICKET_WITHOUT_WARRANTY: z.coerce.boolean().default(false),
+  ENABLE_CRON_JOBS: booleanFromEnv.default(true),
+  BLOCK_TICKET_WITHOUT_WARRANTY: booleanFromEnv.default(false),
   APPOINTMENT_SLOT_MINUTES: z.coerce.number().int().positive().default(60),
   WORK_START_HOUR: z.coerce.number().int().min(0).max(23).default(8),
   WORK_END_HOUR: z.coerce.number().int().min(1).max(24).default(18),
