@@ -58,3 +58,9 @@
 [2m1:53:47 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/admin/adminUtils.jsx[22m
 [2m1:53:47 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/pages/admin/adminUtils.jsx[22m Could not Fast Refresh ("channelLabel" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
 [2m1:53:47 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/admin/Dashboard.jsx, /src/pages/admin/Tickets.jsx, /src/pages/admin/Usuarios.jsx, /src/pages/admin/Frecuencia.jsx, /src/pages/admin/Auditoria.jsx, /src/pages/admin/Reportes.jsx, /src/pages/admin/SLAs.jsx, /src/pages/admin/Plantillas.jsx[22m
+[2m2:11:15 p. m.[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+[2m2:11:15 p. m.[22m [36m[1m[vite][22m[39m server restarted.
+[2m2:11:32 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/admin/Plantillas.jsx[22m
+[2m2:11:43 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m2:11:49 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m2:11:58 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m

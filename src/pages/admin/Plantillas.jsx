@@ -71,6 +71,13 @@ const sampleValues = {
 };
 
 const renderPreview = (value = '') => variables.reduce((text, variable) => text.replaceAll(variable, sampleValues[variable]), value);
+const stripPreviewHtml = (value = '') => String(value)
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<\/(p|li|ul|ol|div|br)>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
 const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 const channelOptions = ['EMAIL', 'IN_APP', 'SMS', 'PUSH'].map((value) => ({ value, label: channelLabel[value] || value }));
 
@@ -83,6 +90,8 @@ const Plantillas = () => {
   const { showToast } = useToast();
   const form = useForm({ resolver: zodResolver(templateSchema), defaultValues: { event: '', channel: 'EMAIL', subject: '', body: '', active: true } });
   const preview = useWatch({ control: form.control });
+  const previewBody = renderPreview(preview.body);
+  const previewIsHtml = preview.channel === 'EMAIL' && /<\/?[a-z][\s\S]*>/i.test(previewBody);
 
   const openEdit = (template) => {
     setEditing(template);
@@ -213,7 +222,11 @@ const Plantillas = () => {
                 <p className="text-xs font-semibold uppercase text-neutral-500">Asunto</p>
                 <p className="mt-1 min-h-6 text-sm font-semibold text-neutral-900">{renderPreview(preview.subject) || 'Sin asunto'}</p>
                 <p className="mt-4 text-xs font-semibold uppercase text-neutral-500">Mensaje</p>
-                <p className="mt-1 whitespace-pre-line text-sm leading-6 text-neutral-700">{renderPreview(preview.body) || 'Escribe un mensaje para previsualizar.'}</p>
+                {previewIsHtml ? (
+                  <div className="mt-1 text-sm leading-6 text-neutral-700" dangerouslySetInnerHTML={{ __html: previewBody }} />
+                ) : (
+                  <p className="mt-1 whitespace-pre-line text-sm leading-6 text-neutral-700">{stripPreviewHtml(previewBody) || 'Escribe un mensaje para previsualizar.'}</p>
+                )}
               </div>
             </Card>
           </div>

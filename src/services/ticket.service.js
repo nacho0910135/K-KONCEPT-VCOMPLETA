@@ -485,15 +485,22 @@ const ticketService = {
 
     await notificationService.notifyUsers({
       event: 'TICKET_ASSIGNED',
-      recipients: [technician],
+      recipients: [technician, ticket.client],
       entityType: 'Ticket',
       entityId: ticket.id,
       payload: {
         ticketCode: ticket.code,
         ticketTitle: ticket.title,
+        clientName: ticket.client?.name || '',
         technicianName: technician.name
       }
     });
+
+    if (ticket.client?.email) {
+      transactionalEmailService.sendTicketAssignedEmail(ticket.client, ticket, technician).catch((error) => {
+        logger.error({ error, userId: ticket.clientId, ticketId: ticket.id }, 'No se pudo enviar correo de asignacion de ticket');
+      });
+    }
 
     await auditService.record({
       userId: user.id,

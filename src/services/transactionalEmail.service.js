@@ -122,6 +122,35 @@ const transactionalEmailService = {
     }, { type: 'TICKET_STATUS_EMAIL', userId: user.id, ticketId: ticket.id });
   },
 
+  async sendTicketAssignedEmail(user, ticket, technician) {
+    const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
+
+    return sendSafely({
+      to: user.email,
+      subject: `Tecnico asignado al ticket ${ticket.code}`,
+      html: layout({
+        title: `Tecnico asignado al ticket ${ticket.code}`,
+        preview: `${technician.name} fue asignado a tu caso.`,
+        body: `
+          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Ya asignamos un tecnico a tu caso.</p>
+          <p><strong>Ticket:</strong> ${escapeHtml(ticket.code)}</p>
+          <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
+          <p><strong>Tecnico:</strong> ${escapeHtml(technician.name)}</p>
+          <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
+        `
+      }),
+      text: [
+        `Hola ${user.name},`,
+        '',
+        `Ya asignamos un tecnico a tu caso ${ticket.code}.`,
+        `Titulo: ${ticket.title}`,
+        `Tecnico: ${technician.name}`,
+        `Ver ticket: ${ticketUrl}`
+      ].join('\n')
+    }, { type: 'TICKET_ASSIGNED_EMAIL', userId: user.id, ticketId: ticket.id });
+  },
+
   async sendTicketCommentEmail(user, ticket, comment) {
     const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
 

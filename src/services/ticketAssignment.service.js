@@ -4,6 +4,8 @@ const { userRepository } = require('../repositories/user.repository');
 const { auditService } = require('./audit.service');
 const { notificationService } = require('./notification.service');
 const { slaService } = require('./sla.service');
+const { transactionalEmailService } = require('./transactionalEmail.service');
+const { logger } = require('../utils/logger');
 
 const AUTO_ASSIGNMENT_KEY = 'ticket.assignment.automatic';
 const OPEN_WORKLOAD_STATUSES = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'];
@@ -73,15 +75,22 @@ const ticketAssignmentService = {
 
     await notificationService.notifyUsers({
       event: 'TICKET_ASSIGNED',
-      recipients: [technician],
+      recipients: [technician, ticket.client],
       entityType: 'Ticket',
       entityId: ticket.id,
       payload: {
         ticketCode: ticket.code,
         ticketTitle: ticket.title,
+        clientName: ticket.client?.name || '',
         technicianName: technician.name
       }
     });
+
+    if (ticket.client?.email) {
+      transactionalEmailService.sendTicketAssignedEmail(ticket.client, ticket, technician).catch((error) => {
+        logger.error({ error, userId: ticket.clientId, ticketId: ticket.id }, 'No se pudo enviar correo de asignacion automatica');
+      });
+    }
 
     await auditService.record({
       userId: actor.id,
