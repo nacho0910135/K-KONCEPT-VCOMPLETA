@@ -141,7 +141,13 @@ const ticketService = {
       payload: {
         userName: user.name,
         ticketCode: ticket.code,
-        ticketTitle: ticket.title
+        ticketTitle: ticket.title,
+        ticketDescription: ticket.description,
+        categoryName: ticket.category?.name || 'Sin categoria',
+        subcategoryName: ticket.subcategory?.name || 'Sin subcategoria',
+        priority: ticket.priority,
+        status: ticket.status,
+        ticketUrl: `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`
       }
     });
 

@@ -16,6 +16,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
   API_PREFIX: z.string().default('/api'),
+  APP_URL: z.string().url().default('http://localhost:5173'),
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener al menos 32 caracteres'),
@@ -25,6 +26,7 @@ const envSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().optional().default(''),
   CLOUDINARY_API_KEY: z.string().optional().default(''),
   CLOUDINARY_API_SECRET: z.string().optional().default(''),
+  BREVO_API_KEY: z.string().optional().default(''),
   SMTP_HOST: z.string().optional().default(''),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: booleanFromEnv.default(false),
@@ -71,6 +73,7 @@ const env = {
   nodeEnv: values.NODE_ENV,
   isProduction: values.NODE_ENV === 'production',
   port: values.PORT,
+  appUrl: values.APP_URL,
   apiPrefix: values.API_PREFIX,
   corsOrigins: values.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean),
   databaseUrl: values.DATABASE_URL,
@@ -84,6 +87,9 @@ const env = {
     cloudName: values.CLOUDINARY_CLOUD_NAME,
     apiKey: values.CLOUDINARY_API_KEY,
     apiSecret: values.CLOUDINARY_API_SECRET
+  },
+  brevo: {
+    apiKey: values.BREVO_API_KEY
   },
   mail: {
     host: values.SMTP_HOST,

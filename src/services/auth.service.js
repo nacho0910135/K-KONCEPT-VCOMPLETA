@@ -9,6 +9,8 @@ const {
   getRefreshTokenExpiryDate
 } = require('../utils/jwt.util');
 const { comparePassword, hashPassword } = require('../utils/password.util');
+const { logger } = require('../utils/logger');
+const { transactionalEmailService } = require('./transactionalEmail.service');
 
 const sanitizeUser = (user) => {
   if (!user) return null;
@@ -74,6 +76,10 @@ const authService = {
       ipAddress: context.ipAddress,
       userAgent: context.userAgent,
       details: { source: 'SELF_REGISTRATION' }
+    });
+
+    transactionalEmailService.sendWelcomeEmail(user).catch((error) => {
+      logger.error({ error, userId: user.id }, 'No se pudo enviar correo de bienvenida');
     });
 
     return user;

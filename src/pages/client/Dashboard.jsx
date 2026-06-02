@@ -1,21 +1,54 @@
 import { Link } from 'react-router-dom';
 import { Bell, CheckCircle2, Clock3, PlusCircle, Ticket } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import StatCard from '../../components/common/StatCard.jsx';
-import { clientNotifications, clientTickets } from './clientMockData.js';
-import { ClientStatusBadge, currentClientId } from './clientUtils.jsx';
+import IllustratedEmptyState from '../../components/common/IllustratedEmptyState.jsx';
+import { ClientStatusBadge } from './clientUtils.jsx';
 import { formatDate } from '../../utils/formatDate.js';
-import { useAdminResource } from '../../hooks/useAdminResource.js';
+import { getMyTickets } from '../../services/tickets.service.js';
+import { getLatestNotifications } from '../../services/notifications.service.js';
+import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const Dashboard = () => {
-  const { data, isLoading } = useAdminResource(() => ({
-    tickets: clientTickets.filter((ticket) => ticket.ownerId === currentClientId),
-    notifications: clientNotifications
-  }), []);
+  const [tickets, setTickets] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const tickets = data?.tickets || [];
-  const unread = (data?.notifications || []).filter((item) => !item.read);
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDashboard = async () => {
+      setIsLoading(true);
+      setError('');
+
+      try {
+        const [ticketsResponse, notificationResponse] = await Promise.all([
+          getMyTickets({ limit: 5, sortBy: 'createdAt', sortOrder: 'desc' }),
+          getLatestNotifications({ limit: 5 })
+        ]);
+        const notificationData = notificationResponse?.data ?? notificationResponse;
+        if (mounted) {
+          setTickets(ticketsResponse.data || []);
+          setNotifications(Array.isArray(notificationData) ? notificationData : notificationData?.items || notificationData?.notifications || []);
+        }
+      } catch (err) {
+        if (mounted) setError(getErrorMessage(err, 'No pudimos cargar tu resumen.'));
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const unread = notifications.filter((item) => !item.read);
 
   return (
     <div className="grid gap-6">
@@ -33,6 +66,8 @@ const Dashboard = () => {
         <StatCard title="Resueltos" value={tickets.filter((ticket) => ticket.status === 'RESOLVED' || ticket.status === 'CLOSED').length} icon={CheckCircle2} tone="success" />
       </div>
 
+      {error && <Card className="border-danger bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</Card>}
+
       <div className="grid gap-6 xl:grid-cols-[1.5fr_.8fr]">
         <Card className="p-4">
           <h2 className="text-sm font-semibold text-neutral-900">Ultimos 5 tickets</h2>
@@ -47,6 +82,7 @@ const Dashboard = () => {
                 <ClientStatusBadge status={ticket.status} />
               </Link>
             ))}
+            {!isLoading && tickets.length === 0 && <IllustratedEmptyState title="Sin tickets" description="Tus solicitudes apareceran aqui cuando las registres." />}
           </div>
         </Card>
 
@@ -58,8 +94,9 @@ const Dashboard = () => {
           <p className="mt-3 text-3xl font-bold text-neutral-900">{unread.length}</p>
           <div className="mt-4 grid gap-2">
             {unread.map((item) => (
-              <Link key={item.id} to={`/client/tickets/${item.ticketId}`} className="rounded-md bg-neutral-50 px-3 py-2 text-sm text-neutral-700 hover:bg-primary-50">{item.title}</Link>
+              <Link key={item.id} to={item.entityId ? `/client/tickets/${item.entityId}` : '/client/notifications'} className="rounded-md bg-neutral-50 px-3 py-2 text-sm text-neutral-700 hover:bg-primary-50">{item.title}</Link>
             ))}
+            {!isLoading && unread.length === 0 && <p className="text-sm text-neutral-500">No tienes notificaciones pendientes.</p>}
           </div>
         </Card>
       </div>

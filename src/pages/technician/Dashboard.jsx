@@ -1,16 +1,41 @@
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Clock3, ListChecks } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import Card from '../../components/common/Card.jsx';
 import StatCard from '../../components/common/StatCard.jsx';
-import { technicianTickets } from './technicianMockData.js';
-import { PriorityBadge, SlaBadge, TechnicianStatusBadge } from './technicianUtils.jsx';
+import IllustratedEmptyState from '../../components/common/IllustratedEmptyState.jsx';
+import { PriorityBadge, TechnicianStatusBadge } from './technicianUtils.jsx';
 import { formatDate } from '../../utils/formatDate.js';
-import { useAdminResource } from '../../hooks/useAdminResource.js';
+import { getAssignedTickets } from '../../services/tickets.service.js';
+import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const Dashboard = () => {
-  const { data, isLoading } = useAdminResource(() => technicianTickets, []);
-  const tickets = data || [];
+  const [tickets, setTickets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const criticalPending = tickets.filter((ticket) => ticket.priority === 'CRITICAL' && ticket.status !== 'RESOLVED').length;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const response = await getAssignedTickets({ limit: 100, sortBy: 'createdAt', sortOrder: 'desc' });
+        if (mounted) setTickets(response.data || []);
+      } catch (err) {
+        if (mounted) setError(getErrorMessage(err, 'No pudimos cargar el panel tecnico.'));
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="grid gap-6">
@@ -23,41 +48,30 @@ const Dashboard = () => {
         <StatCard title="Mis tickets asignados" value={tickets.length} icon={ListChecks} />
         <StatCard title="En progreso" value={tickets.filter((ticket) => ticket.status === 'IN_PROGRESS').length} icon={Clock3} tone="warning" />
         <StatCard title="Criticos pendientes" value={criticalPending} icon={AlertTriangle} tone="danger" />
-        <StatCard title="Resueltos este mes" value={tickets.filter((ticket) => ticket.status === 'RESOLVED').length} icon={CheckCircle2} tone="success" />
+        <StatCard title="Resueltos este mes" value={tickets.filter((ticket) => ticket.status === 'RESOLVED' || ticket.status === 'CLOSED').length} icon={CheckCircle2} tone="success" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_.8fr]">
-        <Card className="p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">Ultimos 5 asignados</h2>
-          <div className="mt-4 grid gap-3">
-            {isLoading && Array.from({ length: 5 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-neutral-100" />)}
-            {tickets.slice(0, 5).map((ticket) => (
-              <Link key={ticket.id} to={`/technician/tickets/${ticket.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-3 hover:bg-neutral-50">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-900">{ticket.code} - {ticket.title}</p>
-                  <p className="text-xs text-neutral-500">{ticket.client.company} - {formatDate(ticket.createdAt)}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <PriorityBadge priority={ticket.priority} />
-                  <TechnicianStatusBadge status={ticket.status} />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Card>
+      {error && <Card className="border-danger bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</Card>}
 
-        <Card className="p-4">
-          <h2 className="text-sm font-semibold text-neutral-900">SLAs proximos a vencer</h2>
-          <div className="mt-4 grid gap-3">
-            {tickets.filter((ticket) => ticket.status !== 'RESOLVED').sort((a, b) => a.slaHoursLeft - b.slaHoursLeft).slice(0, 5).map((ticket) => (
-              <Link key={ticket.id} to={`/technician/tickets/${ticket.id}`} className="flex items-center justify-between rounded-lg bg-neutral-50 px-3 py-2">
-                <span className="text-sm font-semibold text-neutral-800">{ticket.code}</span>
-                <SlaBadge hours={ticket.slaHoursLeft} />
-              </Link>
-            ))}
-          </div>
-        </Card>
-      </div>
+      <Card className="p-4">
+        <h2 className="text-sm font-semibold text-neutral-900">Ultimos 5 asignados</h2>
+        <div className="mt-4 grid gap-3">
+          {isLoading && Array.from({ length: 5 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-neutral-100" />)}
+          {!isLoading && tickets.length === 0 && <IllustratedEmptyState title="Sin tickets asignados" description="Cuando se te asignen casos apareceran aqui." />}
+          {tickets.slice(0, 5).map((ticket) => (
+            <Link key={ticket.id} to={`/technician/tickets/${ticket.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-3 hover:bg-neutral-50">
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">{ticket.code} - {ticket.title}</p>
+                <p className="text-xs text-neutral-500">{ticket.client?.company || ticket.client?.name || 'Cliente'} - {formatDate(ticket.createdAt)}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <PriorityBadge priority={ticket.priority} />
+                <TechnicianStatusBadge status={ticket.status} />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 };

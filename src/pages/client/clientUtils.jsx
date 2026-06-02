@@ -35,9 +35,3 @@ export const warrantyTone = {
   EXPIRADA: 'danger',
   NO_APLICA: 'neutral'
 };
-
-export const simulateClientAction = () => new Promise((resolve) => {
-  window.setTimeout(resolve, 350);
-});
-
-export const currentClientId = 'client-1';

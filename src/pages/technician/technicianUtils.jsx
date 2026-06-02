@@ -44,7 +44,3 @@ export const allowedTransitions = {
   REOPENED: ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED'],
   RESOLVED: []
 };
-
-export const simulateTechnicianAction = () => new Promise((resolve) => {
-  window.setTimeout(resolve, 350);
-});

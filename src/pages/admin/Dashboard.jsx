@@ -1,68 +1,64 @@
 import { Bar, BarChart, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { CheckCircle2, Clock3, FolderKanban, Star, TicketCheck, TicketPlus } from 'lucide-react';
-import { useState } from 'react';
 import Card from '../../components/common/Card.jsx';
 import StatCard from '../../components/common/StatCard.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
-import DateRangePicker from '../../components/forms/DateRangePicker.jsx';
-import { auditLogs, categories, dashboard, priorities, technicians } from './adminMockData.js';
-import { eventLabel, optionize, priorityLabel } from './adminUtils.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
+import { getKpiOverview, getMonthlyVolume, getTicketsByCategory, getTicketsByPriority, listAuditLogs } from '../../services/admin.client.service.js';
 import { formatDateTime } from '../../utils/formatDate.js';
+import { eventLabel, priorityLabel } from './adminUtils.jsx';
 
 const colors = ['#2563eb', '#0f766e', '#d97706', '#dc2626'];
+const getCount = (rows = [], status) => rows.find((item) => item.status === status || item.name === status)?.count || rows.find((item) => item.status === status || item.name === status)?.value || 0;
 
 const Dashboard = () => {
-  const [filters, setFilters] = useState({ dateRange: { from: '2026-05-01', to: '2026-05-21' }, category: '', priority: '' });
-  const { data, isLoading, error } = useAdminResource(() => ({ dashboard, technicians, auditLogs }), []);
+  const { data, isLoading, error } = useAdminResource(async () => {
+    const [overview, byPriority, byCategory, monthly, audit] = await Promise.all([
+      getKpiOverview(),
+      getTicketsByPriority(),
+      getTicketsByCategory(),
+      getMonthlyVolume(),
+      listAuditLogs({ limit: 10 })
+    ]);
 
-  const summary = data?.dashboard.summary || {};
+    return {
+      overview: overview || {},
+      byPriority: (byPriority || overview?.ticketsByPriority || []).map((item) => ({ name: priorityLabel[item.priority] || item.priority || item.name, value: item.count || item.value || 0 })),
+      byCategory: (byCategory || overview?.ticketsByCategory || []).map((item) => ({ name: item.category?.name || item.categoryName || item.name || item.category || 'Sin categoria', value: item.count || item.value || 0 })),
+      monthly: (monthly || overview?.monthlyVolume || []).map((item) => ({ name: item.month || item.name, tickets: item.count || item.tickets || 0 })),
+      auditLogs: audit.data?.items || audit.data || []
+    };
+  }, []);
+
+  const overview = data?.overview || {};
+  const statusRows = overview.ticketsByStatus || [];
+  const slaRate = overview.slaCompliance?.complianceRate ?? overview.slaCompliance ?? 0;
+  const rating = overview.ratingSummary?.average ?? overview.ratingSummary ?? 0;
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Panel administrativo</h1>
-          <p className="mt-1 text-sm text-neutral-500">KPIs operativos, SLA y actividad reciente.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-neutral-900">Panel administrativo</h1>
+        <p className="mt-1 text-sm text-neutral-500">KPIs operativos, SLA y actividad reciente desde la base real.</p>
       </div>
-
-      <Card className="p-4">
-        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr_1fr]">
-          <DateRangePicker value={filters.dateRange} onChange={(dateRange) => setFilters({ ...filters, dateRange })} />
-          <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
-            Categoria
-            <select className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 text-sm" value={filters.category} onChange={(event) => setFilters({ ...filters, category: event.target.value })}>
-              <option value="">Todas</option>
-              {categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-1.5 text-sm font-medium text-neutral-700 lg:col-start-3">
-            Prioridad
-            <select className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 text-sm" value={filters.priority} onChange={(event) => setFilters({ ...filters, priority: event.target.value })}>
-              <option value="">Todas</option>
-              {optionize(priorities, priorityLabel).map((priority) => <option key={priority.value} value={priority.value}>{priority.label}</option>)}
-            </select>
-          </label>
-        </div>
-      </Card>
+      {error && <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{error}</div>}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Tickets abiertos" value={summary.open ?? '...'} icon={TicketPlus} />
-        <StatCard title="En progreso" value={summary.inProgress ?? '...'} icon={Clock3} tone="warning" />
-        <StatCard title="Pendientes" value={summary.pending ?? '...'} icon={FolderKanban} tone="neutral" />
-        <StatCard title="Resueltos" value={summary.resolved ?? '...'} icon={TicketCheck} tone="success" />
-        <StatCard title="Cerrados" value={summary.closed ?? '...'} icon={CheckCircle2} tone="neutral" />
-        <StatCard title="SLA cumplido" value={`${summary.slaMet ?? '...'}%`} helper="Sobre tickets cerrados" icon={CheckCircle2} tone="success" />
-        <StatCard title="Calificacion promedio" value={summary.rating ?? '...'} helper="Ultimos 30 dias" icon={Star} tone="warning" />
+        <StatCard title="Tickets abiertos" value={getCount(statusRows, 'OPEN')} icon={TicketPlus} />
+        <StatCard title="En progreso" value={getCount(statusRows, 'IN_PROGRESS')} icon={Clock3} tone="warning" />
+        <StatCard title="Pendientes" value={getCount(statusRows, 'PENDING')} icon={FolderKanban} tone="neutral" />
+        <StatCard title="Resueltos" value={getCount(statusRows, 'RESOLVED')} icon={TicketCheck} tone="success" />
+        <StatCard title="Cerrados" value={getCount(statusRows, 'CLOSED')} icon={CheckCircle2} tone="neutral" />
+        <StatCard title="SLA cumplido" value={`${slaRate}%`} helper="Sobre tickets medidos" icon={CheckCircle2} tone="success" />
+        <StatCard title="Calificacion promedio" value={rating} helper="Datos reales disponibles" icon={Star} tone="warning" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <Card className="p-4 xl:col-span-1">
+        <Card className="p-4">
           <h2 className="text-sm font-semibold text-neutral-900">Tickets por prioridad</h2>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data?.dashboard.byPriority || []}>
+              <BarChart data={data?.byPriority || []}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip />
@@ -76,7 +72,7 @@ const Dashboard = () => {
           <h2 className="text-sm font-semibold text-neutral-900">Volumen mensual</h2>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data?.dashboard.monthly || []}>
+              <LineChart data={data?.monthly || []}>
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip />
@@ -93,8 +89,8 @@ const Dashboard = () => {
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={data?.dashboard.categoryDistribution || []} dataKey="value" nameKey="name" innerRadius={55} outerRadius={92}>
-                  {(data?.dashboard.categoryDistribution || []).map((entry, index) => <Cell key={entry.name} fill={colors[index % colors.length]} />)}
+                <Pie data={data?.byCategory || []} dataKey="value" nameKey="name" innerRadius={55} outerRadius={92}>
+                  {(data?.byCategory || []).map((entry, index) => <Cell key={entry.name} fill={colors[index % colors.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>
@@ -103,36 +99,21 @@ const Dashboard = () => {
         </Card>
 
         <Card className="p-4 xl:col-span-2">
-          <h2 className="mb-4 text-sm font-semibold text-neutral-900">Top tecnicos por resoluciones</h2>
+          <h2 className="mb-4 text-sm font-semibold text-neutral-900">Actividad reciente</h2>
           <DataTable
             searchable={false}
             pageSize={5}
             loading={isLoading}
-            error={error}
-            data={data?.technicians || []}
+            data={data?.auditLogs || []}
             columns={[
-              { key: 'name', header: 'Tecnico', sortable: true },
-              { key: 'resolutions', header: 'Resoluciones', sortable: true },
-              { key: 'rating', header: 'Calificacion', sortable: true }
+              { key: 'createdAt', header: 'Fecha', render: (row) => formatDateTime(row.createdAt) },
+              { key: 'action', header: 'Accion', render: (row) => eventLabel[row.action] || row.action },
+              { key: 'entity', header: 'Entidad' },
+              { key: 'user', header: 'Usuario', render: (row) => row.user?.email || row.user?.name || 'Sistema' }
             ]}
           />
         </Card>
       </div>
-
-      <Card className="p-4">
-        <h2 className="mb-4 text-sm font-semibold text-neutral-900">Actividad reciente</h2>
-        <div className="grid gap-3">
-          {(data?.auditLogs || []).slice(0, 10).map((log) => (
-            <div key={log.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-100 px-3 py-2">
-              <div>
-                <p className="text-sm font-semibold text-neutral-900">{eventLabel[log.action] || log.action}</p>
-                <p className="text-xs text-neutral-500">{log.user} sobre {log.entity} {log.entityId}</p>
-              </div>
-              <time className="text-xs text-neutral-500">{formatDateTime(log.createdAt)}</time>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 };

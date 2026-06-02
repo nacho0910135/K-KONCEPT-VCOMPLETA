@@ -12,8 +12,8 @@ import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
-import { RoleBadge, roleLabel, simulateAction } from './adminUtils.jsx';
-import { users } from './adminMockData.js';
+import { activateUser, createUser, deactivateUser, getUsers, updateUser, updateUserRole } from '../../services/users.service.js';
+import { RoleBadge, roleLabel } from './adminUtils.jsx';
 
 const userSchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
@@ -29,7 +29,10 @@ const roleSchema = z.object({
 });
 
 const Usuarios = () => {
-  const { data, setData, isLoading, error } = useAdminResource(() => users, []);
+  const { data, setData, isLoading, error } = useAdminResource(async () => {
+    const response = await getUsers({ limit: 100, sortBy: 'createdAt', sortOrder: 'desc' });
+    return response.data?.items || response.data || [];
+  }, []);
   const [filters, setFilters] = useState({ role: '', active: '' });
   const [editingUser, setEditingUser] = useState(null);
   const [creatingTech, setCreatingTech] = useState(false);
@@ -56,29 +59,34 @@ const Usuarios = () => {
   ));
 
   const saveUser = async (values) => {
-    await simulateAction();
     if (editingUser) {
-      setData((current) => current.map((user) => user.id === editingUser.id ? { ...user, ...values } : user));
+      const updated = await updateUser(editingUser.id, {
+        name: values.name,
+        phone: values.phone || undefined,
+        company: values.company || undefined
+      });
+      setData((current) => current.map((user) => user.id === editingUser.id ? updated : user));
       setEditingUser(null);
       showToast({ type: 'success', title: 'Usuario actualizado' });
       return;
     }
 
-    setData((current) => [{ id: crypto.randomUUID(), ...values, role: 'TECHNICIAN', active: true }, ...current]);
+    const created = await createUser({ ...values, role: 'TECHNICIAN' });
+    setData((current) => [created, ...current]);
     setCreatingTech(false);
     showToast({ type: 'success', title: 'Tecnico creado', message: values.email });
   };
 
   const confirmToggle = async () => {
-    await simulateAction();
-    setData((current) => current.map((user) => user.id === toggleUser.id ? { ...user, active: !user.active } : user));
+    const updated = toggleUser.active ? await deactivateUser(toggleUser.id) : await activateUser(toggleUser.id);
+    setData((current) => current.map((user) => user.id === toggleUser.id ? updated : user));
     showToast({ type: 'success', title: toggleUser.active ? 'Usuario desactivado' : 'Usuario activado' });
     setToggleUser(null);
   };
 
   const changeRole = async ({ role }) => {
-    await simulateAction();
-    setData((current) => current.map((user) => user.id === roleUser.id ? { ...user, role } : user));
+    const updated = await updateUserRole(roleUser.id, role);
+    setData((current) => current.map((user) => user.id === roleUser.id ? updated : user));
     showToast({ type: 'warning', title: 'Rol cambiado', message: `${roleUser.email} ahora es ${roleLabel[role] || role}.` });
     setRoleUser(null);
     roleForm.reset();

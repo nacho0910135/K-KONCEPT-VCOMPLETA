@@ -10,12 +10,12 @@ export const useAdminResource = (factory, deps = []) => {
     setIsLoading(true);
     setError(null);
 
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       if (!mounted) return;
       try {
-        setData(factory());
+        setData(await factory());
       } catch (resourceError) {
-        setError(resourceError.message || 'No pudimos cargar la informacion.');
+        setError(resourceError.response?.data?.message || resourceError.message || 'No pudimos cargar la informacion.');
       } finally {
         setIsLoading(false);
       }

@@ -1,19 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import Button from '../../components/common/Button.jsx';
 import Badge from '../../components/common/Badge.jsx';
-import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import Modal from '../../components/common/Modal.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
-import { frequencyRules } from './adminMockData.js';
-import { eventLabel, simulateAction } from './adminUtils.jsx';
+import { createNotificationFrequencyRule, listNotificationFrequencyRules, toggleNotificationFrequencyRule, updateNotificationFrequencyRule } from '../../services/admin.client.service.js';
+import { eventLabel } from './adminUtils.jsx';
 
 const frequencySchema = z.object({
   event: z.string().min(1, 'Evento requerido'),
@@ -29,12 +28,11 @@ const frequencySchema = z.object({
   }
 });
 
-const eventOptions = ['TICKET_CREATED', 'SLA_RISK', 'COMMENT_CREATED'].map((value) => ({ value, label: eventLabel[value] || value }));
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 
 const Frecuencia = () => {
-  const { data, setData, isLoading, error } = useAdminResource(() => frequencyRules, []);
+  const { data, setData, isLoading, error } = useAdminResource(listNotificationFrequencyRules, []);
   const [editing, setEditing] = useState(null);
-  const [deleting, setDeleting] = useState(null);
   const { showToast } = useToast();
   const form = useForm({ resolver: zodResolver(frequencySchema), defaultValues: { event: '', maxPerUserPerHour: 1, maxPerUserPerDay: 10 } });
 
@@ -44,27 +42,26 @@ const Frecuencia = () => {
   };
 
   const save = async (values) => {
-    await simulateAction();
+    const payload = {
+      event: values.event,
+      maxPerUserPerHour: values.maxPerUserPerHour,
+      maxPerUserPerDay: values.maxPerUserPerDay
+    };
     if (editing?.id) {
-      setData((current) => current.map((item) => item.id === editing.id ? { ...item, ...values } : item));
+      const updated = await updateNotificationFrequencyRule(editing.id, payload);
+      setData((current) => current.map((item) => item.id === editing.id ? updated : item));
     } else {
-      setData((current) => [{ id: crypto.randomUUID(), ...values, active: true }, ...current]);
+      const created = await createNotificationFrequencyRule(payload);
+      setData((current) => [created, ...current]);
     }
     setEditing(null);
     showToast({ type: 'success', title: 'Regla guardada' });
   };
 
   const toggle = async (rule) => {
-    await simulateAction();
-    setData((current) => current.map((item) => item.id === rule.id ? { ...item, active: !item.active } : item));
+    const updated = await toggleNotificationFrequencyRule(rule.id);
+    setData((current) => current.map((item) => item.id === rule.id ? updated : item));
     showToast({ type: 'info', title: 'Estado actualizado' });
-  };
-
-  const remove = async () => {
-    await simulateAction();
-    setData((current) => current.filter((item) => item.id !== deleting.id));
-    setDeleting(null);
-    showToast({ type: 'success', title: 'Regla eliminada' });
   };
 
   return (
@@ -92,7 +89,6 @@ const Frecuencia = () => {
               <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" onClick={() => open(row)}><Edit className="h-4 w-4" />Editar</Button>
                 <Button variant="ghost" onClick={() => toggle(row)}>{row.active ? 'Desactivar' : 'Activar'}</Button>
-                <Button variant="ghost" onClick={() => setDeleting(row)}><Trash2 className="h-4 w-4" />Eliminar</Button>
               </div>
             )
           }
@@ -108,13 +104,6 @@ const Frecuencia = () => {
           <Button type="submit" isLoading={form.formState.isSubmitting}>Guardar regla</Button>
         </form>
       </Modal>
-      <ConfirmDialog
-        isOpen={Boolean(deleting)}
-        title="Eliminar regla de frecuencia"
-        message={`Eliminar la regla ${eventLabel[deleting?.event] || deleting?.event}?`}
-        onCancel={() => setDeleting(null)}
-        onConfirm={remove}
-      />
     </div>
   );
 };

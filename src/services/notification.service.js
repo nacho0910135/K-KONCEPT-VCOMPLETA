@@ -22,7 +22,20 @@ const providers = {
 const defaultCopy = {
   TICKET_CREATED: {
     subject: 'Ticket {{ticketCode}} creado',
-    body: 'Hola {{userName}}, el ticket {{ticketCode}} fue creado correctamente.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Tu ticket fue abierto correctamente. Este es el resumen para seguimiento:</p>
+      <ul>
+        <li><strong>ID del ticket:</strong> {{ticketCode}}</li>
+        <li><strong>Titulo:</strong> {{ticketTitle}}</li>
+        <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
+        <li><strong>Prioridad:</strong> {{priority}}</li>
+        <li><strong>Estado:</strong> {{status}}</li>
+      </ul>
+      <p><strong>Descripcion enviada:</strong></p>
+      <p>{{ticketDescription}}</p>
+      <p>Puedes dar seguimiento desde: <a href="{{ticketUrl}}">{{ticketUrl}}</a></p>
+    `
   },
   TICKET_ASSIGNED: {
     subject: 'Ticket {{ticketCode}} asignado',
@@ -58,6 +71,21 @@ const defaultCopy = {
   }
 };
 
+const defaultInAppCopy = {
+  TICKET_CREATED: {
+    subject: 'Ticket {{ticketCode}} creado',
+    body: 'Tu ticket {{ticketCode}} fue abierto correctamente. Prioridad: {{priority}}. Estado: {{status}}.'
+  },
+  TICKET_ASSIGNED: defaultCopy.TICKET_ASSIGNED,
+  STATUS_CHANGED: defaultCopy.STATUS_CHANGED,
+  NEW_COMMENT: defaultCopy.NEW_COMMENT,
+  TICKET_RESOLVED: defaultCopy.TICKET_RESOLVED,
+  TICKET_CLOSED: defaultCopy.TICKET_CLOSED,
+  APPOINTMENT_RESCHEDULED: defaultCopy.APPOINTMENT_RESCHEDULED,
+  REPLACEMENT_APPROVED: defaultCopy.REPLACEMENT_APPROVED,
+  SLA_BREACH: defaultCopy.SLA_BREACH
+};
+
 const uniqueById = (users) => Array.from(
   users.filter(Boolean).reduce((acc, user) => acc.set(user.id, user), new Map()).values()
 );
@@ -66,6 +94,20 @@ const normalizePayload = (payload, user) => ({
   userName: user?.name || '',
   ...payload
 });
+
+const stripHtml = (value = '') => String(value)
+  .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+  .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+  .replace(/<\/(p|li|ul|ol|div|br)>/gi, ' ')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/\s+/g, ' ')
+  .trim();
 
 const getEnabledChannels = async () => {
   const configured = await notificationConfigRepository.listChannels();
@@ -76,15 +118,20 @@ const getEnabledChannels = async () => {
 
 const renderForChannel = async ({ event, channel, payload }) => {
   const template = await notificationConfigRepository.findActiveTemplate({ event, channel });
-  const fallback = defaultCopy[event] || { subject: event, body: payload.message || event };
+  const fallbackCopies = channel === 'IN_APP' ? defaultInAppCopy : defaultCopy;
+  const fallback = fallbackCopies[event] || { subject: event, body: payload.message || event };
   const escape = channel === 'EMAIL';
   const subjectTemplate = template?.subject || fallback.subject;
   const bodyTemplate = template?.bodyTemplate || fallback.body;
 
-  return {
+  const rendered = {
     subject: renderTemplate(subjectTemplate, payload, { escape }),
     body: renderTemplate(bodyTemplate, payload, { escape })
   };
+
+  return channel === 'IN_APP'
+    ? { ...rendered, body: stripHtml(rendered.body) }
+    : rendered;
 };
 
 const recordFrequencyBlock = ({ userId, event, entityType, entityId, channel, rule, counts }) => (
@@ -275,6 +322,7 @@ const notificationService = {
   async listMine(query, user) {
     const pagination = buildPagination(query);
     const where = {
+      channel: 'IN_APP',
       ...(query.read !== undefined ? { read: query.read } : {})
     };
 
@@ -300,7 +348,7 @@ const notificationService = {
   },
 
   async unreadCount(user) {
-    return { count: await notificationRepository.countUnread(user.id) };
+    return { count: await notificationRepository.countUnread(user.id, { channel: 'IN_APP' }) };
   }
 };
 

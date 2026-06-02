@@ -1,21 +1,47 @@
 import { Link } from 'react-router-dom';
 import { Eye } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
-import { technicianTickets, priorityWeight } from './technicianMockData.js';
-import { priorityLabels, PriorityBadge, SlaBadge, TechnicianStatusBadge, technicianStatusLabels } from './technicianUtils.jsx';
+import { priorityLabels, PriorityBadge, TechnicianStatusBadge, technicianStatusLabels } from './technicianUtils.jsx';
 import { formatDate } from '../../utils/formatDate.js';
-import { useAdminResource } from '../../hooks/useAdminResource.js';
+import { getAssignedTickets } from '../../services/tickets.service.js';
+import { getErrorMessage } from '../../utils/errorHandler.js';
+
+const priorityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
 
 const TicketsAsignados = () => {
-  const { data, isLoading, error } = useAdminResource(() => technicianTickets, []);
+  const [tickets, setTickets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState({ priority: '', status: '' });
   const [sortMode, setSortMode] = useState('priority');
 
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const response = await getAssignedTickets({ limit: 100, sortBy: 'createdAt', sortOrder: 'desc' });
+        if (mounted) setTickets(response.data || []);
+      } catch (err) {
+        if (mounted) setError(getErrorMessage(err, 'No pudimos cargar tus tickets asignados.'));
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const rows = useMemo(() => {
-    const filtered = (data || []).filter((ticket) => (
+    const filtered = tickets.filter((ticket) => (
       (!filters.priority || ticket.priority === filters.priority)
       && (!filters.status || ticket.status === filters.status)
     ));
@@ -24,7 +50,7 @@ const TicketsAsignados = () => {
       if (sortMode === 'date') return new Date(b.createdAt) - new Date(a.createdAt);
       return priorityWeight[b.priority] - priorityWeight[a.priority] || new Date(a.createdAt) - new Date(b.createdAt);
     });
-  }, [data, filters, sortMode]);
+  }, [tickets, filters, sortMode]);
 
   return (
     <div className="grid gap-6">
@@ -58,11 +84,10 @@ const TicketsAsignados = () => {
         columns={[
           { key: 'code', header: 'Codigo', sortable: true },
           { key: 'title', header: 'Titulo', sortable: true },
-          { key: 'client', header: 'Cliente', render: (row) => row.client.company, sortable: true },
+          { key: 'client', header: 'Cliente', render: (row) => row.client?.company || row.client?.name || 'Cliente', sortable: true },
           { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge priority={row.priority} /> },
           { key: 'status', header: 'Estado', render: (row) => <TechnicianStatusBadge status={row.status} /> },
           { key: 'createdAt', header: 'Fecha', render: (row) => formatDate(row.createdAt), sortable: true },
-          { key: 'slaHoursLeft', header: 'SLA restante', render: (row) => <SlaBadge hours={row.slaHoursLeft} /> },
           { key: 'actions', header: 'Acciones', render: (row) => <Link to={`/technician/tickets/${row.id}`}><Button variant="ghost"><Eye className="h-4 w-4" />Abrir</Button></Link> }
         ]}
       />

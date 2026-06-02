@@ -12,8 +12,8 @@ import DataTable from '../../components/tables/DataTable.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
-import { channelLabel, eventLabel, simulateAction } from './adminUtils.jsx';
-import { templates } from './adminMockData.js';
+import { listNotificationTemplates, toggleNotificationTemplate, updateNotificationTemplate } from '../../services/admin.client.service.js';
+import { channelLabel, eventLabel } from './adminUtils.jsx';
 
 const templateSchema = z.object({
   event: z.string().min(1, 'Evento requerido'),
@@ -43,7 +43,7 @@ const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'SLA_RISK'].map((valu
 const channelOptions = ['EMAIL', 'IN_APP', 'SMS', 'PUSH'].map((value) => ({ value, label: channelLabel[value] || value }));
 
 const Plantillas = () => {
-  const { data, setData, isLoading, error } = useAdminResource(() => templates, []);
+  const { data, setData, isLoading, error } = useAdminResource(listNotificationTemplates, []);
   const [editing, setEditing] = useState(null);
   const [targetField, setTargetField] = useState('body');
   const subjectRef = useRef(null);
@@ -54,19 +54,25 @@ const Plantillas = () => {
 
   const openEdit = (template) => {
     setEditing(template);
-    form.reset(template);
+    form.reset({ ...template, body: template.bodyTemplate || template.body || '' });
   };
 
   const save = async (values) => {
-    await simulateAction();
-    setData((current) => current.map((item) => item.id === editing.id ? { ...item, ...values } : item));
+    const updated = await updateNotificationTemplate(editing.id, {
+      event: values.event,
+      channel: values.channel,
+      subject: values.subject || null,
+      bodyTemplate: values.body,
+      active: values.active
+    });
+    setData((current) => current.map((item) => item.id === editing.id ? updated : item));
     setEditing(null);
     showToast({ type: 'success', title: 'Plantilla actualizada' });
   };
 
   const toggle = async (template) => {
-    await simulateAction();
-    setData((current) => current.map((item) => item.id === template.id ? { ...item, active: !item.active } : item));
+    const updated = await toggleNotificationTemplate(template.id);
+    setData((current) => current.map((item) => item.id === template.id ? updated : item));
     showToast({ type: 'info', title: 'Estado actualizado' });
   };
 
@@ -97,7 +103,7 @@ const Plantillas = () => {
         columns={[
           { key: 'event', header: 'Evento', sortable: true, render: (row) => eventLabel[row.event] || row.event },
           { key: 'channel', header: 'Canal', sortable: true, render: (row) => channelLabel[row.channel] || row.channel },
-          { key: 'subject', header: 'Asunto' },
+          { key: 'subject', header: 'Asunto', render: (row) => row.subject || 'Sin asunto' },
           { key: 'active', header: 'Estado', render: (row) => row.active ? <Badge tone="success">Activa</Badge> : <Badge>Inactiva</Badge> },
           {
             key: 'actions',

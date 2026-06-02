@@ -1,101 +1,116 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, MessageSquare, RotateCcw, SlidersHorizontal } from 'lucide-react';
-import { useState } from 'react';
+import { Eye, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import Drawer from '../../components/common/Drawer.jsx';
 import Modal from '../../components/common/Modal.jsx';
-import Badge from '../../components/common/Badge.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
-import TicketTimeline from '../../components/tickets/TicketTimeline.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
-import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import { useToast } from '../../hooks/useToast.js';
-import { useAdminResource } from '../../hooks/useAdminResource.js';
-import { categories, priorities, statuses, technicians, ticketDetail, tickets } from './adminMockData.js';
-import { optionize, PriorityBadge, simulateAction, StateBadge } from './adminUtils.jsx';
-import { formatDate, formatDateTime } from '../../utils/formatDate.js';
+import { assignTicketTechnician, getTickets, updateTicketPriority } from '../../services/tickets.service.js';
+import { getUsers } from '../../services/users.service.js';
+import { PriorityBadge, StateBadge } from './adminUtils.jsx';
+import { formatDate } from '../../utils/formatDate.js';
+import { getErrorMessage } from '../../utils/errorHandler.js';
 
+const statuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED', 'CANCELLED', 'REOPENED'];
+const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+const optionize = (items) => items.map((item) => ({ value: item, label: item }));
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
-const prioritySchema = z.object({ priority: z.string().min(1, 'Selecciona una prioridad') });
-const commentSchema = z.object({ body: z.string().min(5, 'Escribe al menos 5 caracteres') });
+const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
 
 const Tickets = () => {
-  const { data, setData, isLoading, error } = useAdminResource(() => tickets, []);
+  const [tickets, setTickets] = useState([]);
+  const [technicians, setTechnicians] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [assignTicket, setAssignTicket] = useState(null);
   const [priorityTicket, setPriorityTicket] = useState(null);
-  const [filters, setFilters] = useState({ status: '', priority: '', technician: '', category: '', date: '' });
+  const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
   const { showToast } = useToast();
-
   const assignForm = useForm({ resolver: zodResolver(assignSchema), defaultValues: { technicianId: '' } });
   const priorityForm = useForm({ resolver: zodResolver(prioritySchema), defaultValues: { priority: '' } });
-  const commentForm = useForm({ resolver: zodResolver(commentSchema), defaultValues: { body: '' } });
 
-  const filteredTickets = (data || []).filter((ticket) => (
+  const load = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const [ticketResponse, userResponse] = await Promise.all([
+        getTickets({ limit: 100, sortBy: 'createdAt', sortOrder: 'desc' }),
+        getUsers({ role: 'TECHNICIAN', active: true, limit: 100 })
+      ]);
+      const userData = userResponse.data?.users || userResponse.data || [];
+      setTickets(ticketResponse.data || []);
+      setTechnicians(Array.isArray(userData) ? userData : []);
+    } catch (err) {
+      setError(getErrorMessage(err, 'No pudimos cargar los tickets.'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filteredTickets = useMemo(() => tickets.filter((ticket) => (
     (!filters.status || ticket.status === filters.status)
     && (!filters.priority || ticket.priority === filters.priority)
-    && (!filters.technician || ticket.technicianId === filters.technician)
-    && (!filters.category || ticket.category === filters.category)
-    && (!filters.date || ticket.createdAt === filters.date)
-  ));
+    && (!filters.technicianId || ticket.assignedTechnicianId === filters.technicianId)
+  )), [tickets, filters]);
 
   const assignTechnician = async ({ technicianId }) => {
-    await simulateAction();
-    const technician = technicians.find((item) => item.id === technicianId);
-    setData((current) => current.map((ticket) => ticket.id === assignTicket.id ? { ...ticket, technicianId, technician: technician.name } : ticket));
-    setAssignTicket(null);
-    assignForm.reset();
-    showToast({ type: 'success', title: 'Tecnico asignado', message: `Ticket ${assignTicket.code} actualizado.` });
+    try {
+      await assignTicketTechnician(assignTicket.id, { technicianId });
+      setAssignTicket(null);
+      assignForm.reset();
+      await load();
+      showToast({ type: 'success', title: 'Tecnico asignado', message: `Ticket ${assignTicket.code} actualizado.` });
+    } catch (err) {
+      showToast({ type: 'error', title: 'No se pudo asignar', message: getErrorMessage(err) });
+    }
   };
 
   const changePriority = async ({ priority }) => {
-    await simulateAction();
-    setData((current) => current.map((ticket) => ticket.id === priorityTicket.id ? { ...ticket, priority } : ticket));
-    setPriorityTicket(null);
-    priorityForm.reset();
-    showToast({ type: 'success', title: 'Prioridad actualizada', message: `Ticket ${priorityTicket.code} ahora es ${priority}.` });
-  };
-
-  const addComment = async ({ body }) => {
-    await simulateAction();
-    commentForm.reset();
-    showToast({ type: 'success', title: 'Respuesta agregada', message: body });
+    try {
+      await updateTicketPriority(priorityTicket.id, { priority });
+      setPriorityTicket(null);
+      priorityForm.reset();
+      await load();
+      showToast({ type: 'success', title: 'Prioridad actualizada', message: `Ticket ${priorityTicket.code} ahora es ${priority}.` });
+    } catch (err) {
+      showToast({ type: 'error', title: 'No se pudo actualizar', message: getErrorMessage(err) });
+    }
   };
 
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Supervision de tickets</h1>
-          <p className="mt-1 text-sm text-neutral-500">Asignacion, prioridad, seguimiento, evidencias e historial.</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-neutral-900">Supervision de tickets</h1>
+        <p className="mt-1 text-sm text-neutral-500">Asignacion, prioridad y seguimiento real de solicitudes.</p>
       </div>
 
       <Card className="p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-900">
           <SlidersHorizontal className="h-4 w-4" /> Filtros
         </div>
-        <div className="grid gap-3 md:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-3">
           <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
             <option value="">Estado</option>
-            {optionize(statuses).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
           <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.priority} onChange={(event) => setFilters({ ...filters, priority: event.target.value })}>
             <option value="">Prioridad</option>
-            {optionize(priorities).map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            {priorities.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.technician} onChange={(event) => setFilters({ ...filters, technician: event.target.value })}>
+          <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.technicianId} onChange={(event) => setFilters({ ...filters, technicianId: event.target.value })}>
             <option value="">Tecnico</option>
-            {technicians.filter((tech) => tech.active).map((tech) => <option key={tech.id} value={tech.id}>{tech.name}</option>)}
+            {technicians.map((tech) => <option key={tech.id} value={tech.id}>{tech.name}</option>)}
           </select>
-          <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.category} onChange={(event) => setFilters({ ...filters, category: event.target.value })}>
-            <option value="">Categoria</option>
-            {categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}
-          </select>
-          <input className="rounded-md border border-neutral-200 px-3 py-2 text-sm" type="date" value={filters.date} onChange={(event) => setFilters({ ...filters, date: event.target.value })} />
         </div>
       </Card>
 
@@ -108,10 +123,10 @@ const Tickets = () => {
         columns={[
           { key: 'code', header: 'Codigo', sortable: true },
           { key: 'title', header: 'Titulo', sortable: true },
-          { key: 'client', header: 'Cliente', sortable: true },
+          { key: 'client', header: 'Cliente', render: (row) => row.client?.name || row.client?.email || 'Cliente', sortable: true },
           { key: 'status', header: 'Estado', render: (row) => <StateBadge value={row.status} /> },
           { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge value={row.priority} /> },
-          { key: 'technician', header: 'Tecnico', sortable: true },
+          { key: 'technician', header: 'Tecnico', render: (row) => row.assignedTechnician?.name || 'Sin asignar', sortable: true },
           { key: 'createdAt', header: 'Fecha', render: (row) => formatDate(row.createdAt) },
           {
             key: 'actions',
@@ -129,48 +144,18 @@ const Tickets = () => {
 
       <Drawer isOpen={Boolean(selectedTicket)} title={selectedTicket ? `${selectedTicket.code} - ${selectedTicket.title}` : 'Detalle'} onClose={() => setSelectedTicket(null)} width="max-w-3xl">
         {selectedTicket && (
-          <div className="grid gap-6">
-            <div className="grid gap-3 rounded-lg border border-neutral-200 p-4 md:grid-cols-2">
-              <p className="text-sm"><span className="font-semibold">Cliente:</span> {selectedTicket.client}</p>
-              <p className="text-sm"><span className="font-semibold">Tecnico:</span> {selectedTicket.technician}</p>
-              <p className="text-sm"><span className="font-semibold">Vence:</span> {formatDate(selectedTicket.dueAt)}</p>
-              <p className="text-sm"><span className="font-semibold">SLA:</span> {selectedTicket.slaMet ? <Badge tone="success">Cumplido</Badge> : <Badge tone="danger">En riesgo</Badge>}</p>
-              <p className="text-sm md:col-span-2">{ticketDetail.description}</p>
-            </div>
-
-            <section>
-              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Timeline</h3>
-              <TicketTimeline events={ticketDetail.timeline} />
-            </section>
-
-            <section>
-              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Comentarios</h3>
-              <div className="grid gap-3">
-                {ticketDetail.comments.map((comment) => (
-                  <div key={comment.id} className="rounded-lg border border-neutral-200 p-3">
-                    <p className="text-sm font-semibold text-neutral-900">{comment.author}</p>
-                    <p className="mt-1 text-sm text-neutral-600">{comment.body}</p>
-                    <time className="mt-1 block text-xs text-neutral-500">{formatDateTime(comment.createdAt)}</time>
-                  </div>
-                ))}
-              </div>
-              <form className="mt-4 grid gap-3" onSubmit={commentForm.handleSubmit(addComment)}>
-                <FormTextarea register={commentForm.register} name="body" label="Responder" error={commentForm.formState.errors.body} />
-                <Button type="submit" isLoading={commentForm.formState.isSubmitting}><MessageSquare className="h-4 w-4" />Agregar respuesta</Button>
-              </form>
-            </section>
-
-            <section className="grid gap-3">
-              <h3 className="text-sm font-semibold text-neutral-900">Evidencias</h3>
-              <div className="flex flex-wrap gap-2">{ticketDetail.evidence.map((item) => <Badge key={item}>{item}</Badge>)}</div>
-            </section>
+          <div className="grid gap-4">
+            <p className="text-sm"><span className="font-semibold">Cliente:</span> {selectedTicket.client?.name || selectedTicket.client?.email}</p>
+            <p className="text-sm"><span className="font-semibold">Tecnico:</span> {selectedTicket.assignedTechnician?.name || 'Sin asignar'}</p>
+            <p className="text-sm"><span className="font-semibold">Categoria:</span> {selectedTicket.category?.name || 'Sin categoria'}</p>
+            <p className="text-sm"><span className="font-semibold">Descripcion:</span> {selectedTicket.description}</p>
           </div>
         )}
       </Drawer>
 
       <Modal isOpen={Boolean(assignTicket)} title="Asignar o reasignar tecnico" onClose={() => setAssignTicket(null)}>
         <form className="grid gap-4" onSubmit={assignForm.handleSubmit(assignTechnician)}>
-          <FormSelect register={assignForm.register} name="technicianId" label="Tecnico activo" error={assignForm.formState.errors.technicianId} options={technicians.filter((tech) => tech.active).map((tech) => ({ value: tech.id, label: tech.name }))} />
+          <FormSelect register={assignForm.register} name="technicianId" label="Tecnico activo" error={assignForm.formState.errors.technicianId} options={technicians.map((tech) => ({ value: tech.id, label: tech.name }))} />
           <Button type="submit" isLoading={assignForm.formState.isSubmitting}>Guardar asignacion</Button>
         </form>
       </Modal>

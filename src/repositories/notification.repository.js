@@ -51,20 +51,22 @@ const notificationRepository = {
     });
   },
 
-  countUnread(userId) {
+  countUnread(userId, where = {}) {
     return prisma.notification.count({
       where: {
+        ...where,
         userId,
         read: false
       }
     });
   },
 
-  countSentSince({ userId, event, since }) {
+  countSentSince({ userId, event, channel, since }) {
     return prisma.notification.count({
       where: {
         userId,
         event,
+        ...(channel ? { channel } : {}),
         sentAt: { gte: since }
       }
     });

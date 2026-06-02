@@ -88,6 +88,21 @@ const templateCopy = {
   }
 };
 
+const inAppTemplateCopy = {
+  TICKET_CREATED: {
+    subject: 'Ticket {{ticketCode}} creado',
+    body: 'Tu ticket {{ticketCode}} fue abierto correctamente. Prioridad: {{priority}}. Estado: {{status}}.'
+  },
+  TICKET_ASSIGNED: templateCopy.TICKET_ASSIGNED,
+  STATUS_CHANGED: templateCopy.STATUS_CHANGED,
+  NEW_COMMENT: templateCopy.NEW_COMMENT,
+  TICKET_RESOLVED: templateCopy.TICKET_RESOLVED,
+  TICKET_CLOSED: templateCopy.TICKET_CLOSED,
+  APPOINTMENT_RESCHEDULED: templateCopy.APPOINTMENT_RESCHEDULED,
+  REPLACEMENT_APPROVED: templateCopy.REPLACEMENT_APPROVED,
+  SLA_BREACH: templateCopy.SLA_BREACH
+};
+
 async function upsertUser({ email, name, password, role, active }) {
   const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -213,13 +228,16 @@ async function seedCategories() {
 
 async function seedNotificationTemplates() {
   const templates = notificationEvents.flatMap((event) => (
-    ['EMAIL', 'IN_APP'].map((channel) => ({
-      event,
-      channel,
-      subject: channel === 'EMAIL' ? templateCopy[event].subject : null,
-      bodyTemplate: templateCopy[event].body,
-      active: true
-    }))
+    ['EMAIL', 'IN_APP'].map((channel) => {
+      const copy = channel === 'EMAIL' ? templateCopy[event] : inAppTemplateCopy[event];
+      return {
+        event,
+        channel,
+        subject: channel === 'EMAIL' ? copy.subject : copy.subject,
+        bodyTemplate: copy.body,
+        active: true
+      };
+    })
   ));
 
   for (const template of templates) {

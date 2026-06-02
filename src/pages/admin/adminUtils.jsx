@@ -83,9 +83,12 @@ export const frequencyLabel = {
 };
 
 export const reportTypeLabel = {
+  KPI_OVERVIEW: 'Resumen KPI',
+  TICKETS: 'Tickets',
+  AUDIT: 'Auditoria',
+  SLA: 'SLA',
   'KPI Overview': 'Resumen KPI',
   Tickets: 'Tickets',
-  SLA: 'SLA',
   Auditoria: 'Auditoria'
 };
 
@@ -94,7 +97,3 @@ export const PriorityBadge = ({ value }) => <Badge tone={priorityTone[value] || 
 export const RoleBadge = ({ value }) => <Badge tone={roleTone[value] || 'neutral'}>{roleLabel[value] || value}</Badge>;
 
 export const optionize = (items, labels = {}) => items.map((item) => ({ value: item, label: labels[item] || item }));
-
-export const simulateAction = () => new Promise((resolve) => {
-  window.setTimeout(resolve, 350);
-});
