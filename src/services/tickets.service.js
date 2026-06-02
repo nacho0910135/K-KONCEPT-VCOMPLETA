@@ -9,6 +9,8 @@ export const createTicket = async (payload) => unwrap(await api.post('/tickets',
 export const getTickets = async (params) => unwrap(await api.get('/tickets', { params }));
 export const getMyTickets = async (params) => unwrap(await api.get('/tickets/me', { params }));
 export const getAssignedTickets = async (params) => unwrap(await api.get('/tickets/assigned', { params }));
+export const getTicketAssignmentSettings = async () => unwrap(await api.get('/tickets/assignment-settings')).data;
+export const updateTicketAssignmentSettings = async (payload) => unwrap(await api.patch('/tickets/assignment-settings', payload)).data;
 export const getTicketById = async (id) => unwrap(await api.get(`/tickets/${id}`)).data;
 export const getTicketHistory = async (id) => unwrap(await api.get(`/tickets/${id}/history`)).data;
 export const updateTicket = async (id, payload) => unwrap(await api.patch(`/tickets/${id}`, payload)).data;

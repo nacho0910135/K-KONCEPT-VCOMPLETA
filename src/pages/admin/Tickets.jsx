@@ -8,10 +8,12 @@ import Card from '../../components/common/Card.jsx';
 import Drawer from '../../components/common/Drawer.jsx';
 import Modal from '../../components/common/Modal.jsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
+import Badge from '../../components/common/Badge.jsx';
+import Toggle from '../../components/common/Toggle.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useToast } from '../../hooks/useToast.js';
-import { assignTicketTechnician, deleteTicket, getTickets, updateTicketPriority } from '../../services/tickets.service.js';
+import { assignTicketTechnician, deleteTicket, getTicketAssignmentSettings, getTickets, updateTicketAssignmentSettings, updateTicketPriority } from '../../services/tickets.service.js';
 import { getUsers } from '../../services/users.service.js';
 import { PriorityBadge, StateBadge } from './adminUtils.jsx';
 import { formatDate } from '../../utils/formatDate.js';
@@ -36,6 +38,8 @@ const Tickets = () => {
   const [priorityTicket, setPriorityTicket] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [assignmentSettings, setAssignmentSettings] = useState({ automatic: true, mode: 'AUTOMATIC' });
+  const [isSavingAssignmentMode, setIsSavingAssignmentMode] = useState(false);
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
   const { showToast } = useToast();
   const assignForm = useForm({ resolver: zodResolver(assignSchema), defaultValues: { technicianId: '' } });
@@ -61,6 +65,12 @@ const Tickets = () => {
 
   useEffect(() => {
     load();
+  }, []);
+
+  useEffect(() => {
+    getTicketAssignmentSettings()
+      .then((settings) => setAssignmentSettings(settings))
+      .catch(() => {});
   }, []);
 
   const filteredTickets = useMemo(() => tickets.filter((ticket) => (
@@ -109,6 +119,23 @@ const Tickets = () => {
     }
   };
 
+  const toggleAssignmentMode = async (automatic) => {
+    setIsSavingAssignmentMode(true);
+    try {
+      const settings = await updateTicketAssignmentSettings({ automatic });
+      setAssignmentSettings(settings);
+      showToast({
+        type: 'success',
+        title: automatic ? 'Asignacion automatica activada' : 'Asignacion manual activada',
+        message: automatic ? 'Los casos nuevos se asignaran al tecnico con menor carga.' : 'El admin asignara los casos manualmente.'
+      });
+    } catch (err) {
+      showToast({ type: 'error', title: 'No se pudo cambiar el modo', message: getErrorMessage(err) });
+    } finally {
+      setIsSavingAssignmentMode(false);
+    }
+  };
+
   return (
     <div className="grid gap-6">
       <div>
@@ -117,8 +144,23 @@ const Tickets = () => {
       </div>
 
       <Card className="p-4">
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-neutral-900">
-          <SlidersHorizontal className="h-4 w-4" /> Filtros
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
+            <SlidersHorizontal className="h-4 w-4" /> Filtros
+          </div>
+          <div className="grid gap-2 rounded-md border border-neutral-200 px-3 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-neutral-900">Asignar casos automaticamente</span>
+              <Badge tone={assignmentSettings.automatic ? 'success' : 'warning'}>{assignmentSettings.automatic ? 'Automatico' : 'Manual'}</Badge>
+            </div>
+            <Toggle
+              checked={Boolean(assignmentSettings.automatic)}
+              onChange={toggleAssignmentMode}
+              disabled={isSavingAssignmentMode}
+              label={assignmentSettings.automatic ? 'Modo automatico activo' : 'Modo manual activo'}
+              description={assignmentSettings.automatic ? 'Los casos nuevos se asignan sin intervencion del admin.' : 'El admin asigna cada caso con el boton Asignar.'}
+            />
+          </div>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
@@ -156,7 +198,7 @@ const Tickets = () => {
             render: (row) => (
               <div className="flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
                 <Button variant="ghost" onClick={() => setSelectedTicket(row)}><Eye className="h-4 w-4" />Ver</Button>
-                <Button variant="ghost" onClick={() => setAssignTicket(row)}><RotateCcw className="h-4 w-4" />Asignar</Button>
+                <Button variant="ghost" disabled={assignmentSettings.automatic} onClick={() => setAssignTicket(row)}><RotateCcw className="h-4 w-4" />Asignar</Button>
                 <Button variant="ghost" onClick={() => setPriorityTicket(row)}>Prioridad</Button>
                 <Button variant="danger" onClick={() => setDeleteTarget(row)}><Trash2 className="h-4 w-4" />Eliminar</Button>
               </div>

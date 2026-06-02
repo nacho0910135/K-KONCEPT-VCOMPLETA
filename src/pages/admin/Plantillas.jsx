@@ -27,19 +27,51 @@ const templateSchema = z.object({
   }
 });
 
-const variables = ['{{userName}}', '{{ticketCode}}', '{{clientName}}', '{{technicianName}}', '{{priority}}', '{{status}}', '{{slaDueAt}}'];
+const variables = [
+  '{{userName}}',
+  '{{ticketCode}}',
+  '{{ticketTitle}}',
+  '{{ticketDescription}}',
+  '{{clientName}}',
+  '{{technicianName}}',
+  '{{categoryName}}',
+  '{{subcategoryName}}',
+  '{{priority}}',
+  '{{status}}',
+  '{{previousStatus}}',
+  '{{newStatus}}',
+  '{{comment}}',
+  '{{commentAuthor}}',
+  '{{commentText}}',
+  '{{ticketUrl}}',
+  '{{slaDueAt}}',
+  '{{deadlineAt}}',
+  '{{appointmentDate}}'
+];
 const sampleValues = {
   '{{userName}}': 'Laura Campos',
   '{{ticketCode}}': 'KK-1025',
+  '{{ticketTitle}}': 'Impresora sin conexion',
+  '{{ticketDescription}}': 'El equipo no responde al enviar trabajos de impresion.',
   '{{clientName}}': 'Industrias Sur',
   '{{technicianName}}': 'Andres Mora',
+  '{{categoryName}}': 'Soporte tecnico',
+  '{{subcategoryName}}': 'Impresoras',
   '{{priority}}': 'Critica',
   '{{status}}': 'En progreso',
-  '{{slaDueAt}}': '21/05/2026 16:00'
+  '{{previousStatus}}': 'Pendiente',
+  '{{newStatus}}': 'En espera del cliente',
+  '{{comment}}': 'Necesitamos una foto del error en pantalla.',
+  '{{commentAuthor}}': 'Andres Mora',
+  '{{commentText}}': 'Necesitamos una foto del error en pantalla.',
+  '{{ticketUrl}}': 'https://app.kollabkoncepts.com/client/tickets/123',
+  '{{slaDueAt}}': '21/05/2026 16:00',
+  '{{deadlineAt}}': '21/05/2026 16:00',
+  '{{appointmentDate}}': '22/05/2026 09:00'
 };
 
 const renderPreview = (value = '') => variables.reduce((text, variable) => text.replaceAll(variable, sampleValues[variable]), value);
-const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'SLA_RISK'].map((value) => ({ value, label: eventLabel[value] || value }));
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 const channelOptions = ['EMAIL', 'IN_APP', 'SMS', 'PUSH'].map((value) => ({ value, label: channelLabel[value] || value }));
 
 const Plantillas = () => {

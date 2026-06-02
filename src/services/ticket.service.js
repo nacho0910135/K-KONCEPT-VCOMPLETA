@@ -7,6 +7,7 @@ const { deleteFromCloudinary } = require('./cloudinary.service');
 const { notificationService } = require('./notification.service');
 const { slaService } = require('./sla.service');
 const { transactionalEmailService } = require('./transactionalEmail.service');
+const { ticketAssignmentService } = require('./ticketAssignment.service');
 const { warrantyService } = require('./warranty.service');
 const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
@@ -89,6 +90,14 @@ const ticketService = {
     };
   },
 
+  getAssignmentSettings() {
+    return ticketAssignmentService.getSettings();
+  },
+
+  updateAssignmentSettings(payload, user) {
+    return ticketAssignmentService.updateSettings(payload, user);
+  },
+
   async create(payload, user) {
     const sanitizedPayload = sanitizePayloadText(payload, ['title', 'description']);
     let warrantyId = payload.warrantyId || null;
@@ -119,7 +128,7 @@ const ticketService = {
     const priority = sanitizedPayload.priority || 'MEDIUM';
     const sla = await slaService.calculateDeadlineForTicket({ priority, categoryId: sanitizedPayload.categoryId, clientId: user.id });
 
-    const ticket = await ticketCounterRepository.createTicketWithSequentialCode({
+    let ticket = await ticketCounterRepository.createTicketWithSequentialCode({
       title: sanitizedPayload.title,
       description: sanitizedPayload.description,
       priority,
@@ -134,6 +143,10 @@ const ticketService = {
       slaDeadline: sla.slaDeadline,
       slaSource: sla.slaSource
     });
+
+    const systemUser = await userRepository.findSystemUser();
+    const assignmentResult = await ticketAssignmentService.assignIfEnabled(ticket, systemUser || user);
+    ticket = assignmentResult.ticket;
 
     await auditService.record({
       userId: user.id,
@@ -157,6 +170,7 @@ const ticketService = {
         subcategoryName: ticket.subcategory?.name || 'Sin subcategoria',
         priority: ticket.priority,
         status: ticket.status,
+        technicianName: ticket.assignedTechnician?.name || '',
         ticketUrl: `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`
       }
     });
@@ -308,6 +322,20 @@ const ticketService = {
           previousStatus: ticket.status,
           newStatus: payload.status
         }
+      });
+    }
+
+    if (user.role === 'TECHNICIAN') {
+      transactionalEmailService.sendTicketStatusEmail(ticket.client, {
+        ...ticket,
+        status: payload.status
+      }, {
+        previousStatus: ticket.status,
+        newStatus: payload.status,
+        comment,
+        technicianName: user.name
+      }).catch((error) => {
+        logger.error({ error, userId: ticket.clientId, ticketId: ticket.id }, 'No se pudo enviar correo de actualizacion de estado');
       });
     }
 

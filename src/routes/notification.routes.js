@@ -13,6 +13,7 @@ router.use(verifyToken);
 router.get('/me', validate(notificationQuerySchema, 'query'), asyncHandler(notificationController.listMine));
 router.get('/me/unread-count', asyncHandler(notificationController.unreadCount));
 router.patch('/me/read-all', asyncHandler(notificationController.markAllRead));
+router.delete('/me', asyncHandler(notificationController.clearMine));
 router.patch('/:id/read', asyncHandler(notificationController.markRead));
 
 module.exports = router;

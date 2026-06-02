@@ -90,6 +90,62 @@ const transactionalEmailService = {
         `Ver ticket: ${ticketUrl}`
       ].join('\n')
     }, { type: 'TICKET_CREATED_EMAIL', userId: user.id, ticketId: ticket.id });
+  },
+
+  async sendTicketStatusEmail(user, ticket, update) {
+    const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
+
+    return sendSafely({
+      to: user.email,
+      subject: `Actualizacion del ticket ${ticket.code}`,
+      html: layout({
+        title: `Actualizacion del ticket ${ticket.code}`,
+        preview: `El estado cambio a ${update.newStatus}.`,
+        body: `
+          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>${escapeHtml(update.technicianName || 'El tecnico asignado')} actualizo tu caso.</p>
+          <p><strong>Estado anterior:</strong> ${escapeHtml(update.previousStatus || 'Nuevo')}</p>
+          <p><strong>Estado actual:</strong> ${escapeHtml(update.newStatus)}</p>
+          ${update.comment ? `<p><strong>Comentario:</strong> ${escapeHtml(update.comment)}</p>` : ''}
+          <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
+        `
+      }),
+      text: [
+        `Hola ${user.name},`,
+        '',
+        `${update.technicianName || 'El tecnico asignado'} actualizo tu caso ${ticket.code}.`,
+        `Estado anterior: ${update.previousStatus || 'Nuevo'}`,
+        `Estado actual: ${update.newStatus}`,
+        update.comment ? `Comentario: ${update.comment}` : '',
+        `Ver ticket: ${ticketUrl}`
+      ].filter(Boolean).join('\n')
+    }, { type: 'TICKET_STATUS_EMAIL', userId: user.id, ticketId: ticket.id });
+  },
+
+  async sendTicketCommentEmail(user, ticket, comment) {
+    const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
+
+    return sendSafely({
+      to: user.email,
+      subject: `Nuevo comentario en ${ticket.code}`,
+      html: layout({
+        title: `Nuevo comentario en ${ticket.code}`,
+        preview: `${comment.authorName} agrego un comentario.`,
+        body: `
+          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>${escapeHtml(comment.authorName)} agrego un comentario en tu caso.</p>
+          <p><strong>Comentario:</strong> ${escapeHtml(comment.text)}</p>
+          <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
+        `
+      }),
+      text: [
+        `Hola ${user.name},`,
+        '',
+        `${comment.authorName} agrego un comentario en tu caso ${ticket.code}.`,
+        `Comentario: ${comment.text}`,
+        `Ver ticket: ${ticketUrl}`
+      ].join('\n')
+    }, { type: 'TICKET_COMMENT_EMAIL', userId: user.id, ticketId: ticket.id });
   }
 };
 

@@ -16,6 +16,11 @@ const markAllRead = async (req, res) => successResponse(res, {
   message: 'Notificaciones marcadas como leidas'
 });
 
+const clearMine = async (req, res) => successResponse(res, {
+  data: { result: await notificationService.clearMine(req.user) },
+  message: 'Notificaciones eliminadas correctamente'
+});
+
 const unreadCount = async (req, res) => successResponse(res, {
   data: await notificationService.unreadCount(req.user)
 });
@@ -24,5 +29,6 @@ module.exports = {
   listMine,
   markRead,
   markAllRead,
+  clearMine,
   unreadCount
 };

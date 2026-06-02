@@ -7,7 +7,7 @@ import Pagination from '../../components/common/Pagination.jsx';
 import { formatRelativeDate } from '../../utils/formatDate.js';
 import { useToast } from '../../hooks/useToast.js';
 import { useNotifications } from '../../hooks/useNotifications.js';
-import { markAllNotificationsAsRead, markNotificationAsRead } from '../../services/notifications.service.js';
+import { clearNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../../services/notifications.service.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 import { cleanNotificationText } from '../../utils/notificationText.js';
 
@@ -36,6 +36,17 @@ const Notificaciones = () => {
     }
   };
 
+  const clearAll = async () => {
+    try {
+      await clearNotifications();
+      await refreshNotifications();
+      setPage(1);
+      showToast({ type: 'success', title: 'Notificaciones limpiadas' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudieron limpiar', message: getErrorMessage(error) });
+    }
+  };
+
   const pageItems = useMemo(() => notifications.slice((page - 1) * pageSize, page * pageSize), [notifications, page]);
 
   return (
@@ -45,7 +56,10 @@ const Notificaciones = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Notificaciones</h1>
           <p className="mt-1 text-sm text-neutral-500">Asignaciones, comentarios y alertas reales.</p>
         </div>
-        <Button variant="ghost" onClick={markAll}>Marcar todas como leidas</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={markAll} disabled={notifications.length === 0}>Marcar todas como leidas</Button>
+          <Button variant="danger" onClick={clearAll} disabled={notifications.length === 0}>Limpiar notificaciones</Button>
+        </div>
       </div>
       {notifications.length === 0 ? <IllustratedEmptyState title="Sin notificaciones" description="Aqui apareceran nuevas asignaciones y comentarios." /> : (
         <Card className="p-2">

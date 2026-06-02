@@ -17,6 +17,7 @@ const {
   assignTicketSchema,
   updatePrioritySchema,
   updateDiagnosisSchema,
+  assignmentSettingsSchema,
   searchTicketsQuerySchema
 } = require('../validators/ticket.validator');
 const { createTicketCommentSchema } = require('../validators/ticketComment.validator');
@@ -30,6 +31,8 @@ router.get('/me', authorizeRoles('CLIENT'), validate(myTicketsQuerySchema, 'quer
 router.get('/assigned', authorizeRoles('TECHNICIAN'), validate(assignedTicketsQuerySchema, 'query'), asyncHandler(ticketController.listAssigned));
 router.get('/preview', authorizeRoles('CLIENT'), validate(ticketPreviewSchema, 'query'), asyncHandler(ticketController.preview));
 router.get('/search', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(searchTicketsQuerySchema, 'query'), asyncHandler(ticketController.search));
+router.get('/assignment-settings', authorizeRoles('ADMIN'), asyncHandler(ticketController.getAssignmentSettings));
+router.patch('/assignment-settings', authorizeRoles('ADMIN'), validate(assignmentSettingsSchema), asyncHandler(ticketController.updateAssignmentSettings));
 router.get('/', authorizeRoles('ADMIN'), validate(adminTicketsQuerySchema, 'query'), asyncHandler(ticketController.listAll));
 
 router.post('/', authorizeRoles('CLIENT'), validate(createTicketSchema), asyncHandler(ticketController.create));

@@ -32,3 +32,29 @@
 [2m1:18:56 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/client/DetalleTicket.jsx[22m
 [2m1:19:13 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
 [2m1:25:50 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:39:31 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:39:39 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:50:12 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:50:17 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:50:28 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/contexts/NotificationContext.jsx, /src/pages/client/Dashboard.jsx, /src/pages/client/Notificaciones.jsx, /src/pages/technician/Notificaciones.jsx[22m
+[2m1:50:29 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/NotificationContext.jsx[22m Could not Fast Refresh ("useNotificationContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m1:50:29 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/AuthContext.jsx, /src/layouts/AppShell.jsx, /src/pages/client/Notificaciones.jsx, /src/pages/technician/Notificaciones.jsx[22m
+[2m1:50:29 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/AuthContext.jsx[22m Could not Fast Refresh ("useAuthContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m1:50:29 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/routes/AppRouter.jsx, /src/routes/RoleRoute.jsx, /src/routes/ProtectedRoute.jsx, /src/layouts/AppShell.jsx, /src/pages/auth/Login.jsx[22m
+[2m1:50:43 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/client/Notificaciones.jsx[22m
+[2m1:50:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/technician/Notificaciones.jsx[22m
+[2m1:51:31 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:51:39 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:51:47 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:52:04 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:52:11 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:52:20 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:52:26 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:52:33 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:52:38 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/client/Dashboard.jsx, /src/pages/client/MisTickets.jsx, /src/pages/client/DetalleTicket.jsx, /src/pages/client/NuevoTicket.jsx, /src/pages/technician/Dashboard.jsx, /src/pages/technician/TicketsAsignados.jsx, /src/pages/technician/Reemplazos.jsx, /src/pages/admin/Tickets.jsx, /src/pages/technician/DetalleTicket.jsx[22m
+[2m1:53:00 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/admin/Tickets.jsx[22m
+[2m1:53:17 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m1:53:40 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/admin/Plantillas.jsx[22m
+[2m1:53:47 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/admin/adminUtils.jsx[22m
+[2m1:53:47 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/pages/admin/adminUtils.jsx[22m Could not Fast Refresh ("channelLabel" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m1:53:47 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/admin/Dashboard.jsx, /src/pages/admin/Tickets.jsx, /src/pages/admin/Usuarios.jsx, /src/pages/admin/Frecuencia.jsx, /src/pages/admin/Auditoria.jsx, /src/pages/admin/Reportes.jsx, /src/pages/admin/SLAs.jsx, /src/pages/admin/Plantillas.jsx[22m

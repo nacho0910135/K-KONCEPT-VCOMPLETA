@@ -21301,3 +21301,821 @@
       "port": 4000
     }
 [31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:50:13.440 -0600] [32mINFO[39m (42528): [36mServidor HTTP iniciado[39m
+    [35mport[39m: 4000
+    [35menv[39m: "development"
+[2026-06-02 13:50:13.460 -0600] [32mINFO[39m (42528): [36mCron jobs iniciados[39m
+    [35mcount[39m: 3
+[2026-06-02 13:50:14.912 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 61083
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 3
+[2026-06-02 13:50:14.914 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 54838
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 0
+[2026-06-02 13:50:14.926 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "GET",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 49809
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1999, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 11
+[2026-06-02 13:50:14.929 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "GET",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 61244
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1998, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 2
+[2026-06-02 13:50:16.277 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 5,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 65434
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 1
+[2026-06-02 13:50:16.278 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 6,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 63933
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 0
+[2026-06-02 13:50:16.279 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 7,
+      "method": "GET",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 55097
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1997, reset=899",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 1
+[2026-06-02 13:50:16.281 -0600] [32mINFO[39m (42528): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 8,
+      "method": "GET",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 52010
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1996, reset=899",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 1
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:50:18.497 -0600] [41mFATAL[49m (54808): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:50:29.952 -0600] [41mFATAL[49m (43244): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:51:03.288 -0600] [41mFATAL[49m (28588): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:51:21.165 -0600] [41mFATAL[49m (32496): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:51:32.001 -0600] [41mFATAL[49m (14400): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:51:40.235 -0600] [41mFATAL[49m (51276): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:51:48.796 -0600] [32mINFO[39m (33184): [36mServidor HTTP iniciado[39m
+    [35mport[39m: 4000
+    [35menv[39m: "development"
+[2026-06-02 13:51:48.818 -0600] [32mINFO[39m (33184): [36mCron jobs iniciados[39m
+    [35mcount[39m: 3
+[2026-06-02 13:52:00.921 -0600] [32mINFO[39m (33184): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 54572
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 3
+[2026-06-02 13:52:00.923 -0600] [32mINFO[39m (33184): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 52751
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 0
+[2026-06-02 13:52:00.932 -0600] [32mINFO[39m (33184): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "GET",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 63968
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1999, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 8
+[2026-06-02 13:52:00.933 -0600] [32mINFO[39m (33184): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "GET",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 52952
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1998, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 1
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:52:05.720 -0600] [41mFATAL[49m (54740): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:52:11.941 -0600] [41mFATAL[49m (56088): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:52:21.448 -0600] [41mFATAL[49m (54980): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:52:27.333 -0600] [32mINFO[39m (15372): [36mServidor HTTP iniciado[39m
+    [35mport[39m: 4000
+    [35menv[39m: "development"
+[2026-06-02 13:52:27.361 -0600] [32mINFO[39m (15372): [36mCron jobs iniciados[39m
+    [35mcount[39m: 3
+[2026-06-02 13:52:30.919 -0600] [32mINFO[39m (15372): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 56306
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 4
+[2026-06-02 13:52:30.922 -0600] [32mINFO[39m (15372): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 55947
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 0
+[2026-06-02 13:52:30.932 -0600] [32mINFO[39m (15372): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "GET",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 55090
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1999, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 9
+[2026-06-02 13:52:30.934 -0600] [32mINFO[39m (15372): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "GET",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 65397
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1998, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 1
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:52:34.223 -0600] [41mFATAL[49m (32488): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:52:38.901 -0600] [41mFATAL[49m (12036): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:53:18.390 -0600] [41mFATAL[49m (45864): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[2026-06-02 13:54:10.383 -0600] [41mFATAL[49m (27940): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:54:15.742 -0600] [41mFATAL[49m (55560): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

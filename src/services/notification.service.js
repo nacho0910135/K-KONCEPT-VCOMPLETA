@@ -39,19 +39,25 @@ const defaultCopy = {
   },
   TICKET_ASSIGNED: {
     subject: 'Ticket {{ticketCode}} asignado',
-    body: 'El ticket {{ticketCode}} fue asignado a {{technicianName}}.'
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} fue asignado a {{technicianName}}.'
   },
   STATUS_CHANGED: {
     subject: 'Ticket {{ticketCode}} cambio de estado',
-    body: 'El ticket {{ticketCode}} cambio a {{newStatus}}.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>{{technicianName}} actualizo el ticket {{ticketCode}}.</p>
+      <p><strong>Estado anterior:</strong> {{previousStatus}}</p>
+      <p><strong>Estado actual:</strong> {{newStatus}}</p>
+      <p>{{comment}}</p>
+    `
   },
   NEW_COMMENT: {
     subject: 'Nuevo comentario en {{ticketCode}}',
-    body: '{{commentAuthor}} agrego un comentario al ticket {{ticketCode}}: {{commentText}}'
+    body: 'Hola {{userName}}, {{commentAuthor}} agrego un comentario al ticket {{ticketCode}}: {{commentText}}'
   },
   TICKET_RESOLVED: {
     subject: 'Ticket {{ticketCode}} resuelto',
-    body: 'El ticket {{ticketCode}} fue marcado como resuelto.'
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} fue marcado como resuelto.'
   },
   TICKET_CLOSED: {
     subject: 'Ticket {{ticketCode}} cerrado',
@@ -109,6 +115,13 @@ const stripHtml = (value = '') => String(value)
   .replace(/\s+/g, ' ')
   .trim();
 
+const decodeTemplateHtml = (value = '') => String(value)
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/&amp;/g, '&');
+
 const getEnabledChannels = async () => {
   const configured = await notificationConfigRepository.listChannels();
   const enabled = new Set(configured.filter((channel) => channel.enabled).map((channel) => channel.channel));
@@ -122,7 +135,9 @@ const renderForChannel = async ({ event, channel, payload }) => {
   const fallback = fallbackCopies[event] || { subject: event, body: payload.message || event };
   const escape = channel === 'EMAIL';
   const subjectTemplate = template?.subject || fallback.subject;
-  const bodyTemplate = template?.bodyTemplate || fallback.body;
+  const bodyTemplate = channel === 'EMAIL'
+    ? decodeTemplateHtml(template?.bodyTemplate || fallback.body)
+    : template?.bodyTemplate || fallback.body;
 
   const rendered = {
     subject: renderTemplate(subjectTemplate, payload, { escape }),

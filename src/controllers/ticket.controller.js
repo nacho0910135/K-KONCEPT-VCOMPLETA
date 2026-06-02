@@ -16,6 +16,16 @@ const preview = async (req, res) => {
   return successResponse(res, { data: previewData });
 };
 
+const getAssignmentSettings = async (_req, res) => {
+  const settings = await ticketService.getAssignmentSettings();
+  return successResponse(res, { data: settings });
+};
+
+const updateAssignmentSettings = async (req, res) => {
+  const settings = await ticketService.updateAssignmentSettings(req.body, req.user);
+  return successResponse(res, { data: settings, message: 'Modo de asignacion actualizado correctamente' });
+};
+
 const listMine = async (req, res) => {
   const result = await ticketService.listMine(req.query, req.user);
   return successResponse(res, { data: result.items, pagination: result.pagination });
@@ -84,6 +94,8 @@ const search = async (req, res) => {
 module.exports = {
   create,
   preview,
+  getAssignmentSettings,
+  updateAssignmentSettings,
   listMine,
   listAssigned,
   listAll,

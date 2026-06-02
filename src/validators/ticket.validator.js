@@ -99,6 +99,10 @@ const updateDiagnosisSchema = z.object({
   diagnosis: z.string().trim().min(1)
 });
 
+const assignmentSettingsSchema = z.object({
+  automatic: z.boolean()
+});
+
 const searchTicketsQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().min(1)
 });
@@ -116,5 +120,6 @@ module.exports = {
   assignTicketSchema,
   updatePrioritySchema,
   updateDiagnosisSchema,
+  assignmentSettingsSchema,
   searchTicketsQuerySchema
 };

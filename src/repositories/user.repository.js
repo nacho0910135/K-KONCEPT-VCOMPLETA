@@ -54,6 +54,39 @@ const userRepository = {
     });
   },
 
+  async findLeastBusyActiveTechnician({ openStatuses = [] } = {}) {
+    const technicians = await prisma.user.findMany({
+      where: {
+        role: 'TECHNICIAN',
+        active: true
+      },
+      select: publicUserSelect,
+      orderBy: { createdAt: 'asc' }
+    });
+
+    if (technicians.length === 0) return null;
+
+    const workloads = openStatuses.length
+      ? await prisma.ticket.groupBy({
+          by: ['assignedTechnicianId'],
+          where: {
+            assignedTechnicianId: { in: technicians.map((technician) => technician.id) },
+            status: { in: openStatuses }
+          },
+          _count: { _all: true }
+        })
+      : [];
+
+    const workloadByTechnician = new Map(workloads.map((item) => [item.assignedTechnicianId, item._count._all]));
+
+    return technicians
+      .map((technician) => ({
+        ...technician,
+        activeTicketCount: workloadByTechnician.get(technician.id) || 0
+      }))
+      .sort((left, right) => left.activeTicketCount - right.activeTicketCount || left.createdAt - right.createdAt)[0];
+  },
+
   findActiveClientById(id) {
     return prisma.user.findFirst({
       where: {
