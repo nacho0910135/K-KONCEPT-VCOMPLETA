@@ -51,6 +51,12 @@ const notificationRepository = {
     });
   },
 
+  deleteForUser(userId) {
+    return prisma.notification.deleteMany({
+      where: { userId }
+    });
+  },
+
   countUnread(userId, where = {}) {
     return prisma.notification.count({
       where: {

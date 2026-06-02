@@ -21279,3 +21279,25 @@
       "port": 4000
     }
 [31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:39:32.583 -0600] [41mFATAL[49m (54864): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 13:39:39.918 -0600] [41mFATAL[49m (43168): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

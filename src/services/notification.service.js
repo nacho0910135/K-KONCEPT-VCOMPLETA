@@ -347,6 +347,10 @@ const notificationService = {
     return notificationRepository.markAllRead(user.id);
   },
 
+  clearMine(user) {
+    return notificationRepository.deleteForUser(user.id);
+  },
+
   async unreadCount(user) {
     return { count: await notificationRepository.countUnread(user.id, { channel: 'IN_APP' }) };
   }
