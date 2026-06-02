@@ -39,6 +39,7 @@ router.patch('/:id/status', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(tick
 router.patch('/:id/diagnosis', authorizeRoles('TECHNICIAN'), validate(ticketIdParamSchema, 'params'), validate(updateDiagnosisSchema), asyncHandler(ticketController.updateDiagnosis));
 router.patch('/:id/assign', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), validate(assignTicketSchema), asyncHandler(ticketController.assignTechnician));
 router.patch('/:id/priority', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), validate(updatePrioritySchema), asyncHandler(ticketController.updatePriority));
+router.delete('/:id', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), asyncHandler(ticketController.remove));
 router.post('/:id/confirm-solution', authorizeRoles('CLIENT'), validate(ticketIdParamSchema, 'params'), validate(confirmSolutionSchema), asyncHandler(ticketController.confirmSolution));
 router.post('/:id/reject-solution', authorizeRoles('CLIENT'), validate(ticketIdParamSchema, 'params'), validate(rejectSolutionSchema), asyncHandler(ticketController.rejectSolution));
 router.post('/:id/comments', authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), validate(createTicketCommentSchema), asyncHandler(ticketCommentController.create));

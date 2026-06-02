@@ -66,6 +66,11 @@ const updatePriority = async (req, res) => {
   return successResponse(res, { data: { ticket }, message: 'Prioridad actualizada correctamente' });
 };
 
+const remove = async (req, res) => {
+  const ticket = await ticketService.delete(req.params.id, req.user);
+  return successResponse(res, { data: { ticket }, message: 'Ticket eliminado correctamente' });
+};
+
 const getHistory = async (req, res) => {
   const history = await ticketService.getHistory(req.params.id, req.user, getContext(req));
   return successResponse(res, { data: history });
@@ -89,6 +94,7 @@ module.exports = {
   updateDiagnosis,
   assignTechnician,
   updatePriority,
+  remove,
   getHistory,
   search
 };

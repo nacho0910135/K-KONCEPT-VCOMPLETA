@@ -83,7 +83,46 @@ const ticketInclude = {
   },
   product: true,
   warranty: true,
-  sla: true
+  sla: true,
+  evidence: {
+    orderBy: { createdAt: 'desc' },
+    include: {
+      uploadedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      }
+    }
+  },
+  comments: {
+    orderBy: { createdAt: 'asc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      }
+    }
+  },
+  statusHistories: {
+    orderBy: { createdAt: 'asc' },
+    include: {
+      changedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true
+        }
+      }
+    }
+  }
 };
 
 module.exports = { ticketCounterRepository, formatTicketCode, ticketInclude };

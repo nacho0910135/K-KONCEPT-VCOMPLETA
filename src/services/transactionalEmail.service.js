@@ -60,6 +60,36 @@ const transactionalEmailService = {
         `Ingresar al sistema: ${loginUrl}`
       ].join('\n')
     }, { type: 'WELCOME_EMAIL', userId: user.id });
+  },
+
+  async sendTicketCreatedEmail(user, ticket) {
+    const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
+
+    return sendSafely({
+      to: user.email,
+      subject: `Confirmacion de ticket ${ticket.code}`,
+      html: layout({
+        title: `Ticket ${ticket.code} creado`,
+        preview: 'Recibimos tu solicitud correctamente.',
+        body: `
+          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Recibimos tu solicitud correctamente y ya quedo registrada para seguimiento.</p>
+          <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
+          <p><strong>Prioridad:</strong> ${escapeHtml(ticket.priority)}</p>
+          <p><strong>Estado:</strong> ${escapeHtml(ticket.status)}</p>
+          <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
+        `
+      }),
+      text: [
+        `Hola ${user.name},`,
+        '',
+        `Recibimos tu solicitud ${ticket.code} correctamente.`,
+        `Titulo: ${ticket.title}`,
+        `Prioridad: ${ticket.priority}`,
+        `Estado: ${ticket.status}`,
+        `Ver ticket: ${ticketUrl}`
+      ].join('\n')
+    }, { type: 'TICKET_CREATED_EMAIL', userId: user.id, ticketId: ticket.id });
   }
 };
 

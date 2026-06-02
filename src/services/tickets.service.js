@@ -14,7 +14,11 @@ export const getTicketHistory = async (id) => unwrap(await api.get(`/tickets/${i
 export const updateTicket = async (id, payload) => unwrap(await api.patch(`/tickets/${id}`, payload)).data;
 export const assignTicketTechnician = async (id, payload) => unwrap(await api.patch(`/tickets/${id}/assign`, payload)).data;
 export const updateTicketPriority = async (id, payload) => unwrap(await api.patch(`/tickets/${id}/priority`, payload)).data;
-export const addComment = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/comments`, payload)).data;
+export const deleteTicket = async (id) => unwrap(await api.delete(`/tickets/${id}`)).data;
+export const addComment = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/comments`, {
+  ...payload,
+  comment: payload.comment ?? payload.body
+})).data;
 export const confirmTicketSolution = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/confirm-solution`, payload)).data;
 export const rejectTicketSolution = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/reject-solution`, payload)).data;
 export const requestTicketReschedule = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/reschedule-requests`, payload)).data;

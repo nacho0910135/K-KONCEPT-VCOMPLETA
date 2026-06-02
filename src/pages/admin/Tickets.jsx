@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { ExternalLink, Eye, Image as ImageIcon, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -7,10 +7,11 @@ import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import Drawer from '../../components/common/Drawer.jsx';
 import Modal from '../../components/common/Modal.jsx';
+import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useToast } from '../../hooks/useToast.js';
-import { assignTicketTechnician, getTickets, updateTicketPriority } from '../../services/tickets.service.js';
+import { assignTicketTechnician, deleteTicket, getTickets, updateTicketPriority } from '../../services/tickets.service.js';
 import { getUsers } from '../../services/users.service.js';
 import { PriorityBadge, StateBadge } from './adminUtils.jsx';
 import { formatDate } from '../../utils/formatDate.js';
@@ -21,6 +22,9 @@ const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 const optionize = (items) => items.map((item) => ({ value: item, label: item }));
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
 const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
+const getEvidenceUrl = (item) => item.fileUrl || item.url;
+const getEvidenceName = (item) => item.fileName || item.name || 'Evidencia';
+const isImageEvidence = (item) => item.fileType === 'IMAGE' || item.mimeType?.startsWith('image/');
 
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
@@ -30,6 +34,8 @@ const Tickets = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [assignTicket, setAssignTicket] = useState(null);
   const [priorityTicket, setPriorityTicket] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
   const { showToast } = useToast();
   const assignForm = useForm({ resolver: zodResolver(assignSchema), defaultValues: { technicianId: '' } });
@@ -87,6 +93,22 @@ const Tickets = () => {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteTicket(deleteTarget.id);
+      setTickets((current) => current.filter((ticket) => ticket.id !== deleteTarget.id));
+      if (selectedTicket?.id === deleteTarget.id) setSelectedTicket(null);
+      showToast({ type: 'success', title: 'Caso eliminado', message: `El ticket ${deleteTarget.code} fue eliminado.` });
+      setDeleteTarget(null);
+    } catch (err) {
+      showToast({ type: 'error', title: 'No se pudo eliminar', message: getErrorMessage(err) });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="grid gap-6">
       <div>
@@ -136,6 +158,7 @@ const Tickets = () => {
                 <Button variant="ghost" onClick={() => setSelectedTicket(row)}><Eye className="h-4 w-4" />Ver</Button>
                 <Button variant="ghost" onClick={() => setAssignTicket(row)}><RotateCcw className="h-4 w-4" />Asignar</Button>
                 <Button variant="ghost" onClick={() => setPriorityTicket(row)}>Prioridad</Button>
+                <Button variant="danger" onClick={() => setDeleteTarget(row)}><Trash2 className="h-4 w-4" />Eliminar</Button>
               </div>
             )
           }
@@ -149,6 +172,25 @@ const Tickets = () => {
             <p className="text-sm"><span className="font-semibold">Tecnico:</span> {selectedTicket.assignedTechnician?.name || 'Sin asignar'}</p>
             <p className="text-sm"><span className="font-semibold">Categoria:</span> {selectedTicket.category?.name || 'Sin categoria'}</p>
             <p className="text-sm"><span className="font-semibold">Descripcion:</span> {selectedTicket.description}</p>
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-900">Evidencias</h3>
+              {(selectedTicket.evidence || []).length === 0 ? (
+                <p className="mt-2 text-sm text-neutral-500">No hay evidencias adjuntas.</p>
+              ) : (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {selectedTicket.evidence.map((item) => (
+                    <a key={item.id} className="rounded-lg border border-neutral-200 p-3 hover:bg-neutral-50" href={getEvidenceUrl(item)} target="_blank" rel="noreferrer">
+                      {isImageEvidence(item) && getEvidenceUrl(item) ? (
+                        <img className="h-36 w-full rounded-md object-cover" src={getEvidenceUrl(item)} alt={getEvidenceName(item)} />
+                      ) : (
+                        <div className="grid h-36 place-items-center rounded-md bg-neutral-100 text-neutral-500"><ImageIcon className="h-8 w-8" /></div>
+                      )}
+                      <p className="mt-2 flex items-center gap-2 truncate text-sm font-semibold text-neutral-800">{getEvidenceName(item)} <ExternalLink className="h-3.5 w-3.5" /></p>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Drawer>
@@ -166,6 +208,15 @@ const Tickets = () => {
           <Button type="submit" isLoading={priorityForm.formState.isSubmitting}>Actualizar prioridad</Button>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Eliminar caso"
+        message={`Confirma que deseas eliminar el caso ${deleteTarget?.code || ''}. Esta accion eliminara tambien comentarios, historial y evidencias asociadas.`}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

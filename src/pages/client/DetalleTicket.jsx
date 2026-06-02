@@ -204,7 +204,7 @@ const DetalleTicket = () => {
               {comments.map((comment) => (
                 <div key={comment.id} className={`max-w-[85%] rounded-lg p-3 ${comment.user?.role === 'CLIENT' ? 'ml-auto bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-800'}`}>
                   <p className="text-xs font-semibold opacity-80">{comment.user?.name || 'Usuario'}</p>
-                  <p className="mt-1 text-sm">{comment.body}</p>
+                  <p className="mt-1 text-sm">{comment.comment || comment.body}</p>
                 </div>
               ))}
             </div>

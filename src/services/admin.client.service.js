@@ -7,17 +7,17 @@ const unwrap = (response) => ({
 
 export const listAuditLogs = async (params) => unwrap(await api.get('/audit-logs', { params }));
 
-export const listNotificationChannels = async () => unwrap(await api.get('/notification-channels')).data;
-export const updateNotificationChannel = async (channel, payload) => unwrap(await api.patch(`/notification-channels/${channel}`, payload)).data;
+export const listNotificationChannels = async () => unwrap(await api.get('/notification-channels')).data?.channels || [];
+export const updateNotificationChannel = async (channel, payload) => unwrap(await api.patch(`/notification-channels/${channel}`, payload)).data?.channel;
 
-export const listNotificationTemplates = async (params) => unwrap(await api.get('/notification-templates', { params })).data;
-export const updateNotificationTemplate = async (id, payload) => unwrap(await api.put(`/notification-templates/${id}`, payload)).data;
-export const toggleNotificationTemplate = async (id) => unwrap(await api.patch(`/notification-templates/${id}/toggle`)).data;
+export const listNotificationTemplates = async (params) => unwrap(await api.get('/notification-templates', { params })).data?.templates || [];
+export const updateNotificationTemplate = async (id, payload) => unwrap(await api.put(`/notification-templates/${id}`, payload)).data?.template;
+export const toggleNotificationTemplate = async (id) => unwrap(await api.patch(`/notification-templates/${id}/toggle`)).data?.template;
 
-export const listNotificationFrequencyRules = async () => unwrap(await api.get('/notification-frequency-rules')).data;
-export const createNotificationFrequencyRule = async (payload) => unwrap(await api.post('/notification-frequency-rules', payload)).data;
-export const updateNotificationFrequencyRule = async (id, payload) => unwrap(await api.put(`/notification-frequency-rules/${id}`, payload)).data;
-export const toggleNotificationFrequencyRule = async (id) => unwrap(await api.patch(`/notification-frequency-rules/${id}/toggle`)).data;
+export const listNotificationFrequencyRules = async () => unwrap(await api.get('/notification-frequency-rules')).data?.rules || [];
+export const createNotificationFrequencyRule = async (payload) => unwrap(await api.post('/notification-frequency-rules', payload)).data?.rule;
+export const updateNotificationFrequencyRule = async (id, payload) => unwrap(await api.put(`/notification-frequency-rules/${id}`, payload)).data?.rule;
+export const toggleNotificationFrequencyRule = async (id) => unwrap(await api.patch(`/notification-frequency-rules/${id}/toggle`)).data?.rule;
 
 export const listSlas = async (params) => unwrap(await api.get('/slas', { params }));
 export const updateSla = async (id, payload) => unwrap(await api.put(`/slas/${id}`, payload)).data;

@@ -3,8 +3,10 @@ const { ticketCounterRepository } = require('../repositories/ticketCounter.repos
 const { ticketRepository } = require('../repositories/ticket.repository');
 const { userRepository } = require('../repositories/user.repository');
 const { auditService } = require('./audit.service');
+const { deleteFromCloudinary } = require('./cloudinary.service');
 const { notificationService } = require('./notification.service');
 const { slaService } = require('./sla.service');
+const { transactionalEmailService } = require('./transactionalEmail.service');
 const { warrantyService } = require('./warranty.service');
 const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
@@ -12,6 +14,15 @@ const { canTransition } = require('../utils/ticketTransitions.util');
 const { sanitizePayloadText, sanitizePlainText } = require('../utils/textSanitizer.util');
 
 const CLOSED_STATUSES = ['CLOSED', 'CANCELLED'];
+
+const resourceTypeForEvidence = (evidence) => {
+  if (evidence.fileUrl?.includes('/video/upload/')) return 'video';
+  if (evidence.fileUrl?.includes('/raw/upload/')) return 'raw';
+  if (evidence.fileUrl?.includes('/image/upload/')) return 'image';
+  if (evidence.fileType === 'VIDEO') return 'video';
+  if (evidence.fileType === 'PDF' || evidence.fileType === 'DOCUMENT') return 'raw';
+  return 'image';
+};
 
 const buildSearchWhere = (q) => q ? {
   OR: [
@@ -132,10 +143,9 @@ const ticketService = {
       newValue: { code: ticket.code }
     });
 
-    const admins = await userRepository.findActiveAdmins();
     await notificationService.notifyUsers({
       event: 'TICKET_CREATED',
-      recipients: [...admins, ticket.client],
+      recipients: [ticket.client],
       entityType: 'Ticket',
       entityId: ticket.id,
       payload: {
@@ -149,6 +159,10 @@ const ticketService = {
         status: ticket.status,
         ticketUrl: `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`
       }
+    });
+
+    transactionalEmailService.sendTicketCreatedEmail(ticket.client, ticket).catch((error) => {
+      logger.error({ error, userId: ticket.clientId, ticketId: ticket.id }, 'No se pudo enviar correo de confirmacion de ticket');
     });
 
     return ticket;
@@ -280,7 +294,50 @@ const ticketService = {
       }
     });
 
+    if (user.role === 'TECHNICIAN') {
+      const admins = await userRepository.findActiveAdmins();
+      await notificationService.notifyUsers({
+        event: payload.status === 'RESOLVED' ? 'TICKET_RESOLVED' : 'STATUS_CHANGED',
+        recipients: admins,
+        entityType: 'Ticket',
+        entityId: id,
+        payload: {
+          ticketCode: ticket.code,
+          ticketTitle: ticket.title,
+          technicianName: user.name,
+          previousStatus: ticket.status,
+          newStatus: payload.status
+        }
+      });
+    }
+
     return updated;
+  },
+
+  async delete(id, user) {
+    const ticket = await ensureTicketExists(id);
+    const evidenceToDelete = ticket.evidence || [];
+    const deleted = await ticketRepository.deleteById(id);
+
+    await Promise.allSettled(evidenceToDelete
+      .filter((evidence) => evidence.publicId)
+      .map((evidence) => deleteFromCloudinary(evidence.publicId, resourceTypeForEvidence(evidence))));
+
+    await auditService.record({
+      userId: user.id,
+      action: 'TICKET_DELETED',
+      entity: 'Ticket',
+      entityId: id,
+      previousValue: {
+        code: ticket.code,
+        title: ticket.title,
+        status: ticket.status,
+        clientId: ticket.clientId,
+        assignedTechnicianId: ticket.assignedTechnicianId
+      }
+    });
+
+    return deleted;
   },
 
   async confirmSolution(id, payload, user) {

@@ -37,6 +37,13 @@ const ticketRepository = {
     });
   },
 
+  deleteById(id) {
+    return prisma.ticket.delete({
+      where: { id },
+      include: ticketInclude
+    });
+  },
+
   updateStatusWithHistory(id, data, history) {
     return prisma.ticket.update({
       where: { id },
