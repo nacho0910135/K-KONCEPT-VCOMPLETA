@@ -6,7 +6,6 @@ const { auditService } = require('./audit.service');
 const { deleteFromCloudinary } = require('./cloudinary.service');
 const { notificationService } = require('./notification.service');
 const { slaService } = require('./sla.service');
-const { transactionalEmailService } = require('./transactionalEmail.service');
 const { ticketAssignmentService } = require('./ticketAssignment.service');
 const { warrantyService } = require('./warranty.service');
 const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
@@ -175,10 +174,6 @@ const ticketService = {
       }
     });
 
-    transactionalEmailService.sendTicketCreatedEmail(ticket.client, ticket).catch((error) => {
-      logger.error({ error, userId: ticket.clientId, ticketId: ticket.id }, 'No se pudo enviar correo de confirmacion de ticket');
-    });
-
     return ticket;
   },
 
@@ -303,8 +298,10 @@ const ticketService = {
       payload: {
         ticketCode: ticket.code,
         ticketTitle: ticket.title,
+        technicianName: user.name,
         previousStatus: ticket.status,
-        newStatus: payload.status
+        newStatus: payload.status,
+        comment
       }
     });
 
@@ -320,22 +317,9 @@ const ticketService = {
           ticketTitle: ticket.title,
           technicianName: user.name,
           previousStatus: ticket.status,
-          newStatus: payload.status
+          newStatus: payload.status,
+          comment
         }
-      });
-    }
-
-    if (user.role === 'TECHNICIAN') {
-      transactionalEmailService.sendTicketStatusEmail(ticket.client, {
-        ...ticket,
-        status: payload.status
-      }, {
-        previousStatus: ticket.status,
-        newStatus: payload.status,
-        comment,
-        technicianName: user.name
-      }).catch((error) => {
-        logger.error({ error, userId: ticket.clientId, ticketId: ticket.id }, 'No se pudo enviar correo de actualizacion de estado');
       });
     }
 
@@ -495,12 +479,6 @@ const ticketService = {
         technicianName: technician.name
       }
     });
-
-    if (ticket.client?.email) {
-      transactionalEmailService.sendTicketAssignedEmail(ticket.client, ticket, technician).catch((error) => {
-        logger.error({ error, userId: ticket.clientId, ticketId: ticket.id }, 'No se pudo enviar correo de asignacion de ticket');
-      });
-    }
 
     await auditService.record({
       userId: user.id,

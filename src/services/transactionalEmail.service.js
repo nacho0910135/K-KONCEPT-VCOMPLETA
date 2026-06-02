@@ -26,7 +26,8 @@ const sendSafely = async (options, context) => {
       accepted: info.accepted,
       rejected: info.rejected,
       messageId: info.messageId,
-      response: info.response
+      response: info.response,
+      provider: info.provider
     }, 'Correo transaccional enviado');
     return info;
   } catch (error) {

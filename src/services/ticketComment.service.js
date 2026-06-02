@@ -2,9 +2,7 @@ const { ticketCommentRepository } = require('../repositories/ticketComment.repos
 const { ticketRepository } = require('../repositories/ticket.repository');
 const { auditService } = require('./audit.service');
 const { notificationService } = require('./notification.service');
-const { transactionalEmailService } = require('./transactionalEmail.service');
 const { ticketService } = require('./ticket.service');
-const { logger } = require('../utils/logger');
 const { NotFoundError } = require('../utils/errors');
 const { sanitizePlainText } = require('../utils/textSanitizer.util');
 
@@ -45,15 +43,6 @@ const ticketCommentService = {
         commentText
       }
     });
-
-    if (user.role === 'TECHNICIAN' && ticket.client?.email) {
-      transactionalEmailService.sendTicketCommentEmail(ticket.client, ticket, {
-        authorName: user.name,
-        text: commentText
-      }).catch((error) => {
-        logger.error({ error, userId: ticket.clientId, ticketId }, 'No se pudo enviar correo de comentario de ticket');
-      });
-    }
 
     return comment;
   }

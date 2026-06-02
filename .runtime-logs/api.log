@@ -22152,3 +22152,296 @@
       "port": 4000
     }
 [31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 16:54:42.305 -0600] [32mINFO[39m (38340): [36mServidor HTTP iniciado[39m
+    [35mport[39m: 4000
+    [35menv[39m: "development"
+[2026-06-02 16:54:42.339 -0600] [32mINFO[39m (38340): [36mCron jobs iniciados[39m
+    [35mcount[39m: 3
+[2026-06-02 16:54:47.087 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 1,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 61494
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 4
+[2026-06-02 16:54:47.089 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 2,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 61692
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 0
+[2026-06-02 16:54:47.090 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 3,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 51080
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 0
+[2026-06-02 16:54:47.091 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 4,
+      "method": "OPTIONS",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 51064
+    }
+    [35mres[39m: {
+      "statusCode": 204,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Access-Control-Request-Headers",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+        "access-control-allow-headers": "authorization",
+        "content-length": "0"
+      }
+    }
+    [35mresponseTime[39m: 0
+[2026-06-02 16:54:47.100 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 5,
+      "method": "GET",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 60507
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1999, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 9
+[2026-06-02 16:54:47.102 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 6,
+      "method": "GET",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 58739
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1998, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 1
+[2026-06-02 16:54:47.104 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 7,
+      "method": "GET",
+      "url": "/api/notifications/me/unread-count",
+      "remoteAddress": "::1",
+      "remotePort": 60507
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1997, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 1
+[2026-06-02 16:54:47.105 -0600] [32mINFO[39m (38340): [36mrequest completed[39m
+    [35mreq[39m: {
+      "id": 8,
+      "method": "GET",
+      "url": "/api/notifications/me?limit=5",
+      "remoteAddress": "::1",
+      "remotePort": 58739
+    }
+    [35mres[39m: {
+      "statusCode": 401,
+      "headers": {
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "same-origin",
+        "origin-agent-cluster": "?1",
+        "referrer-policy": "no-referrer",
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-dns-prefetch-control": "off",
+        "x-download-options": "noopen",
+        "x-frame-options": "SAMEORIGIN",
+        "x-permitted-cross-domain-policies": "none",
+        "x-xss-protection": "0",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding",
+        "access-control-allow-credentials": "true",
+        "ratelimit-policy": "2000;w=900",
+        "ratelimit": "limit=2000, remaining=1996, reset=900",
+        "content-type": "application/json; charset=utf-8",
+        "content-length": "56",
+        "etag": "W/\"38-/hOtaXd9Ely3FXlmoN/X9bkmojg\""
+      }
+    }
+    [35mresponseTime[39m: 1
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 16:54:59.058 -0600] [41mFATAL[49m (8940): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[2026-06-02 16:55:37.471 -0600] [41mFATAL[49m (37524): [36mUncaught exception[39m
+    error: {
+      "code": "EADDRINUSE",
+      "errno": -4091,
+      "syscall": "listen",
+      "address": "::",
+      "port": 4000
+    }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
