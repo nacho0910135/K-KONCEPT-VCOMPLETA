@@ -1,17 +1,21 @@
 import { Bell, LogOut, Menu, Search, UserRound, X } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import clsx from 'clsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { useNotifications } from '../hooks/useNotifications.js';
-import { formatRelativeDate } from '../utils/formatDate.js';
 import kollabLogo from '../assets/kollab-logo.png';
 
 const AppShell = ({ navItems, roleLabel }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { unreadCount, notifications } = useNotifications();
+  const { unreadCount } = useNotifications();
+  const notificationsPath = user?.role === 'ADMIN' ? '/admin/notificaciones' : 'notifications';
+
+  const goToNotifications = () => {
+    navigate(notificationsPath);
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -30,24 +34,10 @@ const AppShell = ({ navItems, roleLabel }) => {
             <input className="h-10 w-full rounded-md border border-neutral-200 bg-neutral-50 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar tickets, usuarios o categorias" />
           </div>
           <div className="relative">
-            <button className="relative rounded-md p-2 text-neutral-600 hover:bg-neutral-100" onClick={() => setNotificationsOpen((open) => !open)} aria-label="Notificaciones">
+            <button className="relative rounded-md p-2 text-neutral-600 hover:bg-neutral-100" onClick={goToNotifications} aria-label="Notificaciones">
               <Bell className="h-5 w-5" />
               {unreadCount > 0 && <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">{unreadCount}</span>}
             </button>
-            {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 rounded-lg border border-neutral-200 bg-white p-2 shadow-soft">
-                <div className="px-2 py-2 text-sm font-semibold text-neutral-900">Notificaciones</div>
-                <div className="grid gap-1">
-                  {notifications.slice(0, 5).map((item) => (
-                    <NavLink key={item.id} to="notificaciones" className="rounded-md px-2 py-2 text-sm hover:bg-neutral-50">
-                      <span className="block font-medium text-neutral-800">{item.title || item.message}</span>
-                      <span className="text-xs text-neutral-500">{formatRelativeDate(item.createdAt)}</span>
-                    </NavLink>
-                  ))}
-                  {notifications.length === 0 && <p className="px-2 py-3 text-sm text-neutral-500">No hay notificaciones recientes.</p>}
-                </div>
-              </div>
-            )}
           </div>
           <div className="hidden items-center gap-3 border-l border-neutral-200 pl-4 sm:flex">
             <div className="text-right">

@@ -3,6 +3,17 @@ import { getLatestNotifications, getUnreadNotificationCount } from '../services/
 
 const NotificationContext = createContext(null);
 
+const unwrapUnreadCount = (response) => {
+  const data = response?.data ?? response;
+  return data?.count ?? data?.unreadCount ?? 0;
+};
+
+const unwrapNotifications = (response) => {
+  const data = response?.data ?? response;
+  const items = data?.items ?? data?.notifications ?? data;
+  return Array.isArray(items) ? items : [];
+};
+
 export const NotificationProvider = ({ children, isAuthenticated = false }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
@@ -13,8 +24,8 @@ export const NotificationProvider = ({ children, isAuthenticated = false }) => {
       getUnreadNotificationCount(),
       getLatestNotifications({ limit: 5 })
     ]);
-    setUnreadCount(countResponse.count ?? countResponse.unreadCount ?? 0);
-    setNotifications(latestResponse.items || latestResponse.notifications || latestResponse || []);
+    setUnreadCount(unwrapUnreadCount(countResponse));
+    setNotifications(unwrapNotifications(latestResponse));
   }, [isAuthenticated]);
 
   useEffect(() => {
