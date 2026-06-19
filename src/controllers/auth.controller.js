@@ -25,6 +25,22 @@ const login = async (req, res) => {
   });
 };
 
+const requestPasswordReset = async (req, res) => {
+  await authService.requestPasswordReset(req.body, getRequestContext(req));
+
+  return successResponse(res, {
+    message: 'Si el correo existe, enviaremos un codigo para restablecer la contrasena'
+  });
+};
+
+const resetPassword = async (req, res) => {
+  await authService.resetPassword(req.body, getRequestContext(req));
+
+  return successResponse(res, {
+    message: 'Contrasena restablecida correctamente'
+  });
+};
+
 const refresh = async (req, res) => {
   const result = await authService.refresh(req.body.refreshToken);
 
@@ -57,6 +73,8 @@ const me = async (req, res) => {
 module.exports = {
   register,
   login,
+  requestPasswordReset,
+  resetPassword,
   refresh,
   logout,
   me

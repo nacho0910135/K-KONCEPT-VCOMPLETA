@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ExternalLink, Image as ImageIcon, Mail, MessageSquare, Phone, Save } from 'lucide-react';
+import { Mail, MessageSquare, Phone, Save } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { z } from 'zod';
 import Badge from '../../components/common/Badge.jsx';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
+import EvidenceGallery from '../../components/tickets/EvidenceGallery.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import { addComment, getTicketById, getTicketHistory, saveTicketDiagnosis, updateTicketStatus } from '../../services/tickets.service.js';
@@ -44,10 +45,6 @@ const allowedTransitions = {
   WAITING_CUSTOMER: ['IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
   REOPENED: ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CANCELLED']
 };
-const getEvidenceUrl = (item) => item.fileUrl || item.url;
-const getEvidenceName = (item) => item.fileName || item.name || 'Evidencia';
-const isImageEvidence = (item) => item.fileType === 'IMAGE' || item.mimeType?.startsWith('image/');
-
 const DetalleTicket = () => {
   const { id } = useParams();
   const [ticket, setTicket] = useState(null);
@@ -86,6 +83,7 @@ const DetalleTicket = () => {
 
   const transitionOptions = useMemo(() => (allowedTransitions[ticket?.status] || [])
     .map((status) => ({ value: status, label: technicianStatusLabels[status] || status })), [ticket?.status]);
+  const evidences = history.evidence || ticket.evidence || [];
 
   const saveStatus = async (values) => {
     try {
@@ -211,22 +209,7 @@ const DetalleTicket = () => {
 
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Evidencias adjuntas</h2>
-            {(history.evidence || ticket.evidence || []).length === 0 ? (
-              <p className="mt-3 text-sm text-neutral-500">No hay evidencias adjuntas registradas.</p>
-            ) : (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {(history.evidence || ticket.evidence || []).map((item) => (
-                  <a key={item.id} className="rounded-lg border border-neutral-200 p-3 hover:bg-neutral-50" href={getEvidenceUrl(item)} target="_blank" rel="noreferrer">
-                    {isImageEvidence(item) && getEvidenceUrl(item) ? (
-                      <img className="h-36 w-full rounded-md object-cover" src={getEvidenceUrl(item)} alt={getEvidenceName(item)} />
-                    ) : (
-                      <div className="grid h-36 place-items-center rounded-md bg-neutral-100 text-neutral-500"><ImageIcon className="h-8 w-8" /></div>
-                    )}
-                    <p className="mt-2 flex items-center gap-2 truncate text-sm font-semibold text-neutral-800">{getEvidenceName(item)} <ExternalLink className="h-3.5 w-3.5" /></p>
-                  </a>
-                ))}
-              </div>
-            )}
+            <EvidenceGallery evidences={evidences} />
           </Card>
 
           <Card className="p-5">

@@ -63,6 +63,37 @@ const transactionalEmailService = {
     }, { type: 'WELCOME_EMAIL', userId: user.id });
   },
 
+  async sendPasswordResetCodeEmail(user, code, expiresInMinutes) {
+    const resetUrl = `${env.appUrl.replace(/\/$/, '')}/forgot-password`;
+
+    return sendSafely({
+      to: user.email,
+      subject: 'Codigo para restablecer tu contrasena',
+      html: layout({
+        title: 'Restablecer contrasena',
+        preview: 'Usa este codigo para crear una nueva contrasena.',
+        body: `
+          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Recibimos una solicitud para restablecer tu contrasena.</p>
+          <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700; margin: 24px 0;">${escapeHtml(code)}</p>
+          <p>Este codigo vence en ${expiresInMinutes} minutos.</p>
+          <p><a href="${escapeHtml(resetUrl)}" style="color: #2563eb;">Restablecer contrasena</a></p>
+          <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+        `
+      }),
+      text: [
+        `Hola ${user.name},`,
+        '',
+        'Recibimos una solicitud para restablecer tu contrasena.',
+        `Codigo: ${code}`,
+        `Este codigo vence en ${expiresInMinutes} minutos.`,
+        `Restablecer contrasena: ${resetUrl}`,
+        '',
+        'Si no solicitaste este cambio, puedes ignorar este correo.'
+      ].join('\n')
+    }, { type: 'PASSWORD_RESET_CODE_EMAIL', userId: user.id });
+  },
+
   async sendTicketCreatedEmail(user, ticket) {
     const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
 

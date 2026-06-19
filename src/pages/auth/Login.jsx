@@ -50,6 +50,9 @@ const Login = () => {
         <form className="mt-8 grid gap-4" onSubmit={handleSubmit(onSubmit)}>
           <FormInput label="Correo electronico" name="email" type="email" autoComplete="email" register={register} error={errors.email} />
           <FormInput label="Contrasena" name="password" type="password" autoComplete="current-password" register={register} error={errors.password} />
+          <div className="-mt-2 text-right">
+            <Link className="text-sm font-semibold text-primary-600 hover:text-primary-700" to="/forgot-password">Olvide contrasena</Link>
+          </div>
           <Button type="submit" isLoading={isSubmitting} className="bg-[#e5232b] hover:bg-[#cf1f27] focus:ring-primary-100">
             Iniciar Sesion
           </Button>

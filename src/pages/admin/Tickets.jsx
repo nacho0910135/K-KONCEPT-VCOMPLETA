@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ExternalLink, Eye, Image as ImageIcon, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Eye, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import Badge from '../../components/common/Badge.jsx';
 import Toggle from '../../components/common/Toggle.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
+import EvidenceGallery from '../../components/tickets/EvidenceGallery.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useToast } from '../../hooks/useToast.js';
 import { assignTicketTechnician, deleteTicket, getTicketAssignmentSettings, getTickets, updateTicketAssignmentSettings, updateTicketPriority } from '../../services/tickets.service.js';
@@ -24,10 +25,6 @@ const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 const optionize = (items) => items.map((item) => ({ value: item, label: item }));
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
 const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
-const getEvidenceUrl = (item) => item.fileUrl || item.url;
-const getEvidenceName = (item) => item.fileName || item.name || 'Evidencia';
-const isImageEvidence = (item) => item.fileType === 'IMAGE' || item.mimeType?.startsWith('image/');
-
 const Tickets = () => {
   const [tickets, setTickets] = useState([]);
   const [technicians, setTechnicians] = useState([]);
@@ -216,22 +213,7 @@ const Tickets = () => {
             <p className="text-sm"><span className="font-semibold">Descripcion:</span> {selectedTicket.description}</p>
             <div>
               <h3 className="text-sm font-semibold text-neutral-900">Evidencias</h3>
-              {(selectedTicket.evidence || []).length === 0 ? (
-                <p className="mt-2 text-sm text-neutral-500">No hay evidencias adjuntas.</p>
-              ) : (
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {selectedTicket.evidence.map((item) => (
-                    <a key={item.id} className="rounded-lg border border-neutral-200 p-3 hover:bg-neutral-50" href={getEvidenceUrl(item)} target="_blank" rel="noreferrer">
-                      {isImageEvidence(item) && getEvidenceUrl(item) ? (
-                        <img className="h-36 w-full rounded-md object-cover" src={getEvidenceUrl(item)} alt={getEvidenceName(item)} />
-                      ) : (
-                        <div className="grid h-36 place-items-center rounded-md bg-neutral-100 text-neutral-500"><ImageIcon className="h-8 w-8" /></div>
-                      )}
-                      <p className="mt-2 flex items-center gap-2 truncate text-sm font-semibold text-neutral-800">{getEvidenceName(item)} <ExternalLink className="h-3.5 w-3.5" /></p>
-                    </a>
-                  ))}
-                </div>
-              )}
+              <EvidenceGallery evidences={selectedTicket.evidence || []} emptyText="No hay evidencias adjuntas." />
             </div>
           </div>
         )}

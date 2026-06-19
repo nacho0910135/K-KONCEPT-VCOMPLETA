@@ -7,3 +7,5 @@ export const refreshRequest = async () => unwrap(await api.post('/auth/refresh',
 export const logoutRequest = async () => unwrap(await api.post('/auth/logout', { refreshToken: getStoredRefreshToken() }));
 export const getCurrentUser = async () => unwrap(await api.get('/auth/me'));
 export const registerClient = async (payload) => unwrap(await api.post('/auth/register', payload));
+export const requestPasswordResetCode = async (payload) => unwrap(await api.post('/auth/forgot-password/request', payload));
+export const resetPasswordWithCode = async (payload) => unwrap(await api.post('/auth/forgot-password/reset', payload));

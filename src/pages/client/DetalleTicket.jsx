@@ -9,6 +9,7 @@ import Card from '../../components/common/Card.jsx';
 import Modal from '../../components/common/Modal.jsx';
 import Badge from '../../components/common/Badge.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
+import EvidenceGallery from '../../components/tickets/EvidenceGallery.jsx';
 import RatingStars from '../../components/tickets/RatingStars.jsx';
 import { ClientPriorityBadge, ClientStatusBadge, warrantyTone } from './clientUtils.jsx';
 import { formatDateTime } from '../../utils/formatDate.js';
@@ -18,8 +19,6 @@ import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const commentSchema = z.object({ body: z.string().min(5, 'Escribe un comentario mas claro') });
 const rejectSchema = z.object({ reason: z.string().min(10, 'Explica por que no fue solucionado') });
-const getEvidenceUrl = (item) => item.fileUrl || item.url;
-const getEvidenceName = (item) => item.fileName || item.name || 'Evidencia';
 
 const DetailError = ({ message }) => (
   <Card className="mx-auto max-w-lg p-8 text-center">
@@ -34,7 +33,6 @@ const DetalleTicket = () => {
   const [ticket, setTicket] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [lightbox, setLightbox] = useState(null);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rating, setRating] = useState(0);
   const [ratingComment, setRatingComment] = useState('');
@@ -136,7 +134,7 @@ const DetalleTicket = () => {
       )}
 
       <div className="grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
-        <div className="grid gap-6">
+        <div className="grid content-start gap-6">
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Tecnico asignado</h2>
             {technician ? (
@@ -170,17 +168,7 @@ const DetalleTicket = () => {
 
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Evidencias adjuntas</h2>
-            {evidences.length === 0 ? (
-              <p className="mt-3 text-sm text-neutral-500">No hay evidencias adjuntas registradas.</p>
-            ) : (
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {evidences.map((item) => (
-                  <button key={item.id} className="rounded-lg border border-neutral-200 p-3 text-left hover:bg-neutral-50" onClick={() => getEvidenceUrl(item) ? setLightbox(item) : undefined}>
-                    <p className="flex min-h-28 items-center justify-center gap-2 text-sm font-semibold">{getEvidenceName(item)}</p>
-                  </button>
-                ))}
-              </div>
-            )}
+            <EvidenceGallery evidences={evidences} columns="sm:grid-cols-3" />
           </Card>
 
           <Card className="p-5">
@@ -219,10 +207,6 @@ const DetalleTicket = () => {
           </Card>
         </div>
       </div>
-
-      <Modal isOpen={Boolean(lightbox)} title={lightbox ? getEvidenceName(lightbox) : 'Evidencia'} onClose={() => setLightbox(null)}>
-        {lightbox && getEvidenceUrl(lightbox) && <img className="max-h-[70vh] w-full rounded-lg object-contain" src={getEvidenceUrl(lightbox)} alt={getEvidenceName(lightbox)} />}
-      </Modal>
 
       <Modal isOpen={rejectOpen} title="Motivo de rechazo" onClose={() => setRejectOpen(false)}>
         <form className="grid gap-4" onSubmit={rejectForm.handleSubmit(rejectSolution)}>

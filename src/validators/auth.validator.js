@@ -19,6 +19,16 @@ const loginSchema = z.object({
   password: z.string().min(1, 'La contrasena es obligatoria')
 });
 
+const passwordResetRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Email invalido')
+});
+
+const passwordResetSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Email invalido'),
+  code: z.string().trim().regex(/^\d{6}$/, 'El codigo debe tener 6 digitos'),
+  password: passwordSchema
+});
+
 const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token requerido')
 });
@@ -30,6 +40,8 @@ const logoutSchema = z.object({
 module.exports = {
   registerSchema,
   loginSchema,
+  passwordResetRequestSchema,
+  passwordResetSchema,
   refreshSchema,
   logoutSchema
 };

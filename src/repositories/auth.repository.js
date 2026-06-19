@@ -61,6 +61,14 @@ const authRepository = {
       data: { lastLogin: new Date() },
       select: publicUserSelect
     });
+  },
+
+  updatePassword(id, password) {
+    return prisma.user.update({
+      where: { id },
+      data: { password },
+      select: publicUserSelect
+    });
   }
 };
 

@@ -12,6 +12,7 @@ import { ROLE_HOME } from '../utils/constants.js';
 
 const Login = lazy(() => import('../pages/auth/Login.jsx'));
 const Register = lazy(() => import('../pages/auth/Register.jsx'));
+const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword.jsx'));
 const AccessDenied = lazy(() => import('../pages/shared/AccessDenied.jsx'));
 const NotFound = lazy(() => import('../pages/shared/NotFound.jsx'));
 const ClientDashboard = lazy(() => import('../pages/client/Dashboard.jsx'));
@@ -50,6 +51,7 @@ const AppRouter = () => (
       <Route element={<PublicLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/access-denied" element={<AccessDenied />} />
       </Route>
 

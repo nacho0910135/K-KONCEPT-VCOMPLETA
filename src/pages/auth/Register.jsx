@@ -32,14 +32,14 @@ const Register = () => {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-lg gap-6">
-      <div className="text-center">
-        <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-primary-600 text-lg font-bold text-white">K</div>
-        <h1 className="mt-4 text-2xl font-bold text-neutral-900">Crear cuenta</h1>
-        <p className="mt-1 text-sm text-neutral-500">Registra tu acceso como cliente.</p>
-      </div>
-      <Card className="p-6">
-        <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
+    <div className="mx-auto w-full max-w-lg">
+      <Card className="border-neutral-200 bg-white p-8">
+        <div className="text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-primary-600 text-lg font-bold text-white">K</div>
+          <h1 className="mt-4 text-2xl font-bold text-neutral-900">Crear cuenta</h1>
+          <p className="mt-1 text-sm text-neutral-700">Registra tu acceso como cliente.</p>
+        </div>
+        <form className="mt-8 grid gap-4" onSubmit={handleSubmit(onSubmit)}>
           <FormInput label="Nombre" name="name" autoComplete="name" register={register} error={errors.name} />
           <FormInput label="Correo electronico" name="email" type="email" autoComplete="email" register={register} error={errors.email} />
           <FormInput label="Contrasena" name="password" type="password" autoComplete="new-password" register={register} error={errors.password} />
@@ -49,10 +49,10 @@ const Register = () => {
           </div>
           <Button type="submit" isLoading={isSubmitting}>Registrarme</Button>
         </form>
+        <p className="mt-6 text-center text-sm text-neutral-700">
+          Ya tienes cuenta? <Link className="font-semibold text-primary-600 hover:text-primary-700" to="/login">Inicia sesion</Link>
+        </p>
       </Card>
-      <p className="text-center text-sm text-neutral-600">
-        Ya tienes cuenta? <Link className="font-semibold text-primary-600 hover:text-primary-700" to="/login">Inicia sesion</Link>
-      </p>
     </div>
   );
 };

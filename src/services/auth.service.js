@@ -1,7 +1,9 @@
 const { authRepository } = require('../repositories/auth.repository');
+const { passwordResetCodeRepository } = require('../repositories/passwordResetCode.repository');
 const { refreshTokenRepository } = require('../repositories/refreshToken.repository');
 const { auditService } = require('./audit.service');
 const { BadRequestError, ConflictError, UnauthorizedError } = require('../utils/errors');
+const crypto = require('crypto');
 const {
   signAccessToken,
   generateRefreshToken,
@@ -11,6 +13,15 @@ const {
 const { comparePassword, hashPassword } = require('../utils/password.util');
 const { logger } = require('../utils/logger');
 const { transactionalEmailService } = require('./transactionalEmail.service');
+
+const PASSWORD_RESET_CODE_TTL_MINUTES = 15;
+
+const generateResetCode = () => crypto.randomInt(100000, 1000000).toString();
+
+const hashResetCode = (email, code) => crypto
+  .createHash('sha256')
+  .update(`${email}:${code}`)
+  .digest('hex');
 
 const sanitizeUser = (user) => {
   if (!user) return null;
@@ -141,6 +152,108 @@ const authService = {
       user: updatedUser,
       ...tokens
     };
+  },
+
+  async requestPasswordReset({ email }, context = {}) {
+    const user = await authRepository.findByEmail(email);
+
+    if (!user || !user.active) {
+      await auditService.logEvent({
+        userId: user?.id || null,
+        action: 'PASSWORD_RESET_REQUEST',
+        entity: 'Auth',
+        entityId: user?.id || null,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+        result: 'SUCCESS',
+        details: {
+          email,
+          delivered: false
+        }
+      });
+
+      return { delivered: false };
+    }
+
+    const code = generateResetCode();
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_CODE_TTL_MINUTES * 60 * 1000);
+
+    await passwordResetCodeRepository.invalidateActiveByUserId(user.id);
+    await passwordResetCodeRepository.create({
+      userId: user.id,
+      codeHash: hashResetCode(user.email, code),
+      expiresAt
+    });
+
+    await auditService.logEvent({
+      userId: user.id,
+      action: 'PASSWORD_RESET_REQUEST',
+      entity: 'Auth',
+      entityId: user.id,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      result: 'SUCCESS',
+      details: {
+        email,
+        delivered: true,
+        expiresAt
+      }
+    });
+
+    await transactionalEmailService.sendPasswordResetCodeEmail(user, code, PASSWORD_RESET_CODE_TTL_MINUTES);
+
+    return { delivered: true };
+  },
+
+  async resetPassword({ email, code, password }, context = {}) {
+    const user = await authRepository.findByEmail(email);
+
+    if (!user || !user.active) {
+      throw new BadRequestError('Codigo invalido o expirado');
+    }
+
+    const resetCode = await passwordResetCodeRepository.findValidByUserAndHash({
+      userId: user.id,
+      codeHash: hashResetCode(user.email, code)
+    });
+
+    if (!resetCode) {
+      await auditService.logEvent({
+        userId: user.id,
+        action: 'PASSWORD_RESET_FAILURE',
+        entity: 'Auth',
+        entityId: user.id,
+        ipAddress: context.ipAddress,
+        userAgent: context.userAgent,
+        result: 'FAILURE',
+        details: {
+          email,
+          reason: 'INVALID_OR_EXPIRED_CODE'
+        }
+      });
+
+      throw new BadRequestError('Codigo invalido o expirado');
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const updatedUser = await authRepository.updatePassword(user.id, hashedPassword);
+    await passwordResetCodeRepository.markUsed(resetCode.id);
+    await refreshTokenRepository.revokeAllByUserId(user.id);
+
+    await auditService.logEvent({
+      userId: user.id,
+      action: 'PASSWORD_RESET_SUCCESS',
+      entity: 'Auth',
+      entityId: user.id,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      result: 'SUCCESS',
+      details: {
+        email
+      }
+    });
+
+    return updatedUser;
   },
 
   async refresh(refreshToken) {

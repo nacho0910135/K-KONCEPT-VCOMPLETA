@@ -114,6 +114,7 @@ model User {
   auditLogs                  AuditLog[]
   scheduledReports           ScheduledReport[]
   refreshTokens              RefreshToken[]
+  passwordResetCodes         PasswordResetCode[]
 
   @@index([role, active])
 }
@@ -498,4 +499,20 @@ model RefreshToken {
   @@index([userId])
   @@index([tokenHash])
   @@index([expiresAt])
+}
+
+model PasswordResetCode {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([codeHash])
+  @@index([expiresAt])
+  @@index([usedAt])
 }
