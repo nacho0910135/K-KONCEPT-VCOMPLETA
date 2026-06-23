@@ -126,6 +126,22 @@ const transactionalEmailService = {
 
   async sendTicketStatusEmail(user, ticket, update) {
     const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
+    const resolutionRows = update.newStatus === 'Resuelto' ? `
+          <p><strong>Tipo de resolucion:</strong> ${escapeHtml(update.closeType || 'No indicado')}</p>
+          <p><strong>Accion:</strong> ${escapeHtml(update.resolutionAction || 'No indicada')}</p>
+          ${update.refundAmount ? `<p><strong>Monto de reembolso:</strong> ${escapeHtml(update.refundAmount)}</p>` : ''}
+          ${update.diagnosis ? `<p><strong>Diagnostico:</strong> ${escapeHtml(update.diagnosis)}</p>` : ''}
+          ${update.solution ? `<p><strong>Solucion:</strong> ${escapeHtml(update.solution)}</p>` : ''}
+        ` : '';
+    const resolutionText = update.newStatus === 'Resuelto'
+      ? [
+          `Tipo de resolucion: ${update.closeType || 'No indicado'}`,
+          `Accion: ${update.resolutionAction || 'No indicada'}`,
+          update.refundAmount ? `Monto de reembolso: ${update.refundAmount}` : '',
+          update.diagnosis ? `Diagnostico: ${update.diagnosis}` : '',
+          update.solution ? `Solucion: ${update.solution}` : ''
+        ].filter(Boolean)
+      : [];
 
     return sendSafely({
       to: user.email,
@@ -136,8 +152,12 @@ const transactionalEmailService = {
         body: `
           <p>Hola ${escapeHtml(user.name)},</p>
           <p>${escapeHtml(update.technicianName || 'El tecnico asignado')} actualizo tu caso.</p>
+          <p><strong>Ticket:</strong> ${escapeHtml(ticket.code)}</p>
+          <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
+          <p><strong>Producto:</strong> ${escapeHtml(update.productName || ticket.product?.name || 'Sin producto asociado')}</p>
           <p><strong>Estado anterior:</strong> ${escapeHtml(update.previousStatus || 'Nuevo')}</p>
           <p><strong>Estado actual:</strong> ${escapeHtml(update.newStatus)}</p>
+          ${resolutionRows}
           ${update.comment ? `<p><strong>Comentario:</strong> ${escapeHtml(update.comment)}</p>` : ''}
           <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
         `
@@ -146,8 +166,11 @@ const transactionalEmailService = {
         `Hola ${user.name},`,
         '',
         `${update.technicianName || 'El tecnico asignado'} actualizo tu caso ${ticket.code}.`,
+        `Titulo: ${ticket.title}`,
+        `Producto: ${update.productName || ticket.product?.name || 'Sin producto asociado'}`,
         `Estado anterior: ${update.previousStatus || 'Nuevo'}`,
         `Estado actual: ${update.newStatus}`,
+        ...resolutionText,
         update.comment ? `Comentario: ${update.comment}` : '',
         `Ver ticket: ${ticketUrl}`
       ].filter(Boolean).join('\n')
@@ -207,6 +230,36 @@ const transactionalEmailService = {
         `Ver ticket: ${ticketUrl}`
       ].join('\n')
     }, { type: 'TICKET_COMMENT_EMAIL', userId: user.id, ticketId: ticket.id });
+  },
+
+  async sendReturnItemRequestEmail(user, ticket, technician) {
+    const ticketUrl = `${env.appUrl.replace(/\/$/, '')}/client/tickets/${ticket.id}`;
+
+    return sendSafely({
+      to: user.email,
+      subject: `Devolucion requerida para el ticket ${ticket.code}`,
+      html: layout({
+        title: `Devolucion requerida para ${ticket.code}`,
+        preview: 'Para continuar con tu caso debes devolver el articulo a la tienda.',
+        body: `
+          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>${escapeHtml(technician.name)} solicita que devuelvas el articulo a la tienda para poder continuar con el caso.</p>
+          <p><strong>Ticket:</strong> ${escapeHtml(ticket.code)}</p>
+          <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
+          <p>Por favor lleva el articulo a la tienda de Kollab Koncepts e indica el codigo del ticket.</p>
+          <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
+        `
+      }),
+      text: [
+        `Hola ${user.name},`,
+        '',
+        `${technician.name} solicita que devuelvas el articulo a la tienda para poder continuar con el caso.`,
+        `Ticket: ${ticket.code}`,
+        `Titulo: ${ticket.title}`,
+        'Por favor lleva el articulo a la tienda de Kollab Koncepts e indica el codigo del ticket.',
+        `Ver ticket: ${ticketUrl}`
+      ].join('\n')
+    }, { type: 'RETURN_ITEM_REQUEST_EMAIL', userId: user.id, ticketId: ticket.id });
   }
 };
 

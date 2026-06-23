@@ -29,6 +29,18 @@ router.get(
 );
 
 router.get(
+  '/replacements',
+  authorizeRoles('TECHNICIAN', 'ADMIN'),
+  asyncHandler(replacementController.list)
+);
+
+router.get(
+  '/replacements/export/pdf',
+  authorizeRoles('TECHNICIAN', 'ADMIN'),
+  asyncHandler(replacementController.exportPdf)
+);
+
+router.get(
   '/replacements/:id',
   authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'),
   asyncHandler(replacementController.getById)

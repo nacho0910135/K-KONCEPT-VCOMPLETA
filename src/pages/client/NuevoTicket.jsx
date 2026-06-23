@@ -11,6 +11,7 @@ import FormSelect from '../../components/forms/FormSelect.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import { priorityLabels } from './clientUtils.jsx';
 import { useToast } from '../../hooks/useToast.js';
+import { useAuth } from '../../hooks/useAuth.js';
 import { createTicket } from '../../services/tickets.service.js';
 import { listCategories } from '../../services/category.client.service.js';
 import { validateWarrantyBySerial } from '../../services/warranties.client.service.js';
@@ -35,6 +36,7 @@ const NuevoTicket = () => {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState('');
   const { showToast } = useToast();
+  const { refreshUser, logout } = useAuth();
   const navigate = useNavigate();
   const form = useForm({
     resolver: zodResolver(ticketSchema),
@@ -121,6 +123,19 @@ const NuevoTicket = () => {
 
   const submit = async () => {
     try {
+      const session = await refreshUser();
+      const currentUser = session?.user || session;
+      if (currentUser?.role !== 'CLIENT') {
+        await logout();
+        showToast({
+          type: 'error',
+          title: 'Sesion incorrecta',
+          message: 'Inicia sesion con un usuario cliente para crear tickets.'
+        });
+        navigate('/login', { replace: true });
+        return;
+      }
+
       const response = await createTicket(buildTicketPayload());
       const ticket = response?.ticket || response?.data?.ticket;
       let evidenceUploaded = false;

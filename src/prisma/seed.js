@@ -60,7 +60,17 @@ const templateCopy = {
   },
   STATUS_CHANGED: {
     subject: 'Ticket {{ticketCode}} cambio de estado',
-    body: 'El ticket {{ticketCode}} cambio de {{previousStatus}} a {{newStatus}}.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>{{technicianName}} actualizo el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <ul>
+        <li><strong>Articulo:</strong> {{productName}}</li>
+        <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
+        <li><strong>Estado anterior:</strong> {{previousStatus}}</li>
+        <li><strong>Estado actual:</strong> {{newStatus}}</li>
+      </ul>
+      <p><strong>Comentario:</strong> {{comment}}</p>
+    `
   },
   NEW_COMMENT: {
     subject: 'Nuevo comentario en {{ticketCode}}',
@@ -68,7 +78,20 @@ const templateCopy = {
   },
   TICKET_RESOLVED: {
     subject: 'Ticket {{ticketCode}} resuelto',
-    body: 'El ticket {{ticketCode}} fue marcado como resuelto.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>{{technicianName}} resolvio el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <ul>
+        <li><strong>Articulo:</strong> {{productName}}</li>
+        <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
+        <li><strong>Tipo de resolucion:</strong> {{closeType}}</li>
+        <li><strong>Accion:</strong> {{resolutionAction}}</li>
+        <li><strong>Monto de reembolso:</strong> {{refundAmount}}</li>
+      </ul>
+      <p><strong>Diagnostico:</strong> {{diagnosis}}</p>
+      <p><strong>Solucion:</strong> {{solution}}</p>
+      <p><strong>Comentario:</strong> {{comment}}</p>
+    `
   },
   TICKET_CLOSED: {
     subject: 'Ticket {{ticketCode}} cerrado',

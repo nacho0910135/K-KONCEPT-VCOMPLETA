@@ -4,6 +4,7 @@ const { userRepository } = require('../repositories/user.repository');
 const { auditService } = require('./audit.service');
 const { notificationService } = require('./notification.service');
 const { pdfGenerationService } = require('./pdfGeneration.service');
+const { exportPdf } = require('../utils/pdfExporter.util');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../utils/errors');
 
 const assertTicketAccess = (ticket, user) => {
@@ -244,6 +245,30 @@ const replacementService = {
     const replacement = await replacementRepository.findByTicketId(ticketId);
     if (!replacement) throw new NotFoundError('Reemplazo no encontrado para este ticket');
     return replacement;
+  },
+
+  list(user) {
+    return replacementRepository.list(user.role === 'TECHNICIAN' ? { requestedById: user.id } : {});
+  },
+
+  async exportListPdf(user) {
+    const replacements = await this.list(user);
+    const buffer = await exportPdf({
+      title: 'Lista de reemplazos',
+      columns: [
+        { header: 'Ticket', value: (row) => row.ticket?.code },
+        { header: 'Cliente', value: (row) => row.ticket?.client?.name },
+        { header: 'Producto solicitado', value: 'requestedProduct' },
+        { header: 'Estado', value: 'status' },
+        { header: 'Razon', value: 'reason' }
+      ],
+      rows: replacements
+    });
+
+    return {
+      buffer,
+      filename: `reemplazos-${new Date().toISOString().slice(0, 10)}.pdf`
+    };
   },
 
   async getCertificate(id, user) {

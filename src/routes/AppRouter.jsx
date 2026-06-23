@@ -26,6 +26,7 @@ const TechnicianDashboard = lazy(() => import('../pages/technician/Dashboard.jsx
 const TicketsAsignados = lazy(() => import('../pages/technician/TicketsAsignados.jsx'));
 const TechnicianDetalleTicket = lazy(() => import('../pages/technician/DetalleTicket.jsx'));
 const Reemplazos = lazy(() => import('../pages/technician/Reemplazos.jsx'));
+const Reembolsos = lazy(() => import('../pages/technician/Reembolsos.jsx'));
 const TechnicianNotificaciones = lazy(() => import('../pages/technician/Notificaciones.jsx'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard.jsx'));
 const AdminTickets = lazy(() => import('../pages/admin/Tickets.jsx'));
@@ -80,6 +81,7 @@ const AppRouter = () => (
             <Route path="tickets" element={<TicketsAsignados />} />
             <Route path="tickets/:id" element={<TechnicianDetalleTicket />} />
             <Route path="reemplazos" element={<Reemplazos />} />
+            <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="notifications" element={<TechnicianNotificaciones />} />
             <Route path="notificaciones" element={<TechnicianNotificaciones />} />
           </Route>

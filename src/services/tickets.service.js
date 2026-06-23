@@ -26,3 +26,4 @@ export const rejectTicketSolution = async (ticketId, payload) => unwrap(await ap
 export const requestTicketReschedule = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/reschedule-requests`, payload)).data;
 export const updateTicketStatus = async (ticketId, payload) => unwrap(await api.patch(`/tickets/${ticketId}/status`, payload)).data;
 export const saveTicketDiagnosis = async (ticketId, payload) => unwrap(await api.patch(`/tickets/${ticketId}/diagnosis`, payload)).data;
+export const searchTickets = async (params) => unwrap(await api.get('/tickets/search', { params }));

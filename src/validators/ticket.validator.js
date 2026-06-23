@@ -47,13 +47,18 @@ const adminTicketsQuerySchema = paginationQuerySchema.extend({
   q: z.string().trim().optional()
 });
 
-const resolvedCloseSchema = z.discriminatedUnion('closeType', [
+const resolvedCloseSchema = z.union([
   z.object({
     status: z.literal('RESOLVED'),
     closeType: z.literal('WITH_SOLUTION'),
+    resolutionAction: z.enum(['REPAIR', 'REFUND_TOTAL', 'REFUND_PARTIAL']).optional(),
     diagnosis: z.string().trim().min(1),
     solution: z.string().trim().min(1),
+    refundAmount: z.coerce.number().positive().optional(),
     comment: z.string().trim().optional()
+  }).refine((data) => data.resolutionAction !== 'REFUND_PARTIAL' || Boolean(data.refundAmount), {
+    path: ['refundAmount'],
+    message: 'El monto es obligatorio para reembolso parcial'
   }),
   z.object({
     status: z.literal('RESOLVED'),
@@ -64,8 +69,9 @@ const resolvedCloseSchema = z.discriminatedUnion('closeType', [
   z.object({
     status: z.literal('RESOLVED'),
     closeType: z.literal('REPLACEMENT'),
-    diagnosis: z.string().trim().optional(),
-    solution: z.string().trim().optional(),
+    diagnosis: z.string().trim().min(1),
+    solution: z.string().trim().min(1),
+    requestedProduct: z.string().trim().optional(),
     comment: z.string().trim().optional()
   })
 ]);
@@ -73,7 +79,7 @@ const resolvedCloseSchema = z.discriminatedUnion('closeType', [
 const changeStatusSchema = z.union([
   z.object({ status: z.literal('IN_PROGRESS'), comment: z.string().trim().min(1) }),
   z.object({ status: z.literal('PENDING'), comment: z.string().trim().min(1) }),
-  z.object({ status: z.literal('WAITING_CUSTOMER'), comment: z.string().trim().min(1) }),
+  z.object({ status: z.literal('WAITING_CUSTOMER'), comment: z.string().trim().min(1), returnItemRequested: z.boolean().optional() }),
   z.object({ status: z.literal('CANCELLED'), comment: z.string().trim().min(1) }),
   resolvedCloseSchema
 ]);

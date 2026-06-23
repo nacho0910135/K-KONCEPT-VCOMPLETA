@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, MessageSquare, Phone, Save } from 'lucide-react';
+import { FileUp, Mail, MessageSquare, Phone, Save, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
@@ -11,6 +11,7 @@ import EvidenceGallery from '../../components/tickets/EvidenceGallery.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import { addComment, getTicketById, getTicketHistory, saveTicketDiagnosis, updateTicketStatus } from '../../services/tickets.service.js';
+import { uploadTicketEvidence } from '../../services/evidence.client.service.js';
 import { useToast } from '../../hooks/useToast.js';
 import { PriorityBadge, TechnicianStatusBadge, technicianStatusLabels } from './technicianUtils.jsx';
 import { formatDate, formatDateTime } from '../../utils/formatDate.js';
@@ -20,6 +21,8 @@ const statusSchema = z.object({
   status: z.string().min(1, 'Selecciona el nuevo estado'),
   comment: z.string().min(8, 'El comentario del cambio es obligatorio'),
   closeType: z.string().optional(),
+  resolutionAction: z.string().optional(),
+  refundAmount: z.string().optional(),
   diagnosis: z.string().optional(),
   solution: z.string().optional(),
   closeJustification: z.string().optional()
@@ -27,8 +30,14 @@ const statusSchema = z.object({
   if (value.status === 'RESOLVED') {
     if (!value.closeType) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['closeType'], message: 'Selecciona el tipo de resolucion' });
     if (value.closeType === 'WITH_SOLUTION') {
+      if (!value.resolutionAction) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['resolutionAction'], message: 'Selecciona la accion' });
       if (!value.diagnosis?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['diagnosis'], message: 'Diagnostico obligatorio' });
       if (!value.solution?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['solution'], message: 'Solucion obligatoria' });
+      if (value.resolutionAction === 'REFUND_PARTIAL' && !value.refundAmount?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['refundAmount'], message: 'Monto obligatorio' });
+    }
+    if (value.closeType === 'REPLACEMENT') {
+      if (!value.diagnosis?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['diagnosis'], message: 'Diagnostico obligatorio' });
+      if (!value.solution?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['solution'], message: 'Detalle del reemplazo obligatorio' });
     }
     if (value.closeType === 'WITHOUT_SOLUTION' && !value.closeJustification?.trim()) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['closeJustification'], message: 'Justificacion obligatoria' });
@@ -39,24 +48,28 @@ const statusSchema = z.object({
 const diagnosisSchema = z.object({ diagnosis: z.string().min(10, 'Agrega un diagnostico util') });
 const commentSchema = z.object({ body: z.string().min(5, 'Comentario demasiado corto') });
 const allowedTransitions = {
-  OPEN: ['PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'CANCELLED'],
-  PENDING: ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CANCELLED'],
-  IN_PROGRESS: ['WAITING_CUSTOMER', 'RESOLVED', 'CANCELLED'],
-  WAITING_CUSTOMER: ['IN_PROGRESS', 'RESOLVED', 'CANCELLED'],
-  REOPENED: ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CANCELLED']
+  OPEN: ['PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RETURN_ITEM_REQUEST', 'CANCELLED'],
+  PENDING: ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RETURN_ITEM_REQUEST', 'RESOLVED', 'CANCELLED'],
+  IN_PROGRESS: ['WAITING_CUSTOMER', 'RETURN_ITEM_REQUEST', 'RESOLVED', 'CANCELLED'],
+  WAITING_CUSTOMER: ['IN_PROGRESS', 'RETURN_ITEM_REQUEST', 'RESOLVED', 'CANCELLED'],
+  REOPENED: ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RETURN_ITEM_REQUEST', 'RESOLVED', 'CANCELLED']
 };
+const transitionLabel = (status) => (status === 'RETURN_ITEM_REQUEST' ? 'Solicitar devolucion del articulo' : technicianStatusLabels[status] || status);
 const DetalleTicket = () => {
   const { id } = useParams();
   const [ticket, setTicket] = useState(null);
   const [history, setHistory] = useState({ statuses: [], comments: [], evidence: [] });
+  const [evidenceFiles, setEvidenceFiles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [error, setError] = useState('');
   const { showToast } = useToast();
-  const statusForm = useForm({ mode: 'onChange', resolver: zodResolver(statusSchema), defaultValues: { status: '', comment: '', closeType: '', diagnosis: '', solution: '', closeJustification: '' } });
+  const statusForm = useForm({ mode: 'onChange', resolver: zodResolver(statusSchema), defaultValues: { status: '', comment: '', closeType: '', resolutionAction: '', refundAmount: '', diagnosis: '', solution: '', closeJustification: '' } });
   const diagnosisForm = useForm({ resolver: zodResolver(diagnosisSchema), defaultValues: { diagnosis: '' } });
   const commentForm = useForm({ resolver: zodResolver(commentSchema), defaultValues: { body: '' } });
   const watchedStatus = useWatch({ control: statusForm.control, name: 'status' });
   const watchedCloseType = useWatch({ control: statusForm.control, name: 'closeType' });
+  const watchedResolutionAction = useWatch({ control: statusForm.control, name: 'resolutionAction' });
 
   const load = async () => {
     setIsLoading(true);
@@ -82,12 +95,18 @@ const DetalleTicket = () => {
   }, [id]);
 
   const transitionOptions = useMemo(() => (allowedTransitions[ticket?.status] || [])
-    .map((status) => ({ value: status, label: technicianStatusLabels[status] || status })), [ticket?.status]);
+    .map((status) => ({ value: status, label: transitionLabel(status) })), [ticket?.status]);
   const evidences = history.evidence || ticket.evidence || [];
 
   const saveStatus = async (values) => {
     try {
-      await updateTicketStatus(ticket.id, values);
+      await updateTicketStatus(ticket.id, {
+        ...values,
+        status: values.status === 'RETURN_ITEM_REQUEST' ? 'WAITING_CUSTOMER' : values.status,
+        returnItemRequested: values.status === 'RETURN_ITEM_REQUEST',
+        refundAmount: values.refundAmount ? Number(values.refundAmount) : undefined,
+        requestedProduct: ticket.product?.name || ticket.title
+      });
       statusForm.reset();
       await load();
       showToast({ type: 'success', title: 'Estado actualizado', message: values.status === 'RESOLVED' ? 'El cliente debera confirmar y calificar para cerrar.' : undefined });
@@ -114,6 +133,32 @@ const DetalleTicket = () => {
       showToast({ type: 'success', title: 'Comentario publicado' });
     } catch (err) {
       showToast({ type: 'error', title: 'No se pudo comentar', message: getErrorMessage(err) });
+    }
+  };
+
+  const selectEvidence = (event) => {
+    const nextFiles = Array.from(event.target.files || []);
+    setEvidenceFiles((current) => [...current, ...nextFiles].slice(0, 10));
+    event.target.value = '';
+  };
+
+  const removeEvidence = (index) => {
+    setEvidenceFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
+  };
+
+  const uploadEvidence = async () => {
+    if (!evidenceFiles.length) return;
+
+    setIsUploadingEvidence(true);
+    try {
+      await uploadTicketEvidence(ticket.id, evidenceFiles);
+      setEvidenceFiles([]);
+      await load();
+      showToast({ type: 'success', title: 'Evidencia adjuntada', message: 'Los archivos quedaron asociados al caso.' });
+    } catch (err) {
+      showToast({ type: 'error', title: 'No se pudo adjuntar', message: getErrorMessage(err) });
+    } finally {
+      setIsUploadingEvidence(false);
     }
   };
 
@@ -183,13 +228,41 @@ const DetalleTicket = () => {
                     error={statusForm.formState.errors.closeType}
                     options={[
                       { value: 'WITH_SOLUTION', label: 'Con solucion' },
+                      { value: 'REPLACEMENT', label: 'Reemplazo' },
                       { value: 'WITHOUT_SOLUTION', label: 'Sin solucion' }
                     ]}
                   />
                   {watchedCloseType === 'WITH_SOLUTION' && (
                     <div className="grid gap-4">
+                      <FormSelect
+                        register={statusForm.register}
+                        name="resolutionAction"
+                        label="Accion"
+                        error={statusForm.formState.errors.resolutionAction}
+                        options={[
+                          { value: 'REPAIR', label: 'Reparacion' },
+                          { value: 'REFUND_TOTAL', label: 'Reembolso total' },
+                          { value: 'REFUND_PARTIAL', label: 'Reembolso parcial' }
+                        ]}
+                      />
+                      {watchedResolutionAction === 'REFUND_PARTIAL' && (
+                        <input
+                          className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+                          placeholder="Monto del reembolso parcial"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          {...statusForm.register('refundAmount')}
+                        />
+                      )}
                       <FormTextarea register={statusForm.register} name="diagnosis" label="Diagnostico" error={statusForm.formState.errors.diagnosis} />
                       <FormTextarea register={statusForm.register} name="solution" label="Solucion" error={statusForm.formState.errors.solution} />
+                    </div>
+                  )}
+                  {watchedCloseType === 'REPLACEMENT' && (
+                    <div className="grid gap-4">
+                      <FormTextarea register={statusForm.register} name="diagnosis" label="Diagnostico" error={statusForm.formState.errors.diagnosis} />
+                      <FormTextarea register={statusForm.register} name="solution" label="Detalle del reemplazo" error={statusForm.formState.errors.solution} />
                     </div>
                   )}
                   {watchedCloseType === 'WITHOUT_SOLUTION' && <FormTextarea register={statusForm.register} name="closeJustification" label="Justificacion" error={statusForm.formState.errors.closeJustification} />}
@@ -209,6 +282,32 @@ const DetalleTicket = () => {
 
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Evidencias adjuntas</h2>
+            <div className="mt-4 grid gap-3 rounded-lg border border-dashed border-neutral-300 bg-neutral-50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">Adjuntar respaldo</p>
+                  <p className="text-xs text-neutral-500">Hasta 10 archivos, maximo 50 MB cada uno.</p>
+                </div>
+                <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700">
+                  <FileUp className="h-4 w-4" />
+                  Adjuntar
+                  <input className="sr-only" type="file" multiple onChange={selectEvidence} />
+                </label>
+              </div>
+              {evidenceFiles.length > 0 && (
+                <div className="grid gap-2">
+                  {evidenceFiles.map((file, index) => (
+                    <div key={`${file.name}-${file.size}-${index}`} className="flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm">
+                      <span className="truncate text-neutral-700">{file.name}</span>
+                      <button className="rounded p-1 text-neutral-500 hover:bg-neutral-100 hover:text-danger" type="button" onClick={() => removeEvidence(index)} aria-label={`Quitar ${file.name}`}>
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <Button onClick={uploadEvidence} isLoading={isUploadingEvidence}>Subir evidencia</Button>
+                </div>
+              )}
+            </div>
             <EvidenceGallery evidences={evidences} />
           </Card>
 

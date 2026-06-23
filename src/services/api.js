@@ -47,12 +47,6 @@ const notifyServerError = () => {
   );
 };
 
-const redirectToAccessDenied = () => {
-  if (window.location.pathname !== '/access-denied') {
-    window.location.assign('/access-denied');
-  }
-};
-
 const isExpiredAccessTokenError = (error) => {
   const status = error.response?.status;
   const code = error.response?.data?.code || error.response?.data?.errorCode;
@@ -115,10 +109,6 @@ api.interceptors.response.use(
         unauthorizedHandler?.();
         return Promise.reject(refreshError);
       }
-    }
-
-    if (error.response?.status === 403) {
-      redirectToAccessDenied();
     }
 
     if (error.response?.status >= 500) {

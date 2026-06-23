@@ -2,11 +2,14 @@ const { env } = require('../config/env');
 const { ticketCounterRepository } = require('../repositories/ticketCounter.repository');
 const { ticketRepository } = require('../repositories/ticket.repository');
 const { userRepository } = require('../repositories/user.repository');
+const { replacementRepository } = require('../repositories/replacement.repository');
+const { refundService } = require('./refund.service');
 const { auditService } = require('./audit.service');
 const { deleteFromCloudinary } = require('./cloudinary.service');
 const { notificationService } = require('./notification.service');
 const { slaService } = require('./sla.service');
 const { ticketAssignmentService } = require('./ticketAssignment.service');
+const { transactionalEmailService } = require('./transactionalEmail.service');
 const { warrantyService } = require('./warranty.service');
 const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
@@ -14,6 +17,32 @@ const { canTransition } = require('../utils/ticketTransitions.util');
 const { sanitizePayloadText, sanitizePlainText } = require('../utils/textSanitizer.util');
 
 const CLOSED_STATUSES = ['CLOSED', 'CANCELLED'];
+const statusLabel = {
+  OPEN: 'Abierto',
+  PENDING: 'Pendiente',
+  IN_PROGRESS: 'En progreso',
+  WAITING_CUSTOMER: 'Esperando cliente',
+  RESOLVED: 'Resuelto',
+  CLOSED: 'Cerrado',
+  CANCELLED: 'Cancelado',
+  REOPENED: 'Reabierto'
+};
+const closeTypeLabel = {
+  WITH_SOLUTION: 'Con solucion',
+  WITHOUT_SOLUTION: 'Sin solucion',
+  REPLACEMENT: 'Reemplazo'
+};
+const resolutionActionLabel = {
+  REPAIR: 'Reparacion',
+  REFUND_TOTAL: 'Reembolso total',
+  REFUND_PARTIAL: 'Reembolso parcial'
+};
+
+const resolutionSummary = (payload) => {
+  if (payload.closeType === 'REPLACEMENT') return 'Reemplazo';
+  if (payload.closeType === 'WITHOUT_SOLUTION') return 'Sin solucion';
+  return resolutionActionLabel[payload.resolutionAction] || payload.resolutionAction || 'Con solucion';
+};
 
 const resourceTypeForEvidence = (evidence) => {
   if (evidence.fileUrl?.includes('/video/upload/')) return 'video';
@@ -65,9 +94,27 @@ const assertTechnicianAssigned = (ticket, user) => {
 
 const assertAllowedTransition = (ticket, nextStatus, role) => {
   if (!canTransition(ticket.status, nextStatus, role)) {
-    throw new ForbiddenError(`Transicion no permitida de ${ticket.status} a ${nextStatus} para rol ${role}`);
+    throw new BadRequestError(`Transicion no permitida de ${ticket.status} a ${nextStatus}`);
   }
 };
+
+const buildStatusNotificationPayload = ({ ticket, payload, user, comment }) => ({
+  ticketCode: ticket.code,
+  ticketTitle: ticket.title,
+  ticketDescription: ticket.description,
+  technicianName: user.name,
+  previousStatus: statusLabel[ticket.status] || ticket.status,
+  newStatus: statusLabel[payload.status] || payload.status,
+  closeType: closeTypeLabel[payload.closeType] || payload.closeType || '',
+  resolutionAction: resolutionSummary(payload),
+  refundAmount: payload.refundAmount || '',
+  productName: ticket.product?.name || 'Sin producto asociado',
+  categoryName: ticket.category?.name || 'Sin categoria',
+  subcategoryName: ticket.subcategory?.name || 'Sin subcategoria',
+  diagnosis: payload.diagnosis || ticket.diagnosis || '',
+  solution: payload.solution || ticket.solution || payload.closeJustification || '',
+  comment: comment || ''
+});
 
 const ticketService = {
   async preview(payload, user) {
@@ -260,18 +307,16 @@ const ticketService = {
         data.solution = sanitizePlainText(payload.solution);
       }
 
+      if (payload.closeType === 'REPLACEMENT') {
+        data.diagnosis = sanitizePlainText(payload.diagnosis);
+        data.solution = sanitizePlainText(payload.solution);
+      }
+
       if (payload.closeType === 'WITHOUT_SOLUTION') {
         data.closeJustification = sanitizePlainText(payload.closeJustification);
       }
 
-      if (payload.closeType === 'REPLACEMENT') {
-        const deliveredReplacement = await ticketRepository.findDeliveredReplacement(ticket.id);
-        if (!deliveredReplacement) {
-          throw new BadRequestError('Para cierre por reemplazo debe existir un reemplazo entregado');
-        }
-      }
-
-      comment = comment || `Ticket resuelto por tecnico con cierre ${payload.closeType}`;
+      comment = comment || `Ticket resuelto por tecnico: ${resolutionSummary(payload)}`;
     }
 
     const updated = await ticketRepository.updateStatusWithHistory(id, data, {
@@ -290,19 +335,45 @@ const ticketService = {
       newValue: { status: payload.status }
     });
 
+    if (payload.returnItemRequested && payload.status === 'WAITING_CUSTOMER') {
+      await transactionalEmailService.sendReturnItemRequestEmail(ticket.client, ticket, user).catch(() => null);
+    }
+
+    if (payload.status === 'RESOLVED' && payload.closeType === 'REPLACEMENT') {
+      const activeReplacement = await replacementRepository.findActiveByTicketId(id);
+      if (!activeReplacement) {
+        await replacementRepository.create({
+          ticketId: id,
+          requestedById: user.id,
+          requestedProduct: payload.requestedProduct || ticket.product?.name || ticket.title,
+          reason: payload.solution || payload.comment || 'Reemplazo indicado en resolucion',
+          status: 'APPROVED',
+          approvedById: user.id,
+          validationNotes: 'Aprobado por tecnico en resolucion del caso',
+          validatedAt: new Date()
+        });
+      }
+    }
+
+    if (payload.status === 'RESOLVED' && ['REFUND_TOTAL', 'REFUND_PARTIAL'].includes(payload.resolutionAction)) {
+      await refundService.createForTicket(id, {
+        type: payload.resolutionAction,
+        amount: payload.resolutionAction === 'REFUND_PARTIAL' ? payload.refundAmount : null,
+        reason: payload.solution || payload.comment || 'Reembolso indicado en resolucion'
+      }, user);
+    }
+
+    const notificationPayload = buildStatusNotificationPayload({ ticket, payload, user, comment });
+
+    await transactionalEmailService.sendTicketStatusEmail(ticket.client, ticket, notificationPayload).catch(() => null);
+
     await notificationService.dispatchNotification({
       userId: ticket.clientId,
       event: payload.status === 'RESOLVED' ? 'TICKET_RESOLVED' : 'STATUS_CHANGED',
       entityType: 'Ticket',
       entityId: id,
-      payload: {
-        ticketCode: ticket.code,
-        ticketTitle: ticket.title,
-        technicianName: user.name,
-        previousStatus: ticket.status,
-        newStatus: payload.status,
-        comment
-      }
+      payload: notificationPayload,
+      skipChannels: ['EMAIL']
     });
 
     if (user.role === 'TECHNICIAN') {
@@ -312,14 +383,7 @@ const ticketService = {
         recipients: admins,
         entityType: 'Ticket',
         entityId: id,
-        payload: {
-          ticketCode: ticket.code,
-          ticketTitle: ticket.title,
-          technicianName: user.name,
-          previousStatus: ticket.status,
-          newStatus: payload.status,
-          comment
-        }
+        payload: notificationPayload
       });
     }
 

@@ -16,10 +16,17 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const refreshUser = useCallback(async () => {
-    const data = await getCurrentUser();
-    setUser(data?.user || data);
-    return data;
-  }, []);
+    try {
+      const data = await getCurrentUser();
+      setUser(data?.user || data);
+      return data;
+    } catch (error) {
+      setUser(null);
+      persistAccessToken(null);
+      clearStoredRefreshToken();
+      throw error;
+    }
+  }, [persistAccessToken]);
 
   const login = useCallback(async (credentials) => {
     const data = await loginRequest(credentials);

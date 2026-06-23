@@ -53,6 +53,17 @@ const getByTicketId = async (req, res) => {
   return successResponse(res, { data: { replacement } });
 };
 
+const list = async (req, res) => successResponse(res, {
+  data: { replacements: await replacementService.list(req.user) }
+});
+
+const exportPdf = async (req, res) => {
+  const pdf = await replacementService.exportListPdf(req.user);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${pdf.filename}"`);
+  return res.send(pdf.buffer);
+};
+
 const downloadCertificate = async (req, res) => {
   const replacement = await replacementService.getCertificate(req.params.id, req.user);
   return res.redirect(302, replacement.pdfUrl);
@@ -74,6 +85,8 @@ module.exports = {
   registerDelivery,
   getById,
   getByTicketId,
+  list,
+  exportPdf,
   downloadCertificate,
   regenerateCertificate
 };

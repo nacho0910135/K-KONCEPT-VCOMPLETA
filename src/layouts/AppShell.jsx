@@ -4,10 +4,12 @@ import { useState } from 'react';
 import clsx from 'clsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { useNotifications } from '../hooks/useNotifications.js';
+import { searchTickets } from '../services/tickets.service.js';
 import kollabLogo from '../assets/kollab-logo.png';
 
 const AppShell = ({ navItems, roleLabel }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
@@ -15,6 +17,21 @@ const AppShell = ({ navItems, roleLabel }) => {
 
   const goToNotifications = () => {
     navigate(notificationsPath);
+  };
+
+  const runSearch = async (event) => {
+    event.preventDefault();
+    const q = searchTerm.trim();
+    if (!q) return;
+
+    if (user?.role === 'TECHNICIAN' || user?.role === 'ADMIN') {
+      const response = await searchTickets({ q, limit: 1 });
+      const ticket = response.data?.[0];
+      if (ticket) navigate(user.role === 'ADMIN' ? `/admin/tickets/${ticket.id}` : `/technician/tickets/${ticket.id}`);
+      return;
+    }
+
+    navigate('/client/tickets');
   };
 
   return (
@@ -29,10 +46,10 @@ const AppShell = ({ navItems, roleLabel }) => {
               <img className="max-h-8 w-full object-contain" src={kollabLogo} alt="Kollab Koncepts" />
             </span>
           </NavLink>
-          <div className="relative ml-auto hidden w-full max-w-md md:block">
+          <form className="relative ml-auto hidden w-full max-w-md md:block" onSubmit={runSearch}>
             <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-            <input className="h-10 w-full rounded-md border border-neutral-200 bg-neutral-50 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar tickets, usuarios o categorias" />
-          </div>
+            <input className="h-10 w-full rounded-md border border-neutral-200 bg-neutral-50 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar tickets, usuarios o categorias" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
+          </form>
           <div className="relative">
             <button className="relative rounded-md p-2 text-neutral-600 hover:bg-neutral-100" onClick={goToNotifications} aria-label="Notificaciones">
               <Bell className="h-5 w-5" />

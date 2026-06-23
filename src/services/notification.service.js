@@ -45,10 +45,14 @@ const defaultCopy = {
     subject: 'Ticket {{ticketCode}} cambio de estado',
     body: `
       <p>Hola {{userName}},</p>
-      <p>{{technicianName}} actualizo el ticket {{ticketCode}}.</p>
-      <p><strong>Estado anterior:</strong> {{previousStatus}}</p>
-      <p><strong>Estado actual:</strong> {{newStatus}}</p>
-      <p>{{comment}}</p>
+      <p>{{technicianName}} actualizo el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <ul>
+        <li><strong>Articulo:</strong> {{productName}}</li>
+        <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
+        <li><strong>Estado anterior:</strong> {{previousStatus}}</li>
+        <li><strong>Estado actual:</strong> {{newStatus}}</li>
+      </ul>
+      <p><strong>Comentario:</strong> {{comment}}</p>
     `
   },
   NEW_COMMENT: {
@@ -57,7 +61,20 @@ const defaultCopy = {
   },
   TICKET_RESOLVED: {
     subject: 'Ticket {{ticketCode}} resuelto',
-    body: 'Hola {{userName}}, el ticket {{ticketCode}} fue marcado como resuelto.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>{{technicianName}} marco como resuelto el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <ul>
+        <li><strong>Articulo:</strong> {{productName}}</li>
+        <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
+        <li><strong>Tipo de resolucion:</strong> {{closeType}}</li>
+        <li><strong>Accion:</strong> {{resolutionAction}}</li>
+        <li><strong>Monto de reembolso:</strong> {{refundAmount}}</li>
+      </ul>
+      <p><strong>Diagnostico:</strong> {{diagnosis}}</p>
+      <p><strong>Solucion:</strong> {{solution}}</p>
+      <p><strong>Comentario:</strong> {{comment}}</p>
+    `
   },
   TICKET_CLOSED: {
     subject: 'Ticket {{ticketCode}} cerrado',
@@ -215,12 +232,13 @@ const persistExternalNotification = ({ userId, event, entityType, entityId, chan
   })
 );
 
-const dispatchNow = async ({ userId, event, entityType, entityId, payload = {} }) => {
+const dispatchNow = async ({ userId, event, entityType, entityId, payload = {}, skipChannels = [] }) => {
   const user = await notificationConfigRepository.findUserById(userId);
   if (!user || !user.active) return { sent: 0, skipped: 0 };
 
   const renderedPayload = normalizePayload(payload, user);
-  const channels = await getEnabledChannels();
+  const skip = new Set(skipChannels);
+  const channels = (await getEnabledChannels()).filter((channel) => !skip.has(channel));
   let sent = 0;
   let skipped = 0;
 

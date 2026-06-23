@@ -30,3 +30,5 @@ const exportPdf = ({ title = 'Reporte', columns, rows }) => new Promise((resolve
 });
 
 module.exports = { exportPdf };
+
+module.exports = { exportPdf };

@@ -1,10 +1,11 @@
-import { Bell, Boxes, Gauge, ClipboardCheck } from 'lucide-react';
+import { Bell, Boxes, CircleDollarSign, Gauge, ClipboardCheck } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
   { to: 'dashboard', label: 'Inicio', icon: Gauge },
   { to: 'tickets', label: 'Asignados', icon: ClipboardCheck },
   { to: 'reemplazos', label: 'Reemplazos', icon: Boxes },
+  { to: 'reembolsos', label: 'Reembolsos', icon: CircleDollarSign },
   { to: 'notifications', label: 'Notificaciones', icon: Bell }
 ];
 

@@ -85,6 +85,14 @@ const replacementRepository = {
     });
   },
 
+  list(where = {}) {
+    return prisma.replacement.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: replacementInclude
+    });
+  },
+
   update(id, data) {
     return prisma.replacement.update({
       where: { id },
