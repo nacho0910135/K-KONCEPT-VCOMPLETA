@@ -5,7 +5,7 @@ let unauthorizedHandler = null;
 let refreshPromise = null;
 const refreshTokenStorageKey = 'kollab_refresh_token';
 
-const apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const apiBaseURL = import.meta.env.VITE_API_URL || '/api';
 
 export const setAccessToken = (token) => {
   accessToken = token || null;

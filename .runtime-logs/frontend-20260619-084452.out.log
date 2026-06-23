@@ -28,3 +28,18 @@
 [2m7:20:12 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
 [2m7:29:12 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/admin/Categorias.jsx, /src/pages/client/NuevoTicket.jsx[22m
 [2m7:29:36 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/pages/admin/Categorias.jsx[22m
+[2m8:13:57 p. m.[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+[2m8:13:57 p. m.[22m [36m[1m[vite][22m[39m server restarted.
+[2m8:32:24 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m8:38:22 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css[22m
+[2m8:41:38 p. m.[22m [36m[1m[vite][22m[39m [32m.env changed, restarting server...[39m
+[2m8:41:38 p. m.[22m [36m[1m[vite][22m[39m server restarted.
+[2m8:53:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles/globals.css, /src/contexts/AuthContext.jsx, /src/pages/auth/Register.jsx, /src/contexts/NotificationContext.jsx, /src/pages/client/Dashboard.jsx, /src/pages/client/DetalleTicket.jsx[22m
+[2m8:53:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/AuthContext.jsx[22m Could not Fast Refresh ("useAuthContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:53:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/routes/AppRouter.jsx, /src/routes/ProtectedRoute.jsx, /src/routes/RoleRoute.jsx, /src/layouts/AppShell.jsx, /src/pages/auth/Login.jsx[22m
+[2m8:53:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/NotificationContext.jsx[22m Could not Fast Refresh ("useNotificationContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:53:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/contexts/AuthContext.jsx, /src/layouts/AppShell.jsx[22m
+[2m8:53:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/contexts/AuthContext.jsx[22m Could not Fast Refresh ("useAuthContext" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m8:53:52 p. m.[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/App.jsx, /src/routes/AppRouter.jsx, /src/routes/ProtectedRoute.jsx, /src/routes/RoleRoute.jsx, /src/layouts/AppShell.jsx, /src/pages/auth/Login.jsx[22m
+[2m8:53:59 p. m.[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m8:53:59 p. m.[22m [36m[1m[vite][22m[39m server restarted.

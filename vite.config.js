@@ -6,7 +6,10 @@ module.exports = async () => {
     plugins: [react()],
     server: {
       port: 5173,
-      strictPort: false
+      strictPort: false,
+      proxy: {
+        '/api': 'http://localhost:4000'
+      }
     },
     build: {
       outDir: 'dist-web'

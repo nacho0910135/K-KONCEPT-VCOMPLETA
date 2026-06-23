@@ -19,7 +19,7 @@ app.use(compression());
 app.use(httpLogger);
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || env.corsOrigins.includes(origin)) {
+    if (!origin || !env.isProduction || env.corsOrigins.includes(origin)) {
       return callback(null, true);
     }
 
