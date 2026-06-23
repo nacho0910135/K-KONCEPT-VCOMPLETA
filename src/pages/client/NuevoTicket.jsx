@@ -21,6 +21,7 @@ const ticketSchema = z.object({
   title: z.string().min(5, 'Describe el problema en el titulo'),
   categoryId: z.string().min(1, 'Selecciona una categoria'),
   subcategoryId: z.string().min(1, 'Selecciona una subcategoria'),
+  productId: z.string().optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'], { message: 'Selecciona una prioridad estimada' }),
   description: z.string().min(30, 'La descripcion debe tener al menos 30 caracteres')
 });
@@ -37,11 +38,14 @@ const NuevoTicket = () => {
   const navigate = useNavigate();
   const form = useForm({
     resolver: zodResolver(ticketSchema),
-    defaultValues: { title: '', categoryId: '', subcategoryId: '', priority: '', description: '' }
+    defaultValues: { title: '', categoryId: '', subcategoryId: '', productId: '', priority: '', description: '' }
   });
   const selectedCategoryId = useWatch({ control: form.control, name: 'categoryId' });
+  const selectedSubcategoryId = useWatch({ control: form.control, name: 'subcategoryId' });
   const description = useWatch({ control: form.control, name: 'description' }) || '';
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
+  const selectedSubcategory = selectedCategory?.subcategories?.find((subcategory) => subcategory.id === selectedSubcategoryId);
+  const productOptions = (selectedSubcategory?.products || []).map((product) => ({ value: product.id, label: product.name }));
 
   useEffect(() => {
     let mounted = true;
@@ -72,7 +76,12 @@ const NuevoTicket = () => {
 
   useEffect(() => {
     form.setValue('subcategoryId', '');
+    form.setValue('productId', '');
   }, [form, selectedCategoryId]);
+
+  useEffect(() => {
+    form.setValue('productId', '');
+  }, [form, selectedSubcategoryId]);
 
   const validateWarranty = async () => {
     if (!serial.trim()) {
@@ -103,8 +112,8 @@ const NuevoTicket = () => {
       subcategoryId: values.subcategoryId
     };
 
-    if (warranty?.isValid && warranty.product?.id) {
-      payload.productId = warranty.product.id;
+    if (values.productId || (warranty?.isValid && warranty.product?.id)) {
+      payload.productId = values.productId || warranty.product.id;
     }
 
     return payload;
@@ -156,7 +165,7 @@ const NuevoTicket = () => {
   const values = form.getValues();
   const categoryName = categories.find((category) => category.id === values.categoryId)?.name;
   const subcategoryName = selectedCategory?.subcategories.find((subcategory) => subcategory.id === values.subcategoryId)?.name;
-  const productName = warranty?.product?.name || 'Sin producto asociado';
+  const productName = selectedSubcategory?.products?.find((product) => product.id === values.productId)?.name || warranty?.product?.name || 'Sin producto asociado';
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6">
@@ -207,6 +216,14 @@ const NuevoTicket = () => {
               />
               <FormSelect register={form.register} name="subcategoryId" label="Subcategoria" error={form.formState.errors.subcategoryId} options={(selectedCategory?.subcategories || []).map((subcategory) => ({ value: subcategory.id, label: subcategory.name }))} />
             </div>
+            <FormSelect
+              register={form.register}
+              name="productId"
+              label="Producto"
+              placeholder={selectedSubcategory ? 'Seleccionar producto' : 'Selecciona una subcategoria primero'}
+              disabled={!selectedSubcategory}
+              options={productOptions}
+            />
             {categoriesError && <p className="text-xs font-semibold text-danger">{categoriesError}</p>}
             <FormSelect register={form.register} name="priority" label="Prioridad estimada" error={form.formState.errors.priority} options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label }))} />
             <div>

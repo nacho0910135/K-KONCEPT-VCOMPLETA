@@ -8,7 +8,13 @@ const subcategoryRepository = {
   findById(id) {
     return prisma.subcategory.findUnique({
       where: { id },
-      include: { category: true }
+      include: {
+        category: true,
+        products: {
+          where: { active: true },
+          orderBy: { name: 'asc' }
+        }
+      }
     });
   },
 
@@ -28,6 +34,12 @@ const subcategoryRepository = {
       where: {
         categoryId,
         active: true
+      },
+      include: {
+        products: {
+          where: { active: true },
+          orderBy: { name: 'asc' }
+        }
       },
       orderBy: { name: 'asc' }
     });

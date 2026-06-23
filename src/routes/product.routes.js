@@ -8,11 +8,12 @@ const { productMutationSchema, productQuerySchema } = require('../validators/pro
 
 const router = Router();
 
+router.get('/', verifyToken, authorizeRoles('ADMIN', 'CLIENT', 'TECHNICIAN'), validate(productQuerySchema, 'query'), asyncHandler(productController.list));
+router.get('/:id', verifyToken, authorizeRoles('ADMIN', 'CLIENT', 'TECHNICIAN'), asyncHandler(productController.getById));
+
 router.use(verifyToken, authorizeRoles('ADMIN'));
 
 router.post('/', validate(productMutationSchema), asyncHandler(productController.create));
-router.get('/', validate(productQuerySchema, 'query'), asyncHandler(productController.list));
-router.get('/:id', asyncHandler(productController.getById));
 router.put('/:id', validate(productMutationSchema), asyncHandler(productController.update));
 router.patch('/:id/deactivate', asyncHandler(productController.deactivate));
 

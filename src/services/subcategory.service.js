@@ -1,6 +1,7 @@
 const { categoryRepository } = require('../repositories/category.repository');
 const { subcategoryRepository } = require('../repositories/subcategory.repository');
 const { auditService } = require('./audit.service');
+const { productService } = require('./product.service');
 const { ConflictError, NotFoundError } = require('../utils/errors');
 
 const subcategoryService = {
@@ -17,6 +18,10 @@ const subcategoryService = {
       description: payload.description || null
     });
 
+    if (payload.products?.length) {
+      await productService.addNamesToSubcategory({ categoryId, subcategoryId: subcategory.id, products: payload.products });
+    }
+
     await auditService.record({
       userId: actor?.id || null,
       action: 'SUBCATEGORY_CREATED',
@@ -25,7 +30,7 @@ const subcategoryService = {
       newValue: subcategory
     });
 
-    return subcategory;
+    return subcategoryRepository.findById(subcategory.id);
   },
 
   async listByCategory(categoryId) {
@@ -49,6 +54,10 @@ const subcategoryService = {
       description: payload.description || null
     });
 
+    if (payload.products?.length) {
+      await productService.addNamesToSubcategory({ categoryId: subcategory.categoryId, subcategoryId: id, products: payload.products });
+    }
+
     await auditService.record({
       userId: actor?.id || null,
       action: 'SUBCATEGORY_UPDATED',
@@ -58,7 +67,7 @@ const subcategoryService = {
       newValue: updated
     });
 
-    return updated;
+    return subcategoryRepository.findById(updated.id);
   },
 
   async deactivate(id, actor) {

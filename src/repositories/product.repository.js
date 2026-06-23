@@ -1,7 +1,8 @@
 const { prisma } = require('../config/database');
 
 const productInclude = {
-  category: true
+  category: true,
+  subcategory: true
 };
 
 const productRepository = {
@@ -22,6 +23,13 @@ const productRepository = {
   findBySerialNumber(serialNumber) {
     return prisma.product.findUnique({
       where: { serialNumber },
+      include: productInclude
+    });
+  },
+
+  findByNameAndSubcategory(name, subcategoryId) {
+    return prisma.product.findFirst({
+      where: { name, subcategoryId },
       include: productInclude
     });
   },

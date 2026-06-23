@@ -10,7 +10,13 @@ const categoryRepository = {
       where: { id },
       include: {
         subcategories: {
-          orderBy: { name: 'asc' }
+          orderBy: { name: 'asc' },
+          include: {
+            products: {
+              where: { active: true },
+              orderBy: { name: 'asc' }
+            }
+          }
         }
       }
     });
@@ -30,7 +36,13 @@ const categoryRepository = {
         take,
         include: {
           subcategories: {
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
+            include: {
+              products: {
+                where: { active: true },
+                orderBy: { name: 'asc' }
+              }
+            }
           }
         }
       })

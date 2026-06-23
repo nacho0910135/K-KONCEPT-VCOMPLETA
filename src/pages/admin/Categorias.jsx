@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, ChevronRight, Edit, FolderPlus, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Edit, FolderPlus, PackagePlus, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ import {
   activateCategory,
   activateSubcategory,
   createCategory,
+  createProduct,
   createSubcategory,
   deactivateCategory,
   deactivateSubcategory,
@@ -28,8 +29,14 @@ import {
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
-  description: z.string().min(5, 'Descripcion requerida')
+  description: z.string().min(5, 'Descripcion requerida'),
+  productsText: z.string().optional()
 });
+
+const productNamesFromText = (value = '') => [...new Set(value
+  .split('\n')
+  .map((item) => item.trim())
+  .filter(Boolean))];
 
 const Categorias = () => {
   const [data, setData] = useState([]);
@@ -40,9 +47,12 @@ const Categorias = () => {
   const [expanded, setExpanded] = useState([]);
   const [editing, setEditing] = useState(null);
   const [subParent, setSubParent] = useState(null);
+  const [productTarget, setProductTarget] = useState(null);
+  const [productSubcategoryId, setProductSubcategoryId] = useState('');
+  const [productsText, setProductsText] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
   const { showToast } = useToast();
-  const form = useForm({ resolver: zodResolver(categorySchema), defaultValues: { name: '', description: '' } });
+  const form = useForm({ resolver: zodResolver(categorySchema), defaultValues: { name: '', description: '', productsText: '' } });
 
   const loadCategories = useCallback(async ({ quiet = false } = {}) => {
     if (!quiet) setIsLoading(true);
@@ -69,29 +79,41 @@ const Categorias = () => {
 
   const openCategory = (category = null) => {
     setEditing(category || { type: 'category' });
-    form.reset({ name: category?.name || '', description: category?.description || '' });
+    form.reset({ name: category?.name || '', description: category?.description || '', productsText: '' });
   };
 
   const openSubcategory = (parent, subcategory = null) => {
     setSubParent(parent);
     setEditing(subcategory || { type: 'subcategory' });
-    form.reset({ name: subcategory?.name || '', description: subcategory?.description || '' });
+    form.reset({
+      name: subcategory?.name || '',
+      description: subcategory?.description || '',
+      productsText: (subcategory?.products || []).map((product) => product.name).join('\n')
+    });
+  };
+
+  const openProduct = (category, subcategory = null) => {
+    setProductTarget(category);
+    setProductSubcategoryId(subcategory?.id || category.subcategories?.[0]?.id || '');
+    setProductsText('');
   };
 
   const save = async (values) => {
     setIsSaving(true);
     try {
       if (subParent) {
+        const payload = { ...values, products: productNamesFromText(values.productsText) };
+        delete payload.productsText;
         if (editing?.id) {
-          await updateSubcategory(editing.id, values);
+          await updateSubcategory(editing.id, payload);
         } else {
-          await createSubcategory(subParent.id, values);
+          await createSubcategory(subParent.id, payload);
           setExpanded((current) => current.includes(subParent.id) ? current : [...current, subParent.id]);
         }
       } else if (editing?.id) {
-        await updateCategory(editing.id, values);
+        await updateCategory(editing.id, { name: values.name, description: values.description });
       } else {
-        const result = await createCategory(values);
+        const result = await createCategory({ name: values.name, description: values.description });
         const createdId = result?.category?.id;
         if (createdId) setExpanded((current) => [...current, createdId]);
       }
@@ -101,6 +123,28 @@ const Categorias = () => {
       showToast({ type: 'success', title: 'Catalogo actualizado', message: 'Los cambios fueron guardados en la base de datos.' });
     } catch (saveError) {
       showToast({ type: 'error', title: 'No se pudo guardar', message: getErrorMessage(saveError, 'Revisa la informacion e intenta de nuevo.') });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveProducts = async (event) => {
+    event.preventDefault();
+    const products = productNamesFromText(productsText);
+    if (!products.length || !productTarget) return;
+
+    setIsSaving(true);
+    try {
+      await Promise.all(products.map((name) => createProduct({
+        name,
+        categoryId: productTarget.id,
+        ...(productSubcategoryId ? { subcategoryId: productSubcategoryId } : {})
+      })));
+      await loadCategories({ quiet: true });
+      setProductTarget(null);
+      showToast({ type: 'success', title: 'Productos agregados', message: `${products.length} producto(s) guardado(s).` });
+    } catch (saveError) {
+      showToast({ type: 'error', title: 'No se pudieron guardar', message: getErrorMessage(saveError, 'Revisa los productos e intenta de nuevo.') });
     } finally {
       setIsSaving(false);
     }
@@ -164,6 +208,7 @@ const Categorias = () => {
               <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" onClick={() => openCategory(category)}><Edit className="h-4 w-4" />Editar</Button>
                 <Button variant="ghost" onClick={() => openSubcategory(category)}><FolderPlus className="h-4 w-4" />Subcategoria</Button>
+                <Button variant="ghost" onClick={() => openProduct(category)}><PackagePlus className="h-4 w-4" />Producto</Button>
                 <Button variant="ghost" onClick={() => setConfirmAction({ type: 'toggle', item: category, isSubcategory: false })}>
                   <RotateCcw className="h-4 w-4" />{category.active ? 'Desactivar' : 'Activar'}
                 </Button>
@@ -182,9 +227,11 @@ const Categorias = () => {
                     <div>
                       <p className="text-sm font-semibold text-neutral-900">{sub.name} {!sub.active && <Badge>Inactiva</Badge>}</p>
                       <p className="text-xs text-neutral-500">{sub.description}</p>
+                      {(sub.products || []).length > 0 && <p className="mt-1 text-xs text-neutral-500">{sub.products.length} producto(s)</p>}
                     </div>
                     <div className="flex gap-2">
                       <Button variant="ghost" onClick={() => openSubcategory(category, sub)}>Editar</Button>
+                      <Button variant="ghost" onClick={() => openProduct(category, sub)}>Producto</Button>
                       <Button variant="ghost" onClick={() => setConfirmAction({ type: 'toggle', item: sub, isSubcategory: true })}>{sub.active ? 'Desactivar' : 'Activar'}</Button>
                       <Button variant="danger" onClick={() => setConfirmAction({ type: 'delete', item: sub, isSubcategory: true })}>Eliminar</Button>
                     </div>
@@ -200,7 +247,39 @@ const Categorias = () => {
         <form className="grid gap-4" onSubmit={form.handleSubmit(save)}>
           <FormInput register={form.register} name="name" label="Nombre" error={form.formState.errors.name} />
           <FormTextarea register={form.register} name="description" label="Descripcion" error={form.formState.errors.description} />
+          {subParent && <FormTextarea register={form.register} name="productsText" label="Productos" rows={6} placeholder="Un producto por linea" />}
           <Button type="submit" isLoading={isSaving}>Guardar</Button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={Boolean(productTarget)} title="Producto" onClose={() => setProductTarget(null)}>
+        <form className="grid gap-4" onSubmit={saveProducts}>
+          {(productTarget?.subcategories || []).length > 0 && (
+            <label className="grid gap-1.5 text-sm font-medium text-neutral-700" htmlFor="productSubcategoryId">
+              <span>Subcategoria</span>
+              <select
+                id="productSubcategoryId"
+                className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+                value={productSubcategoryId}
+                onChange={(event) => setProductSubcategoryId(event.target.value)}
+              >
+                {(productTarget?.subcategories || []).map((subcategory) => (
+                  <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <FormTextarea
+            label="Productos"
+            name="newProducts"
+            rows={8}
+            placeholder="Un producto por linea"
+            register={() => ({
+              value: productsText,
+              onChange: (event) => setProductsText(event.target.value)
+            })}
+          />
+          <Button type="submit" isLoading={isSaving}>Agregar producto</Button>
         </form>
       </Modal>
 

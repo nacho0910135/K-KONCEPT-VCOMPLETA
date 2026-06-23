@@ -144,6 +144,7 @@ model Subcategory {
   updatedAt   DateTime  @updatedAt
 
   tickets     Ticket[]
+  products    Product[]
 
   @@unique([name, categoryId])
   @@index([categoryId])
@@ -164,9 +165,11 @@ model Product {
   name                      String
   brand                     String?
   model                     String?
-  serialNumber              String        @unique
+  serialNumber              String?       @unique
   categoryId                String?
   category                  Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  subcategoryId             String?
+  subcategory               Subcategory?  @relation(fields: [subcategoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   description               String?
   purchaseDate              DateTime?
   active                    Boolean       @default(true)
@@ -178,6 +181,7 @@ model Product {
   replacementProductEntries Replacement[] @relation("ReplacementProduct")
 
   @@index([categoryId])
+  @@index([subcategoryId])
   @@index([brand, model])
 }
 

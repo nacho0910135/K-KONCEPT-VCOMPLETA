@@ -4,8 +4,9 @@ const productMutationSchema = z.object({
   name: z.string().trim().min(1),
   brand: z.string().trim().optional(),
   model: z.string().trim().optional(),
-  serialNumber: z.string().trim().min(1),
+  serialNumber: z.string().trim().optional(),
   categoryId: z.string().uuid().optional(),
+  subcategoryId: z.string().uuid().optional(),
   description: z.string().trim().optional(),
   purchaseDate: z.coerce.date().optional()
 });
@@ -16,6 +17,8 @@ const productQuerySchema = z.object({
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
   categoryId: z.string().uuid().optional(),
+  subcategoryId: z.string().uuid().optional(),
+  active: z.coerce.boolean().optional(),
   q: z.string().trim().optional()
 });
 
