@@ -34,7 +34,7 @@ const notificationRepository = {
     ]);
   },
 
-  async listTicketEmails(ticketId) {
+  async listTicketEmails(ticketId, clientId) {
     const replacements = await prisma.replacement.findMany({
       where: { ticketId },
       select: { id: true }
@@ -44,6 +44,7 @@ const notificationRepository = {
     return prisma.notification.findMany({
       where: {
         channel: 'EMAIL',
+        userId: clientId,
         OR: [
           { entityType: 'Ticket', entityId: ticketId },
           ...(replacementIds.length ? [{ entityType: 'Replacement', entityId: { in: replacementIds } }] : [])

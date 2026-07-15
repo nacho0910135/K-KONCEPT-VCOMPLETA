@@ -433,7 +433,7 @@ const notificationService = {
     if (!ticket) throw new NotFoundError('Ticket no encontrado');
     const allowed = user.role === 'ADMIN' || ticket.clientId === user.id || ticket.assignedTechnicianId === user.id;
     if (!allowed) throw new ForbiddenError('No tiene acceso a este ticket');
-    return notificationRepository.listTicketEmails(ticketId);
+    return notificationRepository.listTicketEmails(ticketId, ticket.clientId);
   },
 
   async markRead(id, user) {
