@@ -5,6 +5,7 @@ import Card from '../../components/common/Card.jsx';
 import IllustratedEmptyState from '../../components/common/IllustratedEmptyState.jsx';
 import { warrantyTone } from './clientUtils.jsx';
 import { formatDate } from '../../utils/formatDate.js';
+import { listProducts } from '../../services/category.client.service.js';
 import { listMyWarranties } from '../../services/warranties.client.service.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 
@@ -16,6 +17,7 @@ const getProductText = (warranty) => {
 const MisGarantias = () => {
   const [query, setQuery] = useState('');
   const [warranties, setWarranties] = useState([]);
+  const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -27,8 +29,14 @@ const MisGarantias = () => {
       setError('');
 
       try {
-        const result = await listMyWarranties();
-        if (mounted) setWarranties(Array.isArray(result) ? result : []);
+        const [warrantyResult, productResult] = await Promise.all([
+          listMyWarranties(),
+          listProducts({ limit: 100, active: true, sortBy: 'name', sortOrder: 'asc' })
+        ]);
+        if (mounted) {
+          setWarranties(Array.isArray(warrantyResult) ? warrantyResult : []);
+          setProducts(Array.isArray(productResult) ? productResult : productResult?.items || []);
+        }
       } catch (err) {
         if (mounted) setError(getErrorMessage(err, 'No pudimos cargar tus garantias.'));
       } finally {
@@ -46,6 +54,9 @@ const MisGarantias = () => {
   const filtered = useMemo(() => warranties.filter((warranty) => (
     getProductText(warranty).toLowerCase().includes(query.toLowerCase())
   )), [query, warranties]);
+  const filteredProducts = useMemo(() => products.filter((product) => (
+    `${product.name || ''} ${product.brand || ''} ${product.model || ''} ${product.category?.name || ''}`.toLowerCase().includes(query.toLowerCase())
+  )), [products, query]);
 
   return (
     <div className="grid gap-6">
@@ -58,6 +69,32 @@ const MisGarantias = () => {
         <input className="h-10 w-full rounded-md border border-neutral-200 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar por nombre o serial" value={query} onChange={(event) => setQuery(event.target.value)} />
       </div>
       {error && <Card className="border-danger bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</Card>}
+      <Card className="p-4">
+        <h2 className="font-semibold text-neutral-900">Garantias de productos en venta</h2>
+        <div className="mt-3 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="text-xs uppercase text-neutral-500">
+              <tr>
+                <th className="px-3 py-2">Producto</th>
+                <th className="px-3 py-2">Categoria</th>
+                <th className="px-3 py-2">Garantia</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {filteredProducts.map((product) => (
+                <tr key={product.id}>
+                  <td className="px-3 py-3 font-medium text-neutral-900">{[product.name, product.brand, product.model].filter(Boolean).join(' ')}</td>
+                  <td className="px-3 py-3 text-neutral-600">{product.category?.name || 'Sin categoria'}</td>
+                  <td className="px-3 py-3 text-neutral-600">{product.warrantyMonths ? `${product.warrantyMonths} meses` : 'No definida'}</td>
+                </tr>
+              ))}
+              {!isLoading && filteredProducts.length === 0 && (
+                <tr><td className="px-3 py-4 text-neutral-500" colSpan="3">No hay productos que coincidan con tu busqueda.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-36 animate-pulse rounded-lg bg-neutral-100" />)}

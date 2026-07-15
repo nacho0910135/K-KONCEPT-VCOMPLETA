@@ -25,3 +25,7 @@ export const deactivateSubcategory = async (id) => unwrap(await api.patch(`/subc
 export const deleteSubcategory = async (id) => unwrap(await api.delete(`/subcategories/${id}`));
 
 export const createProduct = async (payload) => unwrap(await api.post('/products', payload));
+
+export const listProducts = async (params = {}) => unwrap(await api.get('/products', { params }));
+
+export const updateProduct = async (id, payload) => unwrap(await api.put(`/products/${id}`, payload));

@@ -27,11 +27,13 @@ const TicketsAsignados = lazy(() => import('../pages/technician/TicketsAsignados
 const TechnicianDetalleTicket = lazy(() => import('../pages/technician/DetalleTicket.jsx'));
 const Reemplazos = lazy(() => import('../pages/technician/Reemplazos.jsx'));
 const Reembolsos = lazy(() => import('../pages/technician/Reembolsos.jsx'));
+const ValidarGarantia = lazy(() => import('../pages/technician/ValidarGarantia.jsx'));
 const TechnicianNotificaciones = lazy(() => import('../pages/technician/Notificaciones.jsx'));
 const AdminDashboard = lazy(() => import('../pages/admin/Dashboard.jsx'));
 const AdminTickets = lazy(() => import('../pages/admin/Tickets.jsx'));
 const Usuarios = lazy(() => import('../pages/admin/Usuarios.jsx'));
 const Categorias = lazy(() => import('../pages/admin/Categorias.jsx'));
+const AdminGarantias = lazy(() => import('../pages/admin/Garantias.jsx'));
 const SLAs = lazy(() => import('../pages/admin/SLAs.jsx'));
 const Reportes = lazy(() => import('../pages/admin/Reportes.jsx'));
 const Auditoria = lazy(() => import('../pages/admin/Auditoria.jsx'));
@@ -80,6 +82,7 @@ const AppRouter = () => (
             <Route path="dashboard" element={<TechnicianDashboard />} />
             <Route path="tickets" element={<TicketsAsignados />} />
             <Route path="tickets/:id" element={<TechnicianDetalleTicket />} />
+            <Route path="validar-garantia" element={<ValidarGarantia />} />
             <Route path="reemplazos" element={<Reemplazos />} />
             <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="notifications" element={<TechnicianNotificaciones />} />
@@ -97,6 +100,8 @@ const AppRouter = () => (
             <Route path="usuarios" element={<Usuarios />} />
             <Route path="categories" element={<Categorias />} />
             <Route path="categorias" element={<Categorias />} />
+            <Route path="warranties" element={<AdminGarantias />} />
+            <Route path="garantias" element={<AdminGarantias />} />
             <Route path="slas" element={<SLAs />} />
             <Route path="reports" element={<Reportes />} />
             <Route path="reportes" element={<Reportes />} />

@@ -12,7 +12,8 @@ const normalizeProductPayload = (payload) => ({
   categoryId: payload.categoryId || null,
   subcategoryId: payload.subcategoryId || null,
   description: payload.description || null,
-  purchaseDate: payload.purchaseDate || null
+  purchaseDate: payload.purchaseDate || null,
+  warrantyMonths: payload.warrantyMonths ?? null
 });
 
 const normalizeProductNames = (products = []) => [...new Set(products

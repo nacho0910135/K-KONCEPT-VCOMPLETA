@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import IllustratedEmptyState from '../../components/common/IllustratedEmptyState.jsx';
@@ -14,15 +15,19 @@ const statuses = ['OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED
 
 const getTicketCategory = (ticket) => ticket.category?.name || ticket.category || 'Sin categoria';
 const getTicketTechnician = (ticket) => ticket.assignedTechnician || ticket.technician;
-const normalize = (value) => String(value || '').toLowerCase();
-
 const MisTickets = () => {
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('');
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(searchParams.get('q') || '');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const hasFilters = Boolean(status || query.trim() || dateRange.from || dateRange.to);
+
+  useEffect(() => {
+    setQuery(searchParams.get('q') || '');
+  }, [searchParams]);
 
   useEffect(() => {
     let mounted = true;
@@ -32,7 +37,15 @@ const MisTickets = () => {
       setError('');
 
       try {
-        const response = await getMyTickets({ limit: 100, sortBy: 'createdAt', sortOrder: 'desc' });
+        const response = await getMyTickets({
+          limit: 100,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+          ...(status ? { status } : {}),
+          ...(query.trim() ? { q: query.trim() } : {}),
+          ...(dateRange.from ? { from: dateRange.from } : {}),
+          ...(dateRange.to ? { to: dateRange.to } : {})
+        });
         if (mounted) setTickets(response.data || []);
       } catch (err) {
         if (mounted) setError(getErrorMessage(err, 'No pudimos cargar tus tickets.'));
@@ -46,17 +59,7 @@ const MisTickets = () => {
     return () => {
       mounted = false;
     };
-  }, []);
-
-  const filteredTickets = useMemo(() => {
-    const search = normalize(query);
-
-    return tickets
-      .filter((ticket) => !status || ticket.status === status)
-      .filter((ticket) => !search || normalize(ticket.code).includes(search) || normalize(ticket.title).includes(search))
-      .filter((ticket) => !dateRange.from || new Date(ticket.createdAt) >= new Date(dateRange.from))
-      .filter((ticket) => !dateRange.to || new Date(ticket.createdAt) <= new Date(`${dateRange.to}T23:59:59`));
-  }, [tickets, status, query, dateRange]);
+  }, [status, query, dateRange.from, dateRange.to]);
 
   return (
     <div className="grid gap-6">
@@ -80,7 +83,7 @@ const MisTickets = () => {
         <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-            <input className="h-10 w-full rounded-md border border-neutral-200 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar por code o titulo" value={query} onChange={(event) => setQuery(event.target.value)} />
+            <input className="h-10 w-full rounded-md border border-neutral-200 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar por codigo, titulo, categoria o producto" value={query} onChange={(event) => setQuery(event.target.value)} />
           </div>
           <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
@@ -92,11 +95,11 @@ const MisTickets = () => {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }, (_, index) => <div key={index} className="h-40 animate-pulse rounded-lg bg-neutral-100" />)}
         </div>
-      ) : filteredTickets.length === 0 ? (
-        <IllustratedEmptyState title={tickets.length === 0 ? 'Aun no tienes tickets' : 'No hay tickets con esos filtros'} description={tickets.length === 0 ? 'Cuando crees una solicitud aparecera aqui.' : 'Ajusta la busqueda o crea una nueva solicitud.'} actionLabel="Crear ticket" onAction={() => { window.location.href = '/client/tickets/new'; }} />
+      ) : tickets.length === 0 ? (
+        <IllustratedEmptyState title={hasFilters ? 'No hay tickets con esos filtros' : 'Aun no tienes tickets'} description={hasFilters ? 'Ajusta la busqueda o crea una nueva solicitud.' : 'Cuando crees una solicitud aparecera aqui.'} actionLabel="Crear ticket" onAction={() => { window.location.href = '/client/tickets/new'; }} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredTickets.map((ticket) => (
+          {tickets.map((ticket) => (
             <Link key={ticket.id} to={`/client/tickets/${ticket.id}`}>
               <Card className="h-full p-4 transition hover:border-primary-200 hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">

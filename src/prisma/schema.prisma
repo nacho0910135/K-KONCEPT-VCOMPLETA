@@ -173,6 +173,7 @@ model Product {
   subcategory               Subcategory?  @relation(fields: [subcategoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   description               String?
   purchaseDate              DateTime?
+  warrantyMonths            Int?
   active                    Boolean       @default(true)
   createdAt                 DateTime      @default(now())
   updatedAt                 DateTime      @updatedAt

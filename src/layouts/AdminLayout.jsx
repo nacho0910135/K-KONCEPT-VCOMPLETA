@@ -1,4 +1,4 @@
-import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, ShieldAlert, SlidersHorizontal, Tags, UsersRound } from 'lucide-react';
+import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, ShieldCheck, ShieldAlert, SlidersHorizontal, Tags, UsersRound } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
@@ -6,6 +6,7 @@ const navItems = [
   { to: 'tickets', label: 'Casos', icon: FileText },
   { to: 'users', label: 'Usuarios', icon: UsersRound },
   { to: 'categories', label: 'Categorias', icon: Tags },
+  { to: 'garantias', label: 'Garantias', icon: ShieldCheck },
   { to: 'slas', label: 'SLAs', icon: Clock3 },
   { to: 'reports', label: 'Reportes', icon: ChartNoAxesCombined },
   { to: 'audit', label: 'Auditoria', icon: ShieldAlert },

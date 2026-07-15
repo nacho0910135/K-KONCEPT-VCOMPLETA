@@ -124,7 +124,17 @@ const buildSearchWhere = (q) => q ? {
   OR: [
     { code: { contains: q, mode: 'insensitive' } },
     { title: { contains: q, mode: 'insensitive' } },
-    { description: { contains: q, mode: 'insensitive' } }
+    { description: { contains: q, mode: 'insensitive' } },
+    { client: { is: { name: { contains: q, mode: 'insensitive' } } } },
+    { client: { is: { email: { contains: q, mode: 'insensitive' } } } },
+    { client: { is: { company: { contains: q, mode: 'insensitive' } } } },
+    { category: { is: { name: { contains: q, mode: 'insensitive' } } } },
+    { subcategory: { is: { name: { contains: q, mode: 'insensitive' } } } },
+    { assignedTechnician: { is: { name: { contains: q, mode: 'insensitive' } } } },
+    { product: { is: { name: { contains: q, mode: 'insensitive' } } } },
+    { product: { is: { brand: { contains: q, mode: 'insensitive' } } } },
+    { product: { is: { model: { contains: q, mode: 'insensitive' } } } },
+    { product: { is: { serialNumber: { contains: q, mode: 'insensitive' } } } }
   ]
 } : {};
 
@@ -136,6 +146,7 @@ const ensureTicketExists = async (id) => {
 
 const assertCanViewTicket = async (ticket, user, context = {}) => {
   const allowed = user.role === 'ADMIN'
+    || user.role === 'TECHNICIAN'
     || ticket.clientId === user.id
     || ticket.assignedTechnicianId === user.id;
 
@@ -662,12 +673,24 @@ const ticketService = {
 
   async search(query, user) {
     const pagination = buildPagination(query);
+    const q = query.q;
     const where = {
       OR: [
-        { code: { contains: query.q, mode: 'insensitive' } },
-        { client: { name: { contains: query.q, mode: 'insensitive' } } }
+        { code: { contains: q, mode: 'insensitive' } },
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { client: { is: { name: { contains: q, mode: 'insensitive' } } } },
+        { client: { is: { email: { contains: q, mode: 'insensitive' } } } },
+        { client: { is: { company: { contains: q, mode: 'insensitive' } } } },
+        { category: { is: { name: { contains: q, mode: 'insensitive' } } } },
+        { subcategory: { is: { name: { contains: q, mode: 'insensitive' } } } },
+        { assignedTechnician: { is: { name: { contains: q, mode: 'insensitive' } } } },
+        { product: { is: { name: { contains: q, mode: 'insensitive' } } } },
+        { product: { is: { brand: { contains: q, mode: 'insensitive' } } } },
+        { product: { is: { model: { contains: q, mode: 'insensitive' } } } },
+        { product: { is: { serialNumber: { contains: q, mode: 'insensitive' } } } }
       ],
-      ...(user.role === 'TECHNICIAN' ? { assignedTechnicianId: user.id } : {})
+      ...(user.role === 'CLIENT' ? { clientId: user.id } : {})
     };
 
     const [total, items] = await ticketRepository.search({

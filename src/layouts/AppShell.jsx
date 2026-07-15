@@ -24,10 +24,19 @@ const AppShell = ({ navItems, roleLabel }) => {
     const q = searchTerm.trim();
     if (!q) return;
 
-    if (user?.role === 'TECHNICIAN' || user?.role === 'ADMIN') {
-      const response = await searchTickets({ q, limit: 1 });
-      const ticket = response.data?.[0];
-      if (ticket) navigate(user.role === 'ADMIN' ? `/admin/tickets/${ticket.id}` : `/technician/tickets/${ticket.id}`);
+    if (user?.role === 'TECHNICIAN' || user?.role === 'ADMIN' || user?.role === 'CLIENT') {
+      try {
+        const response = await searchTickets({ q, limit: 1 });
+        const ticket = response.data?.[0];
+        if (ticket) {
+          if (user.role === 'ADMIN') navigate(`/admin/tickets/${ticket.id}`);
+          else if (user.role === 'TECHNICIAN') navigate(`/technician/tickets/${ticket.id}`);
+          else navigate(`/client/tickets/${ticket.id}`);
+        }
+      } catch (_error) {
+        if (user.role !== 'CLIENT') return;
+        navigate(`/client/tickets?q=${encodeURIComponent(q)}`);
+      }
       return;
     }
 

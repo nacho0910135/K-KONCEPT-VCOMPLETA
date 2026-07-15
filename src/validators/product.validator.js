@@ -8,7 +8,8 @@ const productMutationSchema = z.object({
   categoryId: z.string().uuid().optional(),
   subcategoryId: z.string().uuid().optional(),
   description: z.string().trim().optional(),
-  purchaseDate: z.coerce.date().optional()
+  purchaseDate: z.coerce.date().optional(),
+  warrantyMonths: z.coerce.number().int().min(0).max(120).optional().nullable()
 });
 
 const productQuerySchema = z.object({
