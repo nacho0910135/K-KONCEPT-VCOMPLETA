@@ -6,6 +6,10 @@ const listMine = async (req, res) => {
   return successResponse(res, { data: result.items, pagination: result.pagination });
 };
 
+const listTicketEmails = async (req, res) => successResponse(res, {
+  data: { emails: await notificationService.listTicketEmails(req.params.ticketId, req.user) }
+});
+
 const markRead = async (req, res) => successResponse(res, {
   data: { result: await notificationService.markRead(req.params.id, req.user) },
   message: 'Notificacion marcada como leida'
@@ -27,6 +31,7 @@ const unreadCount = async (req, res) => successResponse(res, {
 
 module.exports = {
   listMine,
+  listTicketEmails,
   markRead,
   markAllRead,
   clearMine,

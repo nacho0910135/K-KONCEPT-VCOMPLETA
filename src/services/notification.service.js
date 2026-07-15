@@ -1,8 +1,9 @@
 const { auditLogRepository } = require('../repositories/auditLog.repository');
 const { notificationRepository } = require('../repositories/notification.repository');
 const { notificationConfigRepository } = require('../repositories/notificationConfig.repository');
+const { ticketRepository } = require('../repositories/ticket.repository');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
-const { NotFoundError } = require('../utils/errors');
+const { ForbiddenError, NotFoundError } = require('../utils/errors');
 const { renderTemplate } = require('../utils/templateRenderer.util');
 const { emailProvider } = require('./providers/email.provider');
 const { inAppProvider } = require('./providers/inApp.provider');
@@ -19,14 +20,48 @@ const providers = {
   PUSH: pushProvider
 };
 
+const statusLabel = {
+  OPEN: 'Abierto',
+  PENDING: 'Pendiente de revision',
+  IN_PROGRESS: 'En proceso',
+  WAITING_CUSTOMER: 'Esperando respuesta del cliente',
+  RESOLVED: 'Resuelto',
+  CLOSED: 'Cerrado',
+  CANCELLED: 'Cancelado',
+  REOPENED: 'Reabierto'
+};
+
+const statusMeaning = {
+  OPEN: 'recibimos tu solicitud y esta pendiente de asignacion o revision inicial',
+  PENDING: 'tu caso ya esta en cola de atencion tecnica',
+  IN_PROGRESS: 'nuestro tecnico ya esta trabajando en la revision del caso',
+  WAITING_CUSTOMER: 'necesitamos una accion o respuesta tuya para poder continuar',
+  RESOLVED: 'nuestro tecnico registro una solucion; puedes revisarla y confirmar si todo quedo correcto',
+  CLOSED: 'el caso quedo finalizado',
+  CANCELLED: 'el caso fue cancelado',
+  REOPENED: 'el caso fue reabierto para una nueva revision'
+};
+
+const priorityLabel = {
+  LOW: 'Baja',
+  MEDIUM: 'Media',
+  HIGH: 'Alta',
+  CRITICAL: 'Critica'
+};
+
+const getRecipientName = (user = {}) => {
+  const name = String(user.name || '').trim();
+  if (name && !['cliente kollab', 'cliente'].includes(name.toLowerCase())) return name;
+  return String(user.email || '').split('@')[0].replace(/[._-]+/g, ' ') || 'cliente';
+};
+
 const defaultCopy = {
   TICKET_CREATED: {
     subject: 'Ticket {{ticketCode}} creado',
     body: `
       <p>Hola {{userName}},</p>
-      <p>Tu ticket fue abierto correctamente. Este es el resumen para seguimiento:</p>
+      <p>Recibimos tu solicitud y abrimos el ticket <strong>{{ticketCode}}</strong>. Este es el resumen para seguimiento:</p>
       <ul>
-        <li><strong>ID del ticket:</strong> {{ticketCode}}</li>
         <li><strong>Titulo:</strong> {{ticketTitle}}</li>
         <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
         <li><strong>Prioridad:</strong> {{priority}}</li>
@@ -34,19 +69,27 @@ const defaultCopy = {
       </ul>
       <p><strong>Descripcion enviada:</strong></p>
       <p>{{ticketDescription}}</p>
+      <p>Lo revisaremos segun la prioridad indicada y te avisaremos cualquier cambio por este medio.</p>
       <p>Puedes dar seguimiento desde: <a href="{{ticketUrl}}">{{ticketUrl}}</a></p>
     `
   },
   TICKET_ASSIGNED: {
     subject: 'Ticket {{ticketCode}} asignado',
-    body: 'Hola {{userName}}, el ticket {{ticketCode}} fue asignado a {{technicianName}}.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Asignamos el ticket <strong>{{ticketCode}}</strong> a nuestro tecnico <strong>{{technicianName}}</strong>.</p>
+      <p>Esto significa que tu caso ya tiene un responsable tecnico y entra en revision.</p>
+      <p><strong>Titulo:</strong> {{ticketTitle}}</p>
+    `
   },
   STATUS_CHANGED: {
     subject: 'Ticket {{ticketCode}} cambio de estado',
     body: `
       <p>Hola {{userName}},</p>
-      <p>{{technicianName}} actualizo el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <p>Nuestro tecnico {{technicianName}} cambio el estado de tu ticket <strong>{{ticketCode}}</strong> a <strong>{{newStatus}}</strong>.</p>
+      <p>Esto significa que {{newStatusMeaning}}.</p>
       <ul>
+        <li><strong>Titulo:</strong> {{ticketTitle}}</li>
         <li><strong>Articulo:</strong> {{productName}}</li>
         <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
         <li><strong>Estado anterior:</strong> {{previousStatus}}</li>
@@ -63,8 +106,10 @@ const defaultCopy = {
     subject: 'Ticket {{ticketCode}} resuelto',
     body: `
       <p>Hola {{userName}},</p>
-      <p>{{technicianName}} marco como resuelto el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <p>Nuestro tecnico {{technicianName}} marco como resuelto tu ticket <strong>{{ticketCode}}</strong>.</p>
+      <p>Esto significa que se registro una solucion para tu caso. Por favor revisala y confirma si quedo correcto.</p>
       <ul>
+        <li><strong>Titulo:</strong> {{ticketTitle}}</li>
         <li><strong>Articulo:</strong> {{productName}}</li>
         <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
         <li><strong>Tipo de resolucion:</strong> {{closeType}}</li>
@@ -78,26 +123,26 @@ const defaultCopy = {
   },
   TICKET_CLOSED: {
     subject: 'Ticket {{ticketCode}} cerrado',
-    body: 'El ticket {{ticketCode}} fue cerrado.'
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo cerrado. Gracias por confirmar la atencion recibida.'
   },
   APPOINTMENT_RESCHEDULED: {
     subject: 'Cita reprogramada para {{ticketCode}}',
-    body: 'La cita del ticket {{ticketCode}} fue reprogramada para {{appointmentDate}}.'
+    body: 'Hola {{userName}}, la cita del ticket {{ticketCode}} fue reprogramada para {{appointmentDate}}.'
   },
   REPLACEMENT_APPROVED: {
     subject: 'Reemplazo aprobado para {{ticketCode}}',
-    body: 'El reemplazo solicitado para el ticket {{ticketCode}} fue aprobado.'
+    body: 'Hola {{userName}}, el reemplazo solicitado para el ticket {{ticketCode}} fue aprobado. Te avisaremos cuando el producto nuevo este listo para entrega.'
   },
   SLA_BREACH: {
     subject: 'SLA vencido en {{ticketCode}}',
-    body: 'El ticket {{ticketCode}} excedio su fecha limite de SLA {{deadlineAt}}.'
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} excedio su fecha limite de atencion {{deadlineAt}}. Nuestro equipo debe priorizar el seguimiento.'
   }
 };
 
 const defaultInAppCopy = {
   TICKET_CREATED: {
     subject: 'Ticket {{ticketCode}} creado',
-    body: 'Tu ticket {{ticketCode}} fue abierto correctamente. Prioridad: {{priority}}. Estado: {{status}}.'
+    body: 'Hola {{userName}}, recibimos tu ticket {{ticketCode}}. Prioridad: {{priority}}. Estado: {{status}}.'
   },
   TICKET_ASSIGNED: defaultCopy.TICKET_ASSIGNED,
   STATUS_CHANGED: defaultCopy.STATUS_CHANGED,
@@ -114,8 +159,13 @@ const uniqueById = (users) => Array.from(
 );
 
 const normalizePayload = (payload, user) => ({
-  userName: user?.name || '',
-  ...payload
+  userName: getRecipientName(user),
+  ...payload,
+  status: statusLabel[payload.status] || payload.status || '',
+  priority: priorityLabel[payload.priority] || payload.priority || '',
+  previousStatus: statusLabel[payload.previousStatus] || payload.previousStatus || '',
+  newStatus: statusLabel[payload.newStatus] || payload.newStatus || '',
+  newStatusMeaning: payload.newStatusMeaning || statusMeaning[payload.newStatus] || 'tenemos una actualizacion sobre el avance de tu caso'
 });
 
 const stripHtml = (value = '') => String(value)
@@ -139,6 +189,13 @@ const decodeTemplateHtml = (value = '') => String(value)
   .replace(/&#39;/g, "'")
   .replace(/&amp;/g, '&');
 
+const isLegacyTemplate = (value = '') => [
+  'fue asignado a {{technicianName}}',
+  'cambio de {{previousStatus}} a {{newStatus}}',
+  'fue marcado como resuelto',
+  'fue abierto correctamente. Prioridad'
+].some((snippet) => String(value).includes(snippet));
+
 const getEnabledChannels = async () => {
   const configured = await notificationConfigRepository.listChannels();
   const enabled = new Set(configured.filter((channel) => channel.enabled).map((channel) => channel.channel));
@@ -150,11 +207,12 @@ const renderForChannel = async ({ event, channel, payload }) => {
   const template = await notificationConfigRepository.findActiveTemplate({ event, channel });
   const fallbackCopies = channel === 'IN_APP' ? defaultInAppCopy : defaultCopy;
   const fallback = fallbackCopies[event] || { subject: event, body: payload.message || event };
+  const activeTemplate = isLegacyTemplate(template?.bodyTemplate) ? null : template;
   const escape = channel === 'EMAIL';
-  const subjectTemplate = template?.subject || fallback.subject;
+  const subjectTemplate = activeTemplate?.subject || fallback.subject;
   const bodyTemplate = channel === 'EMAIL'
-    ? decodeTemplateHtml(template?.bodyTemplate || fallback.body)
-    : template?.bodyTemplate || fallback.body;
+    ? decodeTemplateHtml(activeTemplate?.bodyTemplate || fallback.body)
+    : activeTemplate?.bodyTemplate || fallback.body;
 
   const rendered = {
     subject: renderTemplate(subjectTemplate, payload, { escape }),
@@ -368,6 +426,14 @@ const notificationService = {
     });
 
     return { items, pagination: buildPaginationMeta({ ...pagination, total }) };
+  },
+
+  async listTicketEmails(ticketId, user) {
+    const ticket = await ticketRepository.findById(ticketId);
+    if (!ticket) throw new NotFoundError('Ticket no encontrado');
+    const allowed = user.role === 'ADMIN' || ticket.clientId === user.id || ticket.assignedTechnicianId === user.id;
+    if (!allowed) throw new ForbiddenError('No tiene acceso a este ticket');
+    return notificationRepository.listTicketEmails(ticketId);
   },
 
   async markRead(id, user) {

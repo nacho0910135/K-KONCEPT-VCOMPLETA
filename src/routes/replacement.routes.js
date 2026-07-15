@@ -35,6 +35,12 @@ router.get(
 );
 
 router.get(
+  '/replacements/export/:format(csv|xls)',
+  authorizeRoles('TECHNICIAN', 'ADMIN'),
+  asyncHandler(replacementController.exportFile)
+);
+
+router.get(
   '/replacements/export/pdf',
   authorizeRoles('TECHNICIAN', 'ADMIN'),
   asyncHandler(replacementController.exportPdf)

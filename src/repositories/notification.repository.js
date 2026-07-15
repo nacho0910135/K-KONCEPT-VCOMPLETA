@@ -34,6 +34,25 @@ const notificationRepository = {
     ]);
   },
 
+  async listTicketEmails(ticketId) {
+    const replacements = await prisma.replacement.findMany({
+      where: { ticketId },
+      select: { id: true }
+    });
+    const replacementIds = replacements.map((replacement) => replacement.id);
+
+    return prisma.notification.findMany({
+      where: {
+        channel: 'EMAIL',
+        OR: [
+          { entityType: 'Ticket', entityId: ticketId },
+          ...(replacementIds.length ? [{ entityType: 'Replacement', entityId: { in: replacementIds } }] : [])
+        ]
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  },
+
   markRead({ id, userId }) {
     return prisma.notification.updateMany({
       where: { id, userId },

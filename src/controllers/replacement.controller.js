@@ -64,9 +64,18 @@ const exportPdf = async (req, res) => {
   return res.send(pdf.buffer);
 };
 
+const exportFile = async (req, res) => {
+  const file = await replacementService.exportList(req.user, req.params.format);
+  res.setHeader('Content-Type', file.contentType);
+  res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+  return res.send(file.buffer);
+};
+
 const downloadCertificate = async (req, res) => {
-  const replacement = await replacementService.getCertificate(req.params.id, req.user);
-  return res.redirect(302, replacement.pdfUrl);
+  const certificate = await replacementService.getCertificate(req.params.id, req.user);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${certificate.filename}"`);
+  return res.send(certificate.buffer);
 };
 
 const regenerateCertificate = async (req, res) => {
@@ -87,6 +96,7 @@ module.exports = {
   getByTicketId,
   list,
   exportPdf,
+  exportFile,
   downloadCertificate,
   regenerateCertificate
 };

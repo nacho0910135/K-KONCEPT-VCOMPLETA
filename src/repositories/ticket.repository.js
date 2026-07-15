@@ -134,6 +134,21 @@ const ticketRepository = {
             }
           }
         }
+      }),
+      prisma.replacement.findMany({
+        where: { ticketId },
+        orderBy: { createdAt: 'asc' },
+        include: {
+          requestedBy: { select: { id: true, name: true, email: true, role: true } },
+          deliveredBy: { select: { id: true, name: true, email: true, role: true } }
+        }
+      }),
+      prisma.refund.findMany({
+        where: { ticketId },
+        orderBy: { createdAt: 'asc' },
+        include: {
+          requestedBy: { select: { id: true, name: true, email: true, role: true } }
+        }
       })
     ]);
   },

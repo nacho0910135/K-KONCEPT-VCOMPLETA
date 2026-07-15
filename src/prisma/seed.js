@@ -52,18 +52,38 @@ const initialCategories = [
 const templateCopy = {
   TICKET_CREATED: {
     subject: 'Ticket {{ticketCode}} creado',
-    body: 'Hola {{userName}}, el ticket {{ticketCode}} fue creado correctamente.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Recibimos tu solicitud y abrimos el ticket <strong>{{ticketCode}}</strong>. Este es el resumen para seguimiento:</p>
+      <ul>
+        <li><strong>Titulo:</strong> {{ticketTitle}}</li>
+        <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
+        <li><strong>Prioridad:</strong> {{priority}}</li>
+        <li><strong>Estado:</strong> {{status}}</li>
+      </ul>
+      <p><strong>Descripcion enviada:</strong></p>
+      <p>{{ticketDescription}}</p>
+      <p>Lo revisaremos segun la prioridad indicada y te avisaremos cualquier cambio por este medio.</p>
+      <p>Puedes dar seguimiento desde: <a href="{{ticketUrl}}">{{ticketUrl}}</a></p>
+    `
   },
   TICKET_ASSIGNED: {
     subject: 'Ticket {{ticketCode}} asignado',
-    body: 'El ticket {{ticketCode}} fue asignado a {{technicianName}}.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Asignamos el ticket <strong>{{ticketCode}}</strong> a nuestro tecnico <strong>{{technicianName}}</strong>.</p>
+      <p>Esto significa que tu caso ya tiene un responsable tecnico y entra en revision.</p>
+      <p><strong>Titulo:</strong> {{ticketTitle}}</p>
+    `
   },
   STATUS_CHANGED: {
     subject: 'Ticket {{ticketCode}} cambio de estado',
     body: `
       <p>Hola {{userName}},</p>
-      <p>{{technicianName}} actualizo el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <p>Nuestro tecnico {{technicianName}} cambio el estado de tu ticket <strong>{{ticketCode}}</strong> a <strong>{{newStatus}}</strong>.</p>
+      <p>Esto significa que {{newStatusMeaning}}.</p>
       <ul>
+        <li><strong>Titulo:</strong> {{ticketTitle}}</li>
         <li><strong>Articulo:</strong> {{productName}}</li>
         <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
         <li><strong>Estado anterior:</strong> {{previousStatus}}</li>
@@ -74,14 +94,16 @@ const templateCopy = {
   },
   NEW_COMMENT: {
     subject: 'Nuevo comentario en {{ticketCode}}',
-    body: '{{commentAuthor}} agrego un comentario al ticket {{ticketCode}}: {{commentText}}'
+    body: 'Hola {{userName}}, {{commentAuthor}} agrego un comentario al ticket {{ticketCode}}: {{commentText}}'
   },
   TICKET_RESOLVED: {
     subject: 'Ticket {{ticketCode}} resuelto',
     body: `
       <p>Hola {{userName}},</p>
-      <p>{{technicianName}} resolvio el ticket <strong>{{ticketCode}}</strong>: {{ticketTitle}}.</p>
+      <p>Nuestro tecnico {{technicianName}} marco como resuelto tu ticket <strong>{{ticketCode}}</strong>.</p>
+      <p>Esto significa que se registro una solucion para tu caso. Por favor revisala y confirma si quedo correcto.</p>
       <ul>
+        <li><strong>Titulo:</strong> {{ticketTitle}}</li>
         <li><strong>Articulo:</strong> {{productName}}</li>
         <li><strong>Categoria:</strong> {{categoryName}} / {{subcategoryName}}</li>
         <li><strong>Tipo de resolucion:</strong> {{closeType}}</li>
@@ -95,26 +117,26 @@ const templateCopy = {
   },
   TICKET_CLOSED: {
     subject: 'Ticket {{ticketCode}} cerrado',
-    body: 'El ticket {{ticketCode}} fue cerrado.'
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo cerrado. Gracias por confirmar la atencion recibida.'
   },
   APPOINTMENT_RESCHEDULED: {
     subject: 'Cita reprogramada para {{ticketCode}}',
-    body: 'La cita del ticket {{ticketCode}} fue reprogramada para {{appointmentDate}}.'
+    body: 'Hola {{userName}}, la cita del ticket {{ticketCode}} fue reprogramada para {{appointmentDate}}.'
   },
   REPLACEMENT_APPROVED: {
     subject: 'Reemplazo aprobado para {{ticketCode}}',
-    body: 'El reemplazo solicitado para el ticket {{ticketCode}} fue aprobado.'
+    body: 'Hola {{userName}}, el reemplazo solicitado para el ticket {{ticketCode}} fue aprobado. Te avisaremos cuando el producto nuevo este listo para entrega.'
   },
   SLA_BREACH: {
     subject: 'SLA vencido en {{ticketCode}}',
-    body: 'El ticket {{ticketCode}} excedio su fecha limite de SLA.'
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} excedio su fecha limite de atencion. Nuestro equipo debe priorizar el seguimiento.'
   }
 };
 
 const inAppTemplateCopy = {
   TICKET_CREATED: {
     subject: 'Ticket {{ticketCode}} creado',
-    body: 'Tu ticket {{ticketCode}} fue abierto correctamente. Prioridad: {{priority}}. Estado: {{status}}.'
+    body: 'Hola {{userName}}, recibimos tu ticket {{ticketCode}}. Prioridad: {{priority}}. Estado: {{status}}.'
   },
   TICKET_ASSIGNED: templateCopy.TICKET_ASSIGNED,
   STATUS_CHANGED: templateCopy.STATUS_CHANGED,

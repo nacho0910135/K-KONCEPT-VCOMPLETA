@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileUp, Mail, MessageSquare, Phone, Save, X } from 'lucide-react';
+import { FileUp, Mail, MessageSquare, Phone, RefreshCw, Save, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
@@ -8,14 +8,17 @@ import Badge from '../../components/common/Badge.jsx';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import EvidenceGallery from '../../components/tickets/EvidenceGallery.jsx';
+import Modal from '../../components/common/Modal.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import { addComment, getTicketById, getTicketHistory, saveTicketDiagnosis, updateTicketStatus } from '../../services/tickets.service.js';
 import { uploadTicketEvidence } from '../../services/evidence.client.service.js';
+import { getTicketEmails } from '../../services/notifications.service.js';
 import { useToast } from '../../hooks/useToast.js';
 import { PriorityBadge, TechnicianStatusBadge, technicianStatusLabels } from './technicianUtils.jsx';
 import { formatDate, formatDateTime } from '../../utils/formatDate.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
+import { cleanNotificationText } from '../../utils/notificationText.js';
 
 const statusSchema = z.object({
   status: z.string().min(1, 'Selecciona el nuevo estado'),
@@ -60,6 +63,8 @@ const DetalleTicket = () => {
   const [ticket, setTicket] = useState(null);
   const [history, setHistory] = useState({ statuses: [], comments: [], evidence: [] });
   const [evidenceFiles, setEvidenceFiles] = useState([]);
+  const [emails, setEmails] = useState([]);
+  const [selectedEmail, setSelectedEmail] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [error, setError] = useState('');
@@ -82,6 +87,7 @@ const DetalleTicket = () => {
       const nextTicket = ticketResponse.ticket || ticketResponse;
       setTicket(nextTicket);
       setHistory(historyResponse);
+      setEmails(await getTicketEmails(id).catch(() => []));
       diagnosisForm.reset({ diagnosis: nextTicket.diagnosis || '' });
     } catch (err) {
       setError(getErrorMessage(err, 'No pudimos cargar el ticket.'));
@@ -97,6 +103,13 @@ const DetalleTicket = () => {
   const transitionOptions = useMemo(() => (allowedTransitions[ticket?.status] || [])
     .map((status) => ({ value: status, label: transitionLabel(status) })), [ticket?.status]);
   const evidences = history.evidence || ticket.evidence || [];
+  const timeline = history.timeline || (history.statuses || []).map((event) => ({
+    id: event.id,
+    title: `${event.previousStatus || 'Nuevo'} -> ${event.newStatus}`,
+    description: event.comment,
+    actor: event.changedBy,
+    createdAt: event.createdAt
+  }));
 
   const saveStatus = async (values) => {
     try {
@@ -160,6 +173,10 @@ const DetalleTicket = () => {
     } finally {
       setIsUploadingEvidence(false);
     }
+  };
+
+  const loadEmails = async () => {
+    setEmails(await getTicketEmails(id).catch(() => []));
   };
 
   if (isLoading) return <div className="h-64 animate-pulse rounded-lg bg-neutral-100" />;
@@ -312,6 +329,23 @@ const DetalleTicket = () => {
           </Card>
 
           <Card className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-neutral-900">Correos enviados al usuario</h2>
+              <Button variant="ghost" className="min-h-8 px-2 py-1" onClick={loadEmails}><RefreshCw className="h-4 w-4" />Actualizar</Button>
+            </div>
+            <div className="mt-4 grid divide-y divide-neutral-100">
+              {emails.length === 0 && <p className="text-sm text-neutral-500">Aun no hay correos registrados para este ticket.</p>}
+              {emails.map((email) => (
+                <button key={email.id} type="button" onClick={() => setSelectedEmail(email)} className="grid gap-1 py-3 text-left hover:bg-neutral-50">
+                  <span className="text-sm font-semibold text-neutral-900">{email.title}</span>
+                  <span className="line-clamp-2 text-sm text-neutral-600">{cleanNotificationText(email.message)}</span>
+                  <span className="text-xs text-neutral-500">{formatDateTime(email.sentAt || email.createdAt)}</span>
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Comentarios</h2>
             <div className="mt-4 grid gap-3">
               {history.comments?.length === 0 && <p className="text-sm text-neutral-500">Aun no hay comentarios registrados.</p>}
@@ -332,18 +366,24 @@ const DetalleTicket = () => {
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Historial</h2>
             <ol className="mt-4 space-y-4">
-              {(history.statuses || []).map((event) => (
+              {timeline.map((event) => (
                 <li key={event.id} className="relative border-l border-neutral-200 pl-4">
                   <span className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-primary-600" />
-                  <p className="text-sm font-semibold text-neutral-900">{event.previousStatus || 'Nuevo'} {'->'} {event.newStatus}</p>
-                  <p className="text-sm text-neutral-600">{event.comment}</p>
-                  <p className="text-xs text-neutral-500">{event.changedBy?.name ? `${event.changedBy.name} · ` : ''}{formatDateTime(event.createdAt)}</p>
+                  <p className="text-sm font-semibold text-neutral-900">{event.title}</p>
+                  <p className="text-sm text-neutral-600">{event.description}</p>
+                  <p className="text-xs text-neutral-500">{event.actor?.name ? `${event.actor.name} - ` : ''}{formatDateTime(event.createdAt)}</p>
                 </li>
               ))}
             </ol>
           </Card>
         </div>
       </div>
+      <Modal isOpen={Boolean(selectedEmail)} title={selectedEmail?.title || 'Correo enviado'} onClose={() => setSelectedEmail(null)} maxWidth="max-w-2xl">
+        <div className="grid gap-3 text-sm text-neutral-700">
+          <p className="text-xs font-semibold uppercase text-neutral-500">{formatDateTime(selectedEmail?.sentAt || selectedEmail?.createdAt)}</p>
+          <div className="whitespace-pre-wrap rounded-lg border border-neutral-200 bg-neutral-50 p-4 leading-6">{cleanNotificationText(selectedEmail?.message)}</div>
+        </div>
+      </Modal>
     </div>
   );
 };

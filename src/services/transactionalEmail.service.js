@@ -1,7 +1,24 @@
 const { env } = require('../config/env');
 const { mailer } = require('../utils/mailer');
+const { notificationRepository } = require('../repositories/notification.repository');
 const { escapeHtml } = require('../utils/templateRenderer.util');
 const { logger } = require('../utils/logger');
+
+const emailEventByType = {
+  TICKET_CREATED_EMAIL: 'TICKET_CREATED',
+  TICKET_STATUS_EMAIL: 'STATUS_CHANGED',
+  TICKET_ASSIGNED_EMAIL: 'TICKET_ASSIGNED',
+  TICKET_COMMENT_EMAIL: 'NEW_COMMENT',
+  RETURN_ITEM_REQUEST_EMAIL: 'STATUS_CHANGED',
+  REPLACEMENT_PRODUCT_EMAIL: 'REPLACEMENT_APPROVED',
+  REPLACEMENT_DELIVERED_EMAIL: 'REPLACEMENT_APPROVED'
+};
+
+const getRecipientName = (user = {}) => {
+  const name = String(user.name || '').trim();
+  if (name && !['cliente kollab', 'cliente'].includes(name.toLowerCase())) return name;
+  return String(user.email || '').split('@')[0].replace(/[._-]+/g, ' ') || 'cliente';
+};
 
 const layout = ({ title, preview, body }) => `
   <div style="font-family: Arial, sans-serif; color: #171717; line-height: 1.5; max-width: 640px; margin: 0 auto;">
@@ -21,6 +38,19 @@ const layout = ({ title, preview, body }) => `
 const sendSafely = async (options, context) => {
   try {
     const info = await mailer.sendMail(options);
+    const event = emailEventByType[context?.type];
+    if (event && context.userId && context.ticketId) {
+      await notificationRepository.create({
+        userId: context.userId,
+        event,
+        title: options.subject,
+        message: options.text || options.html,
+        entityType: 'Ticket',
+        entityId: context.ticketId,
+        channel: 'EMAIL',
+        sentAt: new Date()
+      }).catch((error) => logger.error({ error, context }, 'No se pudo registrar correo enviado'));
+    }
     logger.info({
       context,
       accepted: info.accepted,
@@ -47,14 +77,14 @@ const transactionalEmailService = {
         title: 'Bienvenido a Kollab Koncepts',
         preview: 'Tu cuenta de cliente fue creada correctamente.',
         body: `
-          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
           <p>Tu cuenta de cliente fue creada correctamente. Desde ahora puedes abrir tickets, consultar el estado de tus solicitudes y revisar tus notificaciones.</p>
           <p><strong>Correo de acceso:</strong> ${escapeHtml(user.email)}</p>
           <p><a href="${escapeHtml(loginUrl)}" style="color: #2563eb;">Ingresar al sistema</a></p>
         `
       }),
       text: [
-        `Hola ${user.name},`,
+        `Hola ${getRecipientName(user)},`,
         '',
         'Tu cuenta de cliente fue creada correctamente.',
         `Correo de acceso: ${user.email}`,
@@ -73,7 +103,7 @@ const transactionalEmailService = {
         title: 'Restablecer contrasena',
         preview: 'Usa este codigo para crear una nueva contrasena.',
         body: `
-          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
           <p>Recibimos una solicitud para restablecer tu contrasena.</p>
           <p style="font-size: 28px; letter-spacing: 6px; font-weight: 700; margin: 24px 0;">${escapeHtml(code)}</p>
           <p>Este codigo vence en ${expiresInMinutes} minutos.</p>
@@ -82,7 +112,7 @@ const transactionalEmailService = {
         `
       }),
       text: [
-        `Hola ${user.name},`,
+        `Hola ${getRecipientName(user)},`,
         '',
         'Recibimos una solicitud para restablecer tu contrasena.',
         `Codigo: ${code}`,
@@ -104,7 +134,7 @@ const transactionalEmailService = {
         title: `Ticket ${ticket.code} creado`,
         preview: 'Recibimos tu solicitud correctamente.',
         body: `
-          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
           <p>Recibimos tu solicitud correctamente y ya quedo registrada para seguimiento.</p>
           <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
           <p><strong>Prioridad:</strong> ${escapeHtml(ticket.priority)}</p>
@@ -113,7 +143,7 @@ const transactionalEmailService = {
         `
       }),
       text: [
-        `Hola ${user.name},`,
+        `Hola ${getRecipientName(user)},`,
         '',
         `Recibimos tu solicitud ${ticket.code} correctamente.`,
         `Titulo: ${ticket.title}`,
@@ -150,26 +180,28 @@ const transactionalEmailService = {
         title: `Actualizacion del ticket ${ticket.code}`,
         preview: `El estado cambio a ${update.newStatus}.`,
         body: `
-          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
           <p>${escapeHtml(update.technicianName || 'El tecnico asignado')} actualizo tu caso.</p>
           <p><strong>Ticket:</strong> ${escapeHtml(ticket.code)}</p>
           <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
           <p><strong>Producto:</strong> ${escapeHtml(update.productName || ticket.product?.name || 'Sin producto asociado')}</p>
           <p><strong>Estado anterior:</strong> ${escapeHtml(update.previousStatus || 'Nuevo')}</p>
           <p><strong>Estado actual:</strong> ${escapeHtml(update.newStatus)}</p>
+          <p><strong>Que significa:</strong> ${escapeHtml(update.newStatusMeaning || 'Tenemos una actualizacion sobre el avance de tu caso.')}</p>
           ${resolutionRows}
           ${update.comment ? `<p><strong>Comentario:</strong> ${escapeHtml(update.comment)}</p>` : ''}
           <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
         `
       }),
       text: [
-        `Hola ${user.name},`,
+        `Hola ${getRecipientName(user)},`,
         '',
         `${update.technicianName || 'El tecnico asignado'} actualizo tu caso ${ticket.code}.`,
         `Titulo: ${ticket.title}`,
         `Producto: ${update.productName || ticket.product?.name || 'Sin producto asociado'}`,
         `Estado anterior: ${update.previousStatus || 'Nuevo'}`,
         `Estado actual: ${update.newStatus}`,
+        `Que significa: ${update.newStatusMeaning || 'Tenemos una actualizacion sobre el avance de tu caso.'}`,
         ...resolutionText,
         update.comment ? `Comentario: ${update.comment}` : '',
         `Ver ticket: ${ticketUrl}`
@@ -187,7 +219,7 @@ const transactionalEmailService = {
         title: `Tecnico asignado al ticket ${ticket.code}`,
         preview: `${technician.name} fue asignado a tu caso.`,
         body: `
-          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
           <p>Ya asignamos un tecnico a tu caso.</p>
           <p><strong>Ticket:</strong> ${escapeHtml(ticket.code)}</p>
           <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
@@ -196,7 +228,7 @@ const transactionalEmailService = {
         `
       }),
       text: [
-        `Hola ${user.name},`,
+        `Hola ${getRecipientName(user)},`,
         '',
         `Ya asignamos un tecnico a tu caso ${ticket.code}.`,
         `Titulo: ${ticket.title}`,
@@ -216,14 +248,14 @@ const transactionalEmailService = {
         title: `Nuevo comentario en ${ticket.code}`,
         preview: `${comment.authorName} agrego un comentario.`,
         body: `
-          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
           <p>${escapeHtml(comment.authorName)} agrego un comentario en tu caso.</p>
           <p><strong>Comentario:</strong> ${escapeHtml(comment.text)}</p>
           <p><a href="${escapeHtml(ticketUrl)}" style="color: #2563eb;">Ver ticket</a></p>
         `
       }),
       text: [
-        `Hola ${user.name},`,
+        `Hola ${getRecipientName(user)},`,
         '',
         `${comment.authorName} agrego un comentario en tu caso ${ticket.code}.`,
         `Comentario: ${comment.text}`,
@@ -242,7 +274,7 @@ const transactionalEmailService = {
         title: `Devolucion requerida para ${ticket.code}`,
         preview: 'Para continuar con tu caso debes devolver el articulo a la tienda.',
         body: `
-          <p>Hola ${escapeHtml(user.name)},</p>
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
           <p>${escapeHtml(technician.name)} solicita que devuelvas el articulo a la tienda para poder continuar con el caso.</p>
           <p><strong>Ticket:</strong> ${escapeHtml(ticket.code)}</p>
           <p><strong>Titulo:</strong> ${escapeHtml(ticket.title)}</p>
@@ -251,7 +283,7 @@ const transactionalEmailService = {
         `
       }),
       text: [
-        `Hola ${user.name},`,
+        `Hola ${getRecipientName(user)},`,
         '',
         `${technician.name} solicita que devuelvas el articulo a la tienda para poder continuar con el caso.`,
         `Ticket: ${ticket.code}`,
@@ -260,6 +292,64 @@ const transactionalEmailService = {
         `Ver ticket: ${ticketUrl}`
       ].join('\n')
     }, { type: 'RETURN_ITEM_REQUEST_EMAIL', userId: user.id, ticketId: ticket.id });
+  },
+
+  async sendReplacementProductEmail(user, replacement) {
+    const previous = replacement.ticket?.product;
+    const previousProduct = [previous?.brand || previous?.name, previous?.model, previous?.serialNumber].filter(Boolean).join(' ') || replacement.requestedProduct;
+
+    return sendSafely({
+      to: user.email,
+      subject: `Producto de reemplazo aprobado para ${replacement.ticket.code}`,
+      html: layout({
+        title: `Producto de reemplazo aprobado para ${replacement.ticket.code}`,
+        preview: 'Confirmamos el producto que se entregara como reemplazo.',
+        body: `
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
+          <p>Se aprobo la entrega del siguiente producto como reemplazo para tu ticket <strong>${escapeHtml(replacement.ticket.code)}</strong>.</p>
+          <p><strong>Producto anterior:</strong> ${escapeHtml(previousProduct)}</p>
+          <p><strong>Producto nuevo:</strong> ${escapeHtml(replacement.replacementBrand)} ${escapeHtml(replacement.replacementModel)}</p>
+          <p><strong>Serie del producto nuevo:</strong> ${escapeHtml(replacement.replacementSerialNumber)}</p>
+          ${replacement.replacementNotes ? `<p><strong>Notas:</strong> ${escapeHtml(replacement.replacementNotes)}</p>` : ''}
+        `
+      }),
+      text: [
+        `Hola ${getRecipientName(user)},`,
+        `Se aprobo la entrega del siguiente producto como reemplazo para tu ticket ${replacement.ticket.code}.`,
+        `Producto anterior: ${previousProduct}`,
+        `Producto nuevo: ${replacement.replacementBrand} ${replacement.replacementModel}`,
+        `Serie del producto nuevo: ${replacement.replacementSerialNumber}`,
+        replacement.replacementNotes ? `Notas: ${replacement.replacementNotes}` : ''
+      ].filter(Boolean).join('\n')
+    }, { type: 'REPLACEMENT_PRODUCT_EMAIL', userId: user.id, ticketId: replacement.ticketId });
+  },
+
+  async sendReplacementDeliveredEmail(user, replacement, certificateBuffer) {
+    return sendSafely({
+      to: user.email,
+      subject: `Entrega de reemplazo completada para ${replacement.ticket.code}`,
+      html: layout({
+        title: `Entrega de reemplazo completada para ${replacement.ticket.code}`,
+        preview: 'La entrega del producto nuevo se realizo correctamente.',
+        body: `
+          <p>Hola ${escapeHtml(getRecipientName(user))},</p>
+          <p>La entrega del producto nuevo <strong>${escapeHtml(replacement.replacementBrand)} ${escapeHtml(replacement.replacementModel)}</strong> se realizo correctamente.</p>
+          <p><strong>Serie:</strong> ${escapeHtml(replacement.replacementSerialNumber)}</p>
+          <p>Gracias por utilizar nuestros servicios. Adjuntamos la constancia formal de sustitucion en PDF.</p>
+        `
+      }),
+      text: [
+        `Hola ${getRecipientName(user)},`,
+        `La entrega del producto nuevo ${replacement.replacementBrand} ${replacement.replacementModel} se realizo correctamente.`,
+        `Serie: ${replacement.replacementSerialNumber}`,
+        'Gracias por utilizar nuestros servicios. Adjuntamos la constancia formal de sustitucion en PDF.'
+      ].join('\n'),
+      attachments: certificateBuffer ? [{
+        filename: `constancia-${replacement.ticket.code}.pdf`,
+        content: certificateBuffer,
+        contentType: 'application/pdf'
+      }] : []
+    }, { type: 'REPLACEMENT_DELIVERED_EMAIL', userId: user.id, ticketId: replacement.ticketId });
   }
 };
 

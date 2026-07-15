@@ -12,4 +12,11 @@ const exportPdf = async (req, res) => {
   return res.send(pdf.buffer);
 };
 
-module.exports = { list, exportPdf };
+const exportFile = async (req, res) => {
+  const file = await refundService.exportList(req.user, req.params.format);
+  res.setHeader('Content-Type', file.contentType);
+  res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+  return res.send(file.buffer);
+};
+
+module.exports = { list, exportPdf, exportFile };

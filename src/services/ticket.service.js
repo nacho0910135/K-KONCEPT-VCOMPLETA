@@ -19,13 +19,23 @@ const { sanitizePayloadText, sanitizePlainText } = require('../utils/textSanitiz
 const CLOSED_STATUSES = ['CLOSED', 'CANCELLED'];
 const statusLabel = {
   OPEN: 'Abierto',
-  PENDING: 'Pendiente',
+  PENDING: 'Pendiente de revisión',
   IN_PROGRESS: 'En progreso',
-  WAITING_CUSTOMER: 'Esperando cliente',
+  WAITING_CUSTOMER: 'Esperando respuesta del cliente',
   RESOLVED: 'Resuelto',
   CLOSED: 'Cerrado',
   CANCELLED: 'Cancelado',
   REOPENED: 'Reabierto'
+};
+const statusMeaning = {
+  OPEN: 'recibimos tu solicitud y esta pendiente de asignacion o revision inicial',
+  PENDING: 'tu caso ya esta en cola de atencion tecnica',
+  IN_PROGRESS: 'nuestro tecnico ya esta trabajando en la revision del caso',
+  WAITING_CUSTOMER: 'necesitamos una accion o respuesta tuya para poder continuar',
+  RESOLVED: 'nuestro tecnico registro una solucion; puedes revisarla y confirmar si todo quedo correcto',
+  CLOSED: 'el caso quedo finalizado',
+  CANCELLED: 'el caso fue cancelado',
+  REOPENED: 'el caso fue reabierto para una nueva revision'
 };
 const closeTypeLabel = {
   WITH_SOLUTION: 'Con solucion',
@@ -42,6 +52,63 @@ const resolutionSummary = (payload) => {
   if (payload.closeType === 'REPLACEMENT') return 'Reemplazo';
   if (payload.closeType === 'WITHOUT_SOLUTION') return 'Sin solucion';
   return resolutionActionLabel[payload.resolutionAction] || payload.resolutionAction || 'Con solucion';
+};
+
+const replacementProductSummary = (replacement) => [replacement.replacementBrand, replacement.replacementModel, replacement.replacementSerialNumber]
+  .filter(Boolean)
+  .join(' ');
+
+const translateHistoryText = (value = '') => String(value)
+  .replace(/Asignacion automatica/gi, 'Asignación automática')
+  .replace(/Tecnico/gi, 'Técnico')
+  .replace(/Ticket creado por cliente/gi, 'Ticket creado por cliente')
+  .replace(/resuelto se aplicara un remplazo/gi, 'Resuelto: se aplicará un reemplazo')
+  .replace(/resuelto se aplicara un reemplazo/gi, 'Resuelto: se aplicará un reemplazo');
+
+const buildTimeline = ({ statuses, replacements, refunds }) => {
+  const statusEvents = statuses.map((event) => ({
+    id: event.id,
+    type: 'STATUS',
+    title: `${statusLabel[event.previousStatus] || event.previousStatus || 'Nuevo'} -> ${statusLabel[event.newStatus] || event.newStatus}`,
+    description: translateHistoryText(event.comment),
+    actor: event.changedBy,
+    createdAt: event.createdAt
+  }));
+  const replacementProductEvents = replacements
+    .filter((replacement) => replacement.replacementSerialNumber)
+    .map((replacement) => ({
+      id: `${replacement.id}-product`,
+      type: 'REPLACEMENT_PRODUCT',
+      title: 'Producto nuevo registrado',
+      description: `Reemplazo: ${replacementProductSummary(replacement)}`,
+      actor: replacement.requestedBy,
+      createdAt: replacement.updatedAt || replacement.validatedAt || replacement.createdAt
+    }));
+  const refundEvents = refunds.map((refund) => ({
+    id: `${refund.id}-refund`,
+    type: 'REFUND',
+    title: 'Reembolso otorgado',
+    description: `${resolutionActionLabel[refund.type] || refund.type}${refund.amount ? ` por ${refund.amount}` : ''}. ${translateHistoryText(refund.reason || '')}`.trim(),
+    actor: refund.requestedBy,
+    createdAt: refund.createdAt
+  }));
+  const replacementDeliveryEvents = replacements
+    .filter((replacement) => replacement.deliveryDate)
+    .map((replacement) => ({
+      id: `${replacement.id}-delivery`,
+      type: 'REPLACEMENT_DELIVERY',
+      title: 'Producto nuevo entregado',
+      description: `Entregado: ${replacementProductSummary(replacement)}${replacement.deliveryObservations ? `. ${translateHistoryText(replacement.deliveryObservations)}` : ''}`,
+      actor: replacement.deliveredBy || replacement.requestedBy,
+      createdAt: replacement.deliveryDate
+    }));
+
+  return [
+    ...statusEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+    ...replacementProductEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+    ...refundEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+    ...replacementDeliveryEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+  ];
 };
 
 const resourceTypeForEvidence = (evidence) => {
@@ -105,6 +172,7 @@ const buildStatusNotificationPayload = ({ ticket, payload, user, comment }) => (
   technicianName: user.name,
   previousStatus: statusLabel[ticket.status] || ticket.status,
   newStatus: statusLabel[payload.status] || payload.status,
+  newStatusMeaning: statusMeaning[payload.status] || 'tenemos una actualizacion sobre el avance de tu caso',
   closeType: closeTypeLabel[payload.closeType] || payload.closeType || '',
   resolutionAction: resolutionSummary(payload),
   refundAmount: payload.refundAmount || '',
@@ -587,9 +655,9 @@ const ticketService = {
 
   async getHistory(id, user, context) {
     const ticket = await this.getById(id, user, context);
-    const [statuses, comments, evidence] = await ticketRepository.getChronologicalHistory(ticket.id);
+    const [statuses, comments, evidence, replacements, refunds] = await ticketRepository.getChronologicalHistory(ticket.id);
 
-    return { statuses, comments, evidence };
+    return { statuses, comments, evidence, replacements, refunds, timeline: buildTimeline({ statuses, replacements, refunds }) };
   },
 
   async search(query, user) {

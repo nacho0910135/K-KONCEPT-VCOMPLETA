@@ -4,7 +4,7 @@ import Card from '../../components/common/Card.jsx';
 import Badge from '../../components/common/Badge.jsx';
 import Button from '../../components/common/Button.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
-import { exportRefundsPdf, listRefunds } from '../../services/refunds.client.service.js';
+import { exportRefunds, listRefunds } from '../../services/refunds.client.service.js';
 
 const refundLabel = {
   REFUND_TOTAL: 'Reembolso total',
@@ -42,7 +42,10 @@ const Reembolsos = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Reembolsos</h1>
           <p className="mt-1 text-sm text-neutral-500">Reembolsos registrados desde resoluciones de tickets.</p>
         </div>
-        <Button onClick={exportRefundsPdf}>Exportar PDF</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={() => exportRefunds('csv')}>Exportar CSV</Button>
+          <Button onClick={() => exportRefunds('xls')}>Exportar Excel</Button>
+        </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {isLoading && Array.from({ length: 4 }, (_, index) => <div key={index} className="h-32 animate-pulse rounded-lg bg-neutral-100" />)}

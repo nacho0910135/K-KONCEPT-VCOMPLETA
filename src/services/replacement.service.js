@@ -4,7 +4,10 @@ const { userRepository } = require('../repositories/user.repository');
 const { auditService } = require('./audit.service');
 const { notificationService } = require('./notification.service');
 const { pdfGenerationService } = require('./pdfGeneration.service');
+const { transactionalEmailService } = require('./transactionalEmail.service');
 const { exportPdf } = require('../utils/pdfExporter.util');
+const { exportTable } = require('../utils/tableExport.util');
+const { generateReplacementCertificate } = require('../utils/pdfGenerator.util');
 const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../utils/errors');
 
 const assertTicketAccess = (ticket, user) => {
@@ -35,6 +38,9 @@ const hasNewProductData = (replacement) => Boolean(
     && replacement.replacementModel
   )
 );
+
+const formatDate = (value) => value ? new Date(value).toISOString().slice(0, 10) : '';
+const productName = (product) => [product?.brand || product?.name, product?.model, product?.serialNumber].filter(Boolean).join(' ');
 
 const replacementService = {
   async request(ticketId, payload, user) {
@@ -167,6 +173,8 @@ const replacementService = {
       }
     });
 
+    await transactionalEmailService.sendReplacementProductEmail(updated.ticket.client, updated).catch(() => null);
+
     return updated;
   },
 
@@ -206,19 +214,23 @@ const replacementService = {
     });
 
     const certificate = await pdfGenerationService.generateAndUploadReplacementCertificate(delivered);
-    const updated = await replacementRepository.update(id, certificate);
+    const { buffer: certificateBuffer, ...certificateData } = certificate;
+    const updated = await replacementRepository.update(id, certificateData);
 
-    await notificationService.notifyUsers({
+    await notificationService.dispatchNotification({
+      userId: replacement.ticket.clientId,
       event: 'REPLACEMENT_APPROVED',
-      recipients: [replacement.ticket.client],
       entityType: 'Replacement',
       entityId: id,
       payload: {
         ticketCode: replacement.ticket.code,
         ticketTitle: replacement.ticket.title,
         replacementStatus: 'DELIVERED'
-      }
+      },
+      skipChannels: ['EMAIL']
     });
+
+    await transactionalEmailService.sendReplacementDeliveredEmail(updated.ticket.client, updated, certificateBuffer).catch(() => null);
 
     await auditService.record({
       userId: user.id,
@@ -271,10 +283,46 @@ const replacementService = {
     };
   },
 
+  async exportList(user, format) {
+    const replacements = await this.list(user);
+    return exportTable({
+      filename: `reemplazos-${new Date().toISOString().slice(0, 10)}`,
+      format,
+      columns: [
+        { header: 'fechaSolicitud', value: (row) => formatDate(row.createdAt) },
+        { header: 'fechaValidacion', value: (row) => formatDate(row.validatedAt) },
+        { header: 'fechaEntrega', value: (row) => formatDate(row.deliveryDate) },
+        { header: 'codigoTicket', value: (row) => row.ticket?.code },
+        { header: 'tituloTicket', value: (row) => row.ticket?.title },
+        { header: 'nombreCliente', value: (row) => row.ticket?.client?.name },
+        { header: 'correoCliente', value: (row) => row.ticket?.client?.email },
+        { header: 'telefonoCliente', value: (row) => row.ticket?.client?.phone },
+        { header: 'empresaCliente', value: (row) => row.ticket?.client?.company },
+        { header: 'tecnico', value: (row) => row.requestedBy?.name || row.ticket?.assignedTechnician?.name },
+        { header: 'correoTecnico', value: (row) => row.requestedBy?.email || row.ticket?.assignedTechnician?.email },
+        { header: 'productoAnterior', value: (row) => productName(row.ticket?.product) || row.requestedProduct },
+        { header: 'productoSolicitado', value: 'requestedProduct' },
+        { header: 'marcaReemplazo', value: 'replacementBrand' },
+        { header: 'modeloReemplazo', value: 'replacementModel' },
+        { header: 'serieReemplazo', value: 'replacementSerialNumber' },
+        { header: 'notasReemplazo', value: 'replacementNotes' },
+        { header: 'Estado', value: 'status' },
+        { header: 'razonReemplazo', value: 'reason' },
+        { header: 'notasValidacion', value: 'validationNotes' },
+        { header: 'observacionesEntrega', value: 'deliveryObservations' },
+        { header: 'constanciaPdf', value: 'pdfUrl' }
+      ],
+      rows: replacements
+    });
+  },
+
   async getCertificate(id, user) {
     const replacement = await this.getById(id, user);
-    if (!replacement.pdfUrl) throw new NotFoundError('Constancia PDF no generada');
-    return replacement;
+    if (replacement.status !== 'DELIVERED') throw new NotFoundError('Constancia PDF no generada');
+    return {
+      buffer: await generateReplacementCertificate(replacement),
+      filename: `constancia-${replacement.ticket?.code || replacement.id}.pdf`
+    };
   },
 
   async regenerateCertificate(id, user) {

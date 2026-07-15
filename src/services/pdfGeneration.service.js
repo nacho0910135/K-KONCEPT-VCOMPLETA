@@ -14,7 +14,8 @@ const pdfGenerationService = {
     return {
       pdfUrl: uploaded.url,
       pdfPublicId: uploaded.publicId,
-      pdfGeneratedAt: new Date()
+      pdfGeneratedAt: new Date(),
+      buffer
     };
   }
 };
