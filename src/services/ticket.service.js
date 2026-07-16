@@ -706,7 +706,7 @@ const ticketService = {
   },
 
   ensureCanComment(ticket, user) {
-    if (CLOSED_STATUSES.includes(ticket.status)) {
+    if (CLOSED_STATUSES.includes(ticket.status) && user.role !== 'ADMIN') {
       throw new BadRequestError('No se puede comentar un ticket cerrado o cancelado');
     }
 

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
@@ -39,6 +40,7 @@ const Tickets = () => {
   const [isSavingAssignmentMode, setIsSavingAssignmentMode] = useState(false);
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const assignForm = useForm({ resolver: zodResolver(assignSchema), defaultValues: { technicianId: '' } });
   const priorityForm = useForm({ resolver: zodResolver(prioritySchema), defaultValues: { priority: '' } });
 
@@ -211,6 +213,9 @@ const Tickets = () => {
             <p className="text-sm"><span className="font-semibold">Tecnico:</span> {selectedTicket.assignedTechnician?.name || 'Sin asignar'}</p>
             <p className="text-sm"><span className="font-semibold">Categoria:</span> {selectedTicket.category?.name || 'Sin categoria'}</p>
             <p className="text-sm"><span className="font-semibold">Descripcion:</span> {selectedTicket.description}</p>
+            <div>
+              <Button onClick={() => navigate(`/admin/tickets/${selectedTicket.id}`)}><Eye className="h-4 w-4" />Gestionar caso</Button>
+            </div>
             <div>
               <h3 className="text-sm font-semibold text-neutral-900">Evidencias</h3>
               <EvidenceGallery evidences={selectedTicket.evidence || []} emptyText="No hay evidencias adjuntas." />

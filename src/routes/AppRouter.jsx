@@ -95,7 +95,7 @@ const AppRouter = () => (
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="tickets" element={<AdminTickets />} />
-            <Route path="tickets/:id" element={<AdminTickets />} />
+            <Route path="tickets/:id" element={<TechnicianDetalleTicket />} />
             <Route path="users" element={<Usuarios />} />
             <Route path="usuarios" element={<Usuarios />} />
             <Route path="categories" element={<Categorias />} />

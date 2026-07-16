@@ -14,6 +14,7 @@ import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import { addComment, getTicketById, getTicketHistory, saveTicketDiagnosis, updateTicketStatus } from '../../services/tickets.service.js';
 import { uploadTicketEvidence } from '../../services/evidence.client.service.js';
 import { getTicketEmails } from '../../services/notifications.service.js';
+import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
 import { PriorityBadge, TechnicianStatusBadge, technicianStatusLabels } from './technicianUtils.jsx';
 import { formatDate, formatDateTime } from '../../utils/formatDate.js';
@@ -57,9 +58,11 @@ const allowedTransitions = {
   WAITING_CUSTOMER: ['IN_PROGRESS', 'RETURN_ITEM_REQUEST', 'RESOLVED', 'CANCELLED'],
   REOPENED: ['IN_PROGRESS', 'WAITING_CUSTOMER', 'RETURN_ITEM_REQUEST', 'RESOLVED', 'CANCELLED']
 };
+const adminTransitions = ['PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RETURN_ITEM_REQUEST', 'RESOLVED', 'CANCELLED'];
 const transitionLabel = (status) => (status === 'RETURN_ITEM_REQUEST' ? 'Solicitar devolucion del articulo' : technicianStatusLabels[status] || status);
 const DetalleTicket = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [ticket, setTicket] = useState(null);
   const [history, setHistory] = useState({ statuses: [], comments: [], evidence: [] });
   const [evidenceFiles, setEvidenceFiles] = useState([]);
@@ -100,8 +103,9 @@ const DetalleTicket = () => {
     load();
   }, [id]);
 
-  const transitionOptions = useMemo(() => (allowedTransitions[ticket?.status] || [])
-    .map((status) => ({ value: status, label: transitionLabel(status) })), [ticket?.status]);
+  const transitionOptions = useMemo(() => (user?.role === 'ADMIN' ? adminTransitions : (allowedTransitions[ticket?.status] || []))
+    .filter((status) => status !== ticket?.status)
+    .map((status) => ({ value: status, label: transitionLabel(status) })), [ticket?.status, user?.role]);
   const evidences = history.evidence || ticket.evidence || [];
   const timeline = history.timeline || (history.statuses || []).map((event) => ({
     id: event.id,

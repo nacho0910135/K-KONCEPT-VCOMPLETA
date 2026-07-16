@@ -39,7 +39,7 @@ router.post('/', authorizeRoles('CLIENT'), validate(createTicketSchema), asyncHa
 router.get('/:id', authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), asyncHandler(ticketController.getById));
 router.get('/:id/history', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), asyncHandler(ticketController.getHistory));
 router.patch('/:id/status', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), validate(changeStatusSchema), asyncHandler(ticketController.changeStatus));
-router.patch('/:id/diagnosis', authorizeRoles('TECHNICIAN'), validate(ticketIdParamSchema, 'params'), validate(updateDiagnosisSchema), asyncHandler(ticketController.updateDiagnosis));
+router.patch('/:id/diagnosis', authorizeRoles('TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), validate(updateDiagnosisSchema), asyncHandler(ticketController.updateDiagnosis));
 router.patch('/:id/assign', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), validate(assignTicketSchema), asyncHandler(ticketController.assignTechnician));
 router.patch('/:id/priority', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), validate(updatePrioritySchema), asyncHandler(ticketController.updatePriority));
 router.delete('/:id', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), asyncHandler(ticketController.remove));
