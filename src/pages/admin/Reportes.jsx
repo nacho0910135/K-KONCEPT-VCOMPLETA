@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Edit, Plus, Trash2 } from 'lucide-react';
+import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CheckCircle2, Clock3, Download, Edit, Plus, Star, TicketCheck, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -8,11 +9,12 @@ import Card from '../../components/common/Card.jsx';
 import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import Modal from '../../components/common/Modal.jsx';
 import Badge from '../../components/common/Badge.jsx';
+import StatCard from '../../components/common/StatCard.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import EmailChipInput from '../../components/forms/EmailChipInput.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
-import { createScheduledReport, deleteScheduledReport, listScheduledReports, toggleScheduledReport, updateScheduledReport } from '../../services/admin.client.service.js';
+import { createScheduledReport, deleteScheduledReport, exportReport, getKpiOverview, listScheduledReports, toggleScheduledReport, updateScheduledReport } from '../../services/admin.client.service.js';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
 import { frequencyLabel, reportTypeLabel } from './adminUtils.jsx';
@@ -38,15 +40,39 @@ const parseParameters = (value) => {
   return JSON.parse(value);
 };
 
+const today = new Date().toISOString().slice(0, 10);
+const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+const getCount = (rows = [], status) => rows.find((item) => item.status === status)?.count || 0;
+const downloadFile = (response, fallback) => {
+  const disposition = response.headers['content-disposition'] || '';
+  const filename = disposition.match(/filename="?([^"]+)"?/)?.[1] || fallback;
+  const url = window.URL.createObjectURL(response.data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  window.URL.revokeObjectURL(url);
+};
+
 const Reportes = () => {
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [filters, setFilters] = useState({ dateFrom: monthStart, dateTo: today });
+  const [exporting, setExporting] = useState(false);
   const { showToast } = useToast();
   const { data, setData, isLoading, error } = useAdminResource(async () => {
-    const response = await listScheduledReports({ limit: 100 });
-    return response.data?.items || response.data || [];
-  }, []);
+    const [overview, scheduled] = await Promise.all([
+      getKpiOverview(filters),
+      listScheduledReports({ limit: 100 })
+    ]);
+    return {
+      overview: overview || {},
+      scheduled: scheduled.data?.items || scheduled.data || []
+    };
+  }, [filters.dateFrom, filters.dateTo]);
   const form = useForm({ resolver: zodResolver(scheduledSchema), defaultValues: { name: '', reportType: 'KPI_OVERVIEW', parameters: '', frequency: 'WEEKLY', recipients: [], format: 'PDF' } });
+  const filterForm = useForm({ defaultValues: filters });
+  const exportForm = useForm({ defaultValues: { reportType: 'KPI_OVERVIEW', format: 'PDF', dateFrom: monthStart, dateTo: today } });
 
   const openScheduled = (row = null) => {
     setEditing(row || { mode: 'new' });
@@ -67,10 +93,10 @@ const Reportes = () => {
     const payload = { ...values, parameters };
     if (editing?.id) {
       const updated = await updateScheduledReport(editing.id, payload);
-      setData((current) => current.map((item) => item.id === editing.id ? updated : item));
+      setData((current) => ({ ...current, scheduled: current.scheduled.map((item) => item.id === editing.id ? updated : item) }));
     } else {
       const created = await createScheduledReport(payload);
-      setData((current) => [created, ...current]);
+      setData((current) => ({ ...current, scheduled: [created, ...current.scheduled] }));
     }
     setEditing(null);
     showToast({ type: 'success', title: 'Reporte programado guardado' });
@@ -78,33 +104,108 @@ const Reportes = () => {
 
   const deleteSelected = async () => {
     await deleteScheduledReport(deleting.id);
-    setData((current) => current.filter((item) => item.id !== deleting.id));
+    setData((current) => ({ ...current, scheduled: current.scheduled.filter((item) => item.id !== deleting.id) }));
     setDeleting(null);
     showToast({ type: 'success', title: 'Reporte eliminado' });
   };
 
   const toggleScheduled = async (row) => {
     const updated = await toggleScheduledReport(row.id);
-    setData((current) => current.map((item) => item.id === row.id ? updated : item));
+    setData((current) => ({ ...current, scheduled: current.scheduled.map((item) => item.id === row.id ? updated : item) }));
     showToast({ type: 'info', title: 'Estado actualizado' });
   };
+
+  const applyFilters = (values) => setFilters({ dateFrom: values.dateFrom || undefined, dateTo: values.dateTo || undefined });
+
+  const exportNow = async (values) => {
+    setExporting(true);
+    try {
+      const response = await exportReport({
+        reportType: values.reportType,
+        format: values.format,
+        filters: { dateFrom: values.dateFrom || undefined, dateTo: values.dateTo || undefined }
+      });
+      downloadFile(response, `${values.reportType.toLowerCase()}.${values.format.toLowerCase()}`);
+      showToast({ type: 'success', title: 'Reporte exportado' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const overview = data?.overview || {};
+  const monthly = (overview.monthlyVolume || []).map((item) => ({ name: item.month, tickets: item.count || 0 }));
+  const byStatus = overview.ticketsByStatus || [];
+  const byPriority = (overview.ticketsByPriority || []).map((item) => ({ name: item.priority, value: item.count || 0 }));
 
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Reportes</h1>
-          <p className="mt-1 text-sm text-neutral-500">Programacion real de reportes con destinatarios.</p>
+          <p className="mt-1 text-sm text-neutral-500">KPIs, exportaciones y programacion real de reportes.</p>
         </div>
         <Button onClick={() => openScheduled()}><Plus className="h-4 w-4" />Programar nuevo</Button>
       </div>
 
-      <Card className="p-4 text-sm text-neutral-600">
-        Los reportes programados se guardan en el backend y se ejecutan segun la configuracion de cron del servidor.
+      {error && <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{error}</div>}
+
+      <Card className="p-4">
+        <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={filterForm.handleSubmit(applyFilters)}>
+          <FormInput register={filterForm.register} name="dateFrom" id="kpi-date-from" type="date" label="Desde" />
+          <FormInput register={filterForm.register} name="dateTo" id="kpi-date-to" type="date" label="Hasta" />
+          <Button type="submit" className="md:self-end">Actualizar KPIs</Button>
+        </form>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard title="Abiertos" value={getCount(byStatus, 'OPEN')} icon={Clock3} />
+        <StatCard title="Resueltos" value={getCount(byStatus, 'RESOLVED')} icon={TicketCheck} tone="success" />
+        <StatCard title="SLA cumplido" value={`${overview.slaCompliance?.complianceRate ?? 0}%`} icon={CheckCircle2} tone="success" />
+        <StatCard title="Calificacion" value={overview.ratingSummary?.average ?? 0} icon={Star} tone="warning" />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="p-4">
+          <h2 className="text-sm font-semibold text-neutral-900">Tickets por prioridad</h2>
+          <div className="mt-4 h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={byPriority}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <h2 className="text-sm font-semibold text-neutral-900">Volumen mensual</h2>
+          <div className="mt-4 h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthly}>
+                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                <YAxis axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Line type="monotone" dataKey="tickets" stroke="#0f766e" strokeWidth={3} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-4">
+        <form className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_1fr_auto]" onSubmit={exportForm.handleSubmit(exportNow)}>
+          <FormSelect register={exportForm.register} name="reportType" label="Reporte" options={reportTypes} />
+          <FormSelect register={exportForm.register} name="format" label="Formato" options={[{ value: 'CSV', label: 'CSV' }, { value: 'EXCEL', label: 'Excel' }, { value: 'PDF', label: 'PDF' }]} />
+          <FormInput register={exportForm.register} name="dateFrom" id="export-date-from" type="date" label="Desde" />
+          <FormInput register={exportForm.register} name="dateTo" id="export-date-to" type="date" label="Hasta" />
+          <Button type="submit" className="md:self-end" isLoading={exporting}><Download className="h-4 w-4" />Exportar</Button>
+        </form>
       </Card>
 
       <DataTable
-        data={data || []}
+        data={data?.scheduled || []}
         loading={isLoading}
         error={error}
         columns={[

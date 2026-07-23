@@ -29,6 +29,7 @@ export const getTicketsByStatus = async (params) => unwrap(await api.get('/repor
 export const getTicketsByPriority = async (params) => unwrap(await api.get('/reports/kpi/tickets-by-priority', { params })).data;
 export const getTicketsByCategory = async (params) => unwrap(await api.get('/reports/kpi/tickets-by-category', { params })).data;
 export const getMonthlyVolume = async (params) => unwrap(await api.get('/reports/kpi/monthly-volume', { params })).data;
+export const exportReport = async (payload) => api.post('/reports/export', payload, { responseType: 'blob' });
 
 export const listScheduledReports = async (params) => unwrap(await api.get('/scheduled-reports', { params }));
 export const createScheduledReport = async (payload) => unwrap(await api.post('/scheduled-reports', payload)).data;
