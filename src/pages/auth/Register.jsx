@@ -8,6 +8,7 @@ import FormInput from '../../components/forms/FormInput.jsx';
 import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 import { registerSchema } from '../../utils/validators.js';
+import kollabLogo from '../../assets/kollab-logo.png';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -35,7 +36,9 @@ const Register = () => {
     <div className="mx-auto w-full max-w-lg">
       <Card className="border-neutral-200 bg-white p-8">
         <div className="text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-primary-600 text-lg font-bold text-white">K</div>
+          <div className="mx-auto px-5 py-2">
+            <img className="mx-auto h-auto w-48 max-w-full" src={kollabLogo} alt="Kollab Koncepts" />
+          </div>
           <h1 className="mt-4 text-2xl font-bold text-neutral-900">Crear cuenta</h1>
           <p className="mt-1 text-sm text-neutral-700">Registra tu acceso como cliente.</p>
         </div>

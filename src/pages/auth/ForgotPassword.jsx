@@ -9,6 +9,7 @@ import { requestPasswordResetCode, resetPasswordWithCode } from '../../services/
 import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 import { passwordResetRequestSchema, passwordResetSchema } from '../../utils/validators.js';
+import kollabLogo from '../../assets/kollab-logo.png';
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -52,7 +53,9 @@ const ForgotPassword = () => {
     <div className="mx-auto w-full max-w-md">
       <Card className="border-neutral-200 bg-white p-8">
         <div className="text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-lg bg-primary-600 text-lg font-bold text-white">K</div>
+          <div className="mx-auto px-5 py-2">
+            <img className="mx-auto h-auto w-48 max-w-full" src={kollabLogo} alt="Kollab Koncepts" />
+          </div>
           <h1 className="mt-5 text-2xl font-bold text-neutral-900">Restablecer contrasena</h1>
           <p className="mt-1 text-sm text-neutral-700">Solicita un codigo por correo y crea una nueva contrasena.</p>
         </div>
