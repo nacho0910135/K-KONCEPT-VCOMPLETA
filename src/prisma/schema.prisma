@@ -93,6 +93,7 @@ model User {
   role                       Role              @default(CLIENT)
   phone                      String?
   company                    String?
+  avatarUrl                  String?
   active                     Boolean           @default(true)
   lastLogin                  DateTime?
   createdAt                  DateTime          @default(now())
@@ -352,6 +353,7 @@ model Replacement {
   replacementModel         String?
   replacementNotes         String?
   deliveryDate             DateTime?
+  deliveryType             String?
   deliveredById            String?
   deliveredBy              User?             @relation("ReplacementDeliveredBy", fields: [deliveredById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   deliveryObservations     String?

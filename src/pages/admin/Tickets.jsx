@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, RotateCcw, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Eye, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -8,22 +8,21 @@ import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import Drawer from '../../components/common/Drawer.jsx';
 import Modal from '../../components/common/Modal.jsx';
-import ConfirmDialog from '../../components/common/ConfirmDialog.jsx';
 import Badge from '../../components/common/Badge.jsx';
 import Toggle from '../../components/common/Toggle.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import EvidenceGallery from '../../components/tickets/EvidenceGallery.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import { useToast } from '../../hooks/useToast.js';
-import { assignTicketTechnician, deleteTicket, getTicketAssignmentSettings, getTickets, updateTicketAssignmentSettings, updateTicketPriority } from '../../services/tickets.service.js';
+import { assignTicketTechnician, getTicketAssignmentSettings, getTickets, updateTicketAssignmentSettings, updateTicketPriority } from '../../services/tickets.service.js';
 import { getUsers } from '../../services/users.service.js';
-import { PriorityBadge, StateBadge } from './adminUtils.jsx';
+import { PriorityBadge, StateBadge, priorityLabel, statusLabel } from './adminUtils.jsx';
 import { formatDate } from '../../utils/formatDate.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const statuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED', 'CANCELLED', 'REOPENED'];
 const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
-const optionize = (items) => items.map((item) => ({ value: item, label: item }));
+const optionize = (items, labels = {}) => items.map((item) => ({ value: item, label: labels[item] || item }));
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
 const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
 const Tickets = () => {
@@ -34,8 +33,6 @@ const Tickets = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [assignTicket, setAssignTicket] = useState(null);
   const [priorityTicket, setPriorityTicket] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [assignmentSettings, setAssignmentSettings] = useState({ automatic: true, mode: 'AUTOMATIC' });
   const [isSavingAssignmentMode, setIsSavingAssignmentMode] = useState(false);
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
@@ -96,25 +93,9 @@ const Tickets = () => {
       setPriorityTicket(null);
       priorityForm.reset();
       await load();
-      showToast({ type: 'success', title: 'Prioridad actualizada', message: `Ticket ${priorityTicket.code} ahora es ${priority}.` });
+      showToast({ type: 'success', title: 'Prioridad actualizada', message: `Ticket ${priorityTicket.code} ahora es ${priorityLabel[priority] || priority}.` });
     } catch (err) {
       showToast({ type: 'error', title: 'No se pudo actualizar', message: getErrorMessage(err) });
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteTarget) return;
-    setIsDeleting(true);
-    try {
-      await deleteTicket(deleteTarget.id);
-      setTickets((current) => current.filter((ticket) => ticket.id !== deleteTarget.id));
-      if (selectedTicket?.id === deleteTarget.id) setSelectedTicket(null);
-      showToast({ type: 'success', title: 'Caso eliminado', message: `El ticket ${deleteTarget.code} fue eliminado.` });
-      setDeleteTarget(null);
-    } catch (err) {
-      showToast({ type: 'error', title: 'No se pudo eliminar', message: getErrorMessage(err) });
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -164,11 +145,11 @@ const Tickets = () => {
         <div className="grid gap-3 md:grid-cols-3">
           <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
             <option value="">Estado</option>
-            {statuses.map((item) => <option key={item} value={item}>{item}</option>)}
+            {statuses.map((item) => <option key={item} value={item}>{statusLabel[item] || item}</option>)}
           </select>
           <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.priority} onChange={(event) => setFilters({ ...filters, priority: event.target.value })}>
             <option value="">Prioridad</option>
-            {priorities.map((item) => <option key={item} value={item}>{item}</option>)}
+            {priorities.map((item) => <option key={item} value={item}>{priorityLabel[item] || item}</option>)}
           </select>
           <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.technicianId} onChange={(event) => setFilters({ ...filters, technicianId: event.target.value })}>
             <option value="">Tecnico</option>
@@ -199,7 +180,6 @@ const Tickets = () => {
                 <Button variant="ghost" onClick={() => setSelectedTicket(row)}><Eye className="h-4 w-4" />Ver</Button>
                 <Button variant="ghost" disabled={assignmentSettings.automatic} onClick={() => setAssignTicket(row)}><RotateCcw className="h-4 w-4" />Asignar</Button>
                 <Button variant="ghost" onClick={() => setPriorityTicket(row)}>Prioridad</Button>
-                <Button variant="danger" onClick={() => setDeleteTarget(row)}><Trash2 className="h-4 w-4" />Eliminar</Button>
               </div>
             )
           }
@@ -233,19 +213,10 @@ const Tickets = () => {
 
       <Modal isOpen={Boolean(priorityTicket)} title="Cambiar prioridad" onClose={() => setPriorityTicket(null)}>
         <form className="grid gap-4" onSubmit={priorityForm.handleSubmit(changePriority)}>
-          <FormSelect register={priorityForm.register} name="priority" label="Prioridad" error={priorityForm.formState.errors.priority} options={optionize(priorities)} />
+          <FormSelect register={priorityForm.register} name="priority" label="Prioridad" error={priorityForm.formState.errors.priority} options={optionize(priorities, priorityLabel)} />
           <Button type="submit" isLoading={priorityForm.formState.isSubmitting}>Actualizar prioridad</Button>
         </form>
       </Modal>
-
-      <ConfirmDialog
-        isOpen={Boolean(deleteTarget)}
-        title="Eliminar caso"
-        message={`Confirma que deseas eliminar el caso ${deleteTarget?.code || ''}. Esta accion eliminara tambien comentarios, historial y evidencias asociadas.`}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={confirmDelete}
-        isLoading={isDeleting}
-      />
     </div>
   );
 };

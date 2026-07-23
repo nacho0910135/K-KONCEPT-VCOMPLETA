@@ -11,8 +11,11 @@ export const statusTone = {
   OPEN: 'primary',
   PENDING: 'warning',
   IN_PROGRESS: 'purple',
+  WAITING_CUSTOMER: 'warning',
   RESOLVED: 'success',
-  CLOSED: 'neutral'
+  CLOSED: 'neutral',
+  CANCELLED: 'danger',
+  REOPENED: 'primary'
 };
 
 export const roleTone = {

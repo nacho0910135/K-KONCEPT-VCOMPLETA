@@ -87,6 +87,8 @@ const AppRouter = () => (
             <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="notifications" element={<TechnicianNotificaciones />} />
             <Route path="notificaciones" element={<TechnicianNotificaciones />} />
+            <Route path="profile" element={<Perfil />} />
+            <Route path="perfil" element={<Perfil />} />
           </Route>
         </Route>
 
@@ -114,6 +116,8 @@ const AppRouter = () => (
             <Route path="notifications/frequency" element={<Frecuencia />} />
             <Route path="frecuencia" element={<Frecuencia />} />
             <Route path="notificaciones" element={<ClientNotificaciones />} />
+            <Route path="profile" element={<Perfil />} />
+            <Route path="perfil" element={<Perfil />} />
           </Route>
         </Route>
       </Route>

@@ -34,11 +34,12 @@ const Canales = () => {
   const [configuring, setConfiguring] = useState(null);
   const [configValues, setConfigValues] = useState({});
   const { showToast } = useToast();
+  const channels = Array.isArray(data) ? data : data?.channels || [];
 
   const toggle = async (channel) => {
     const key = channel.channel || channel.id;
     const updated = await updateNotificationChannel(key, { enabled: !channel.enabled, config: channel.config || {} });
-    setData((current) => current.map((item) => (item.channel || item.id) === key ? updated : item));
+    setData((current) => (Array.isArray(current) ? current : current?.channels || []).map((item) => (item.channel || item.id) === key ? updated : item));
     showToast({ type: 'success', title: `${channelMeta[key]?.label || key} actualizado` });
   };
 
@@ -50,7 +51,7 @@ const Canales = () => {
   const saveConfig = async () => {
     const key = configuring.channel || configuring.id;
     const updated = await updateNotificationChannel(key, { enabled: configuring.enabled, config: configValues });
-    setData((current) => current.map((item) => (item.channel || item.id) === key ? updated : item));
+    setData((current) => (Array.isArray(current) ? current : current?.channels || []).map((item) => (item.channel || item.id) === key ? updated : item));
     setConfiguring(null);
     showToast({ type: 'success', title: 'Configuracion guardada', message: `${channelMeta[key]?.label || key} quedo listo para operar.` });
   };
@@ -64,7 +65,7 @@ const Canales = () => {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {isLoading && Array.from({ length: 4 }, (_, index) => <div key={index} className="h-40 animate-pulse rounded-lg bg-neutral-100" />)}
         {error && <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-danger md:col-span-2 xl:col-span-4">{error}</div>}
-        {(data || []).map((channel) => (
+        {channels.map((channel) => (
           <Card key={channel.channel || channel.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div>

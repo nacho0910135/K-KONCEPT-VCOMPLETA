@@ -1,18 +1,26 @@
 import Badge from '../../components/common/Badge.jsx';
 
 export const technicianStatusLabels = {
+  OPEN: 'Abierto',
   ASSIGNED: 'Asignado',
+  PENDING: 'Pendiente',
   IN_PROGRESS: 'En progreso',
   WAITING_CUSTOMER: 'Esperando cliente',
   RESOLVED: 'Resuelto',
+  CLOSED: 'Cerrado',
+  CANCELLED: 'Cancelado',
   REOPENED: 'Reabierto'
 };
 
 export const technicianStatusTone = {
+  OPEN: 'primary',
   ASSIGNED: 'primary',
+  PENDING: 'warning',
   IN_PROGRESS: 'warning',
   WAITING_CUSTOMER: 'neutral',
   RESOLVED: 'success',
+  CLOSED: 'neutral',
+  CANCELLED: 'danger',
   REOPENED: 'warning'
 };
 

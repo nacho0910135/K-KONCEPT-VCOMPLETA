@@ -7,6 +7,7 @@ const publicUserSelect = {
   role: true,
   phone: true,
   company: true,
+  avatarUrl: true,
   active: true,
   lastLogin: true,
   createdAt: true,

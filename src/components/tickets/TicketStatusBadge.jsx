@@ -4,10 +4,13 @@ import { formatStatus } from '../../utils/formatStatus.js';
 const statusClass = {
   OPEN: 'bg-primary-50 text-primary-700',
   ASSIGNED: 'bg-indigo-50 text-indigo-700',
+  PENDING: 'bg-amber-50 text-amber-700',
   IN_PROGRESS: 'bg-amber-50 text-amber-700',
+  WAITING_CUSTOMER: 'bg-yellow-50 text-yellow-700',
   RESOLVED: 'bg-green-50 text-green-700',
   CLOSED: 'bg-neutral-100 text-neutral-700',
-  CANCELLED: 'bg-red-50 text-red-700'
+  CANCELLED: 'bg-red-50 text-red-700',
+  REOPENED: 'bg-primary-50 text-primary-700'
 };
 
 const TicketStatusBadge = ({ status }) => (

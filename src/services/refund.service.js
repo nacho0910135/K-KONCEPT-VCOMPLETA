@@ -39,7 +39,12 @@ const refundService = {
   },
 
   list(user) {
-    return refundRepository.list(user.role === 'TECHNICIAN' ? { requestedById: user.id } : {});
+    return refundRepository.list(user.role === 'TECHNICIAN' ? {
+      OR: [
+        { requestedById: user.id },
+        { ticket: { assignedTechnicianId: user.id } }
+      ]
+    } : {});
   },
 
   async exportListPdf(user) {

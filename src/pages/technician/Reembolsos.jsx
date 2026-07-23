@@ -5,10 +5,19 @@ import Badge from '../../components/common/Badge.jsx';
 import Button from '../../components/common/Button.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import { exportRefunds, listRefunds } from '../../services/refunds.client.service.js';
+import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const refundLabel = {
   REFUND_TOTAL: 'Reembolso total',
   REFUND_PARTIAL: 'Reembolso parcial'
+};
+
+const statusLabel = {
+  REGISTERED: 'Registrado',
+  REQUESTED: 'Solicitado',
+  APPROVED: 'Aprobado',
+  REJECTED: 'Rechazado',
+  PAID: 'Pagado'
 };
 
 const Reembolsos = () => {
@@ -23,9 +32,10 @@ const Reembolsos = () => {
       try {
         setIsLoading(true);
         const response = await listRefunds();
-        if (mounted) setRefunds(response.refunds || []);
+        const rows = response.refunds || response.data?.refunds || response.data || [];
+        if (mounted) setRefunds(Array.isArray(rows) ? rows : []);
       } catch (loadError) {
-        if (mounted) setError(loadError.response?.data?.message || 'No pudimos cargar reembolsos.');
+        if (mounted) setError(getErrorMessage(loadError) || 'No pudimos cargar reembolsos.');
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -65,7 +75,7 @@ const Reembolsos = () => {
                   <p className="mt-1 text-sm text-neutral-500">{refund.ticket?.client?.company || refund.ticket?.client?.name || 'Cliente'}</p>
                   {refund.amount && <p className="mt-1 text-sm font-semibold text-neutral-900">Monto: {refund.amount}</p>}
                 </div>
-                <Badge tone="warning">{refund.status}</Badge>
+                <Badge tone="warning">{statusLabel[refund.status] || refund.status}</Badge>
               </div>
             </Card>
           </Link>

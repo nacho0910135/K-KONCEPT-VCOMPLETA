@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ChevronDown, ChevronRight, Edit, FolderPlus, PackagePlus, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Edit, FolderPlus, PackagePlus, Plus, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -20,8 +20,6 @@ import {
   createSubcategory,
   deactivateCategory,
   deactivateSubcategory,
-  deleteCategory,
-  deleteSubcategory,
   listCategories,
   updateCategory,
   updateSubcategory
@@ -155,10 +153,7 @@ const Categorias = () => {
     setIsConfirming(true);
     try {
       const { type, item, isSubcategory } = confirmAction;
-      if (type === 'delete') {
-        await (isSubcategory ? deleteSubcategory(item.id) : deleteCategory(item.id));
-        showToast({ type: 'success', title: 'Registro eliminado', message: `${item.name} fue eliminado correctamente.` });
-      } else {
+      if (type === 'toggle') {
         const nextActive = !item.active;
         if (isSubcategory) {
           await (nextActive ? activateSubcategory(item.id) : deactivateSubcategory(item.id));
@@ -212,9 +207,6 @@ const Categorias = () => {
                 <Button variant="ghost" onClick={() => setConfirmAction({ type: 'toggle', item: category, isSubcategory: false })}>
                   <RotateCcw className="h-4 w-4" />{category.active ? 'Desactivar' : 'Activar'}
                 </Button>
-                <Button variant="danger" onClick={() => setConfirmAction({ type: 'delete', item: category, isSubcategory: false })}>
-                  <Trash2 className="h-4 w-4" />Eliminar
-                </Button>
               </div>
             </div>
             {expanded.includes(category.id) && (
@@ -233,7 +225,6 @@ const Categorias = () => {
                       <Button variant="ghost" onClick={() => openSubcategory(category, sub)}>Editar</Button>
                       <Button variant="ghost" onClick={() => openProduct(category, sub)}>Producto</Button>
                       <Button variant="ghost" onClick={() => setConfirmAction({ type: 'toggle', item: sub, isSubcategory: true })}>{sub.active ? 'Desactivar' : 'Activar'}</Button>
-                      <Button variant="danger" onClick={() => setConfirmAction({ type: 'delete', item: sub, isSubcategory: true })}>Eliminar</Button>
                     </div>
                   </div>
                 ))}
@@ -285,10 +276,8 @@ const Categorias = () => {
 
       <ConfirmDialog
         isOpen={Boolean(confirmAction)}
-        title={confirmAction?.type === 'delete' ? 'Eliminar registro' : `${confirmAction?.item?.active ? 'Desactivar' : 'Activar'} registro`}
-        message={confirmAction?.type === 'delete'
-          ? `Confirma que deseas eliminar ${confirmAction?.item?.name}. Si ya tiene informacion relacionada, el sistema lo bloqueara para proteger el historial.`
-          : `Confirma que deseas ${confirmAction?.item?.active ? 'desactivar' : 'activar'} ${confirmAction?.item?.name}.`}
+        title={`${confirmAction?.item?.active ? 'Desactivar' : 'Activar'} registro`}
+        message={`Confirma que deseas ${confirmAction?.item?.active ? 'desactivar' : 'activar'} ${confirmAction?.item?.name}.`}
         onCancel={() => setConfirmAction(null)}
         onConfirm={runConfirmedAction}
         isLoading={isConfirming}

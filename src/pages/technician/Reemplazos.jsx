@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ClipboardCheck, FileText, PackageCheck, Truck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
@@ -30,6 +30,11 @@ const statusLabel = {
   IN_TRANSIT: 'En transito',
   PENDING_APPROVAL: 'Pendiente de validacion'
 };
+const deliveryTypeLabel = {
+  STORE_PICKUP: 'Retiro en tienda',
+  HOME_DELIVERY: 'Entrega a domicilio',
+  COURIER: 'Mensajeria'
+};
 
 const validationSchema = z.object({ validationNotes: z.string().min(8, 'Indica la condicion validada') });
 const productSchema = z.object({
@@ -40,6 +45,7 @@ const productSchema = z.object({
 });
 const deliverySchema = z.object({
   deliveryDate: z.string().min(1, 'Fecha obligatoria'),
+  deliveryType: z.string().min(1, 'Tipo de entrega obligatorio'),
   deliveryObservations: z.string().min(8, 'Observacion obligatoria')
 });
 
@@ -49,10 +55,16 @@ const Reemplazos = () => {
   const [error, setError] = useState(null);
   const [active, setActive] = useState(null);
   const [action, setAction] = useState(null);
+  const [filters, setFilters] = useState({ q: '', status: '' });
   const { showToast } = useToast();
   const validationForm = useForm({ resolver: zodResolver(validationSchema), defaultValues: { validationNotes: '' } });
   const productForm = useForm({ resolver: zodResolver(productSchema), defaultValues: { replacementSerialNumber: '', replacementBrand: '', replacementModel: '', replacementNotes: '' } });
-  const deliveryForm = useForm({ resolver: zodResolver(deliverySchema), defaultValues: { deliveryDate: new Date().toISOString().slice(0, 10), deliveryObservations: '' } });
+  const deliveryForm = useForm({ resolver: zodResolver(deliverySchema), defaultValues: { deliveryDate: new Date().toISOString().slice(0, 10), deliveryType: 'STORE_PICKUP', deliveryObservations: '' } });
+  const filteredReplacements = useMemo(() => replacements.filter((replacement) => {
+    const q = filters.q.trim().toLowerCase();
+    const text = [replacement.ticket?.code, replacement.requestedProduct, replacement.ticket?.client?.name, replacement.ticket?.client?.company].filter(Boolean).join(' ').toLowerCase();
+    return (!q || text.includes(q)) && (!filters.status || replacement.status === filters.status);
+  }), [replacements, filters]);
 
   const loadReplacements = async () => {
     try {
@@ -81,7 +93,7 @@ const Reemplazos = () => {
       replacementModel: replacement.replacementModel || '',
       replacementNotes: replacement.replacementNotes || ''
     });
-    deliveryForm.reset({ deliveryDate: new Date().toISOString().slice(0, 10), deliveryObservations: replacement.deliveryObservations || '' });
+    deliveryForm.reset({ deliveryDate: new Date().toISOString().slice(0, 10), deliveryType: replacement.deliveryType || 'STORE_PICKUP', deliveryObservations: replacement.deliveryObservations || '' });
   };
 
   const closeAction = () => {
@@ -113,7 +125,12 @@ const Reemplazos = () => {
 
   const submitDelivery = async (values) => {
     try {
-      await registerReplacementDelivery(active.id, values);
+      const now = new Date();
+      const [year, month, day] = values.deliveryDate.split('-').map(Number);
+      await registerReplacementDelivery(active.id, {
+        ...values,
+        deliveryDate: new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString()
+      });
       closeAction();
       await loadReplacements();
       showToast({ type: 'success', title: 'Entrega registrada', message: 'La constancia fue generada.' });
@@ -134,15 +151,27 @@ const Reemplazos = () => {
           <Button onClick={() => exportReplacements('xls')}>Exportar Excel</Button>
         </div>
       </div>
+      <Card className="grid gap-3 p-4 md:grid-cols-2">
+        <input
+          className="h-10 rounded-md border border-neutral-200 px-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+          placeholder="Buscar por ticket, producto o cliente"
+          value={filters.q}
+          onChange={(event) => setFilters({ ...filters, q: event.target.value })}
+        />
+        <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
+          <option value="">Todos los estados</option>
+          {Object.entries(statusLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </Card>
       <div className="grid gap-4 md:grid-cols-2">
         {isLoading && Array.from({ length: 4 }, (_, index) => <div key={index} className="h-44 animate-pulse rounded-lg bg-neutral-100" />)}
         {error && <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-danger md:col-span-2">{error}</div>}
-        {!isLoading && !error && replacements.length === 0 && (
+        {!isLoading && !error && filteredReplacements.length === 0 && (
           <div className="md:col-span-2">
             <EmptyState title="Sin reemplazos" description="Cuando un ticket requiera reemplazo aparecera aqui." />
           </div>
         )}
-        {replacements.map((replacement) => (
+        {filteredReplacements.map((replacement) => (
           <Card key={replacement.id} className="p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -157,7 +186,7 @@ const Reemplazos = () => {
               <div><dt className="font-semibold text-neutral-900">Razon</dt><dd>{replacement.reason}</dd></div>
               {replacement.validationNotes && <div><dt className="font-semibold text-neutral-900">Condiciones validadas</dt><dd>{replacement.validationNotes}</dd></div>}
               {replacement.replacementSerialNumber && <div><dt className="font-semibold text-neutral-900">Producto nuevo</dt><dd>{replacement.replacementBrand} {replacement.replacementModel} - {replacement.replacementSerialNumber}</dd></div>}
-              {replacement.deliveryDate && <div><dt className="font-semibold text-neutral-900">Entrega</dt><dd>{formatDateTime(replacement.deliveryDate)}</dd></div>}
+              {replacement.deliveryDate && <div><dt className="font-semibold text-neutral-900">Entrega</dt><dd>{formatDateTime(replacement.deliveryDate)}{replacement.deliveryType ? ` - ${deliveryTypeLabel[replacement.deliveryType] || replacement.deliveryType}` : ''}</dd></div>}
             </dl>
             <div className="mt-4 flex flex-wrap gap-2">
               {replacement.status === 'PENDING_APPROVAL' && <Button variant="secondary" onClick={() => openAction(replacement, 'validate')}><ClipboardCheck className="h-4 w-4" />Validar</Button>}
@@ -192,6 +221,13 @@ const Reemplazos = () => {
       <Modal isOpen={action === 'delivery'} title="Registrar entrega al cliente" onClose={closeAction}>
         <form className="grid gap-4" onSubmit={deliveryForm.handleSubmit(submitDelivery)}>
           <FormInput register={deliveryForm.register} name="deliveryDate" label="Fecha de entrega" type="date" error={deliveryForm.formState.errors.deliveryDate} />
+          <label className="grid gap-1.5 text-sm font-medium text-neutral-700" htmlFor="deliveryType">
+            <span>Tipo de entrega</span>
+            <select id="deliveryType" className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100" {...deliveryForm.register('deliveryType')}>
+              {Object.entries(deliveryTypeLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+            {deliveryForm.formState.errors.deliveryType && <span className="text-xs font-medium text-danger">{deliveryForm.formState.errors.deliveryType.message}</span>}
+          </label>
           <FormTextarea register={deliveryForm.register} name="deliveryObservations" label="Constancia de entrega" error={deliveryForm.formState.errors.deliveryObservations} />
           <Button type="submit" isLoading={deliveryForm.formState.isSubmitting}>Registrar entrega</Button>
         </form>

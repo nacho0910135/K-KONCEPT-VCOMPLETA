@@ -75,6 +75,10 @@ const userService = {
     return updated;
   },
 
+  updateMe(payload, actor) {
+    return this.update(actor.id, payload, actor);
+  },
+
   async updateRole(id, role, actor) {
     const previous = await this.getById(id);
     const updated = await userRepository.update(id, { role });

@@ -9,7 +9,6 @@ import Card from '../../components/common/Card.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
-import { priorityLabels } from './clientUtils.jsx';
 import { useToast } from '../../hooks/useToast.js';
 import { useAuth } from '../../hooks/useAuth.js';
 import { createTicket } from '../../services/tickets.service.js';
@@ -23,7 +22,6 @@ const ticketSchema = z.object({
   categoryId: z.string().min(1, 'Selecciona una categoria'),
   subcategoryId: z.string().min(1, 'Selecciona una subcategoria'),
   productId: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'], { message: 'Selecciona una prioridad estimada' }),
   description: z.string().min(30, 'La descripcion debe tener al menos 30 caracteres')
 });
 
@@ -40,7 +38,7 @@ const NuevoTicket = () => {
   const navigate = useNavigate();
   const form = useForm({
     resolver: zodResolver(ticketSchema),
-    defaultValues: { title: '', categoryId: '', subcategoryId: '', productId: '', priority: '', description: '' }
+    defaultValues: { title: '', categoryId: '', subcategoryId: '', productId: '', description: '' }
   });
   const selectedCategoryId = useWatch({ control: form.control, name: 'categoryId' });
   const selectedSubcategoryId = useWatch({ control: form.control, name: 'subcategoryId' });
@@ -109,7 +107,6 @@ const NuevoTicket = () => {
     const payload = {
       title: values.title,
       description: values.description,
-      priority: values.priority,
       categoryId: values.categoryId,
       subcategoryId: values.subcategoryId
     };
@@ -240,7 +237,6 @@ const NuevoTicket = () => {
               options={productOptions}
             />
             {categoriesError && <p className="text-xs font-semibold text-danger">{categoriesError}</p>}
-            <FormSelect register={form.register} name="priority" label="Prioridad estimada" error={form.formState.errors.priority} options={Object.entries(priorityLabels).map(([value, label]) => ({ value, label }))} />
             <div>
               <FormTextarea register={form.register} name="description" label="Descripcion detallada" error={form.formState.errors.description} rows={6} />
               <p className={`mt-1 text-xs ${description.length < 30 ? 'text-warning' : 'text-success'}`}>{description.length}/30 minimo</p>
@@ -285,7 +281,6 @@ const NuevoTicket = () => {
             <div><dt className="font-semibold text-neutral-900">Titulo</dt><dd className="text-neutral-600">{values.title}</dd></div>
             <div><dt className="font-semibold text-neutral-900">Categoria</dt><dd className="text-neutral-600">{categoryName} / {subcategoryName}</dd></div>
             <div><dt className="font-semibold text-neutral-900">Producto</dt><dd className="text-neutral-600">{productName}</dd></div>
-            <div><dt className="font-semibold text-neutral-900">Prioridad</dt><dd className="text-neutral-600">{priorityLabels[values.priority]}</dd></div>
             <div><dt className="font-semibold text-neutral-900">Evidencia</dt><dd className="text-neutral-600">{evidenceFiles.length} archivo(s)</dd></div>
             <div className="sm:col-span-2"><dt className="font-semibold text-neutral-900">Descripcion</dt><dd className="text-neutral-600">{values.description}</dd></div>
           </dl>

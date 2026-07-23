@@ -18,7 +18,8 @@ const createUserSchema = z.object({
 const updateUserSchema = z.object({
   name: z.string().trim().min(1).optional(),
   phone: z.string().trim().optional(),
-  company: z.string().trim().optional()
+  company: z.string().trim().optional(),
+  avatarUrl: z.string().trim().max(800000).optional()
 });
 
 const updateUserRoleSchema = z.object({

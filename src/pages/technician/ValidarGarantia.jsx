@@ -14,9 +14,11 @@ const addMonths = (date, months) => {
 };
 
 const productLabel = (product) => [product.name, product.brand, product.model].filter(Boolean).join(' ');
+const findProductByLabel = (products, label) => products.find((item) => productLabel(item) === label);
 
 const ValidarGarantia = () => {
   const [products, setProducts] = useState([]);
+  const [query, setQuery] = useState('');
   const [productId, setProductId] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
   const [validated, setValidated] = useState(false);
@@ -35,6 +37,7 @@ const ValidarGarantia = () => {
         if (!mounted) return;
         setProducts(items);
         setProductId(items[0]?.id || '');
+        setQuery(items[0] ? productLabel(items[0]) : '');
       } catch (loadError) {
         if (mounted) setError(getErrorMessage(loadError, 'No pudimos cargar productos.'));
       } finally {
@@ -67,16 +70,25 @@ const ValidarGarantia = () => {
         <form className="grid gap-4 md:grid-cols-[1fr_220px_auto] md:items-end" onSubmit={validate}>
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
             <span>Producto</span>
-            <select
-              className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+            <input
+              list="warranty-products"
+              className="h-10 rounded-md border border-neutral-200 px-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+              placeholder="Nombre, marca o modelo"
               disabled={isLoading}
-              value={productId}
-              onChange={(event) => { setProductId(event.target.value); setValidated(false); }}
-            >
+              value={query}
+              onChange={(event) => {
+                const value = event.target.value;
+                const selected = findProductByLabel(products, value);
+                setQuery(value);
+                setProductId(selected?.id || '');
+                setValidated(false);
+              }}
+            />
+            <datalist id="warranty-products">
               {products.map((item) => (
-                <option key={item.id} value={item.id}>{productLabel(item) || item.name}</option>
+                <option key={item.id} value={productLabel(item) || item.name} />
               ))}
-            </select>
+            </datalist>
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
             <span>Fecha de compra</span>

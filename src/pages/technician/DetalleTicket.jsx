@@ -109,7 +109,7 @@ const DetalleTicket = () => {
   const evidences = history.evidence || ticket.evidence || [];
   const timeline = history.timeline || (history.statuses || []).map((event) => ({
     id: event.id,
-    title: `${event.previousStatus || 'Nuevo'} -> ${event.newStatus}`,
+    title: `${technicianStatusLabels[event.previousStatus] || 'Nuevo'} -> ${technicianStatusLabels[event.newStatus] || event.newStatus}`,
     description: event.comment,
     actor: event.changedBy,
     createdAt: event.createdAt
@@ -199,8 +199,8 @@ const DetalleTicket = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[.95fr_1.05fr]">
-        <div className="grid content-start gap-6">
+      <div className="grid gap-6">
+        <div className="grid gap-6 xl:grid-cols-3">
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Informacion del caso</h2>
             <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
@@ -229,13 +229,15 @@ const DetalleTicket = () => {
               <h2 className="text-sm font-semibold text-neutral-900">Producto</h2>
               <p className="mt-3 font-semibold text-neutral-900">{ticket.product.brand || ticket.product.name} {ticket.product.model}</p>
               <p className="text-sm text-neutral-500">{ticket.product.serialNumber || ticket.product.serial}</p>
-              <Badge className="mt-3" tone="neutral">{ticket.warrantyStatusAtCreation || 'Sin garantia asociada'}</Badge>
+              {ticket.warrantyStatusAtCreation && ticket.warrantyStatusAtCreation !== 'NOT_APPLICABLE' && (
+                <Badge className="mt-3" tone="neutral">{ticket.warrantyStatusAtCreation}</Badge>
+              )}
             </Card>
           )}
         </div>
 
-        <div className="grid content-start gap-6">
-          <Card className="p-5">
+        <div className="grid content-start gap-6 xl:grid-cols-2">
+          <Card className="p-5 xl:col-span-2">
             <h2 className="text-sm font-semibold text-neutral-900">Actualizar estado</h2>
             <form className="mt-4 grid gap-4" onSubmit={statusForm.handleSubmit(saveStatus)}>
               <FormSelect register={statusForm.register} name="status" label="Nuevo estado" error={statusForm.formState.errors.status} options={transitionOptions} />
@@ -337,7 +339,7 @@ const DetalleTicket = () => {
               <h2 className="text-sm font-semibold text-neutral-900">Correos enviados al usuario</h2>
               <Button variant="ghost" className="min-h-8 px-2 py-1" onClick={loadEmails}><RefreshCw className="h-4 w-4" />Actualizar</Button>
             </div>
-            <div className="mt-4 grid divide-y divide-neutral-100">
+            <div className="mt-4 grid max-h-44 divide-y divide-neutral-100 overflow-y-auto pr-2">
               {emails.length === 0 && <p className="text-sm text-neutral-500">Aun no hay correos registrados para este ticket.</p>}
               {emails.map((email) => (
                 <button key={email.id} type="button" onClick={() => setSelectedEmail(email)} className="grid gap-1 py-3 text-left hover:bg-neutral-50">
@@ -367,7 +369,7 @@ const DetalleTicket = () => {
             </form>
           </Card>
 
-          <Card className="p-5">
+          <Card className="p-5 xl:col-span-2">
             <h2 className="text-sm font-semibold text-neutral-900">Historial</h2>
             <ol className="mt-4 space-y-4">
               {timeline.map((event) => (

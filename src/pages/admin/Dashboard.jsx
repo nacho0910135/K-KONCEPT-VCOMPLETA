@@ -90,7 +90,7 @@ const Dashboard = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={data?.byCategory || []} dataKey="value" nameKey="name" innerRadius={55} outerRadius={92}>
-                  {(data?.byCategory || []).map((entry, index) => <Cell key={entry.name} fill={colors[index % colors.length]} />)}
+                  {(data?.byCategory || []).map((entry, index) => <Cell key={`${entry.name}-${index}`} fill={colors[index % colors.length]} />)}
                 </Pie>
                 <Tooltip />
               </PieChart>

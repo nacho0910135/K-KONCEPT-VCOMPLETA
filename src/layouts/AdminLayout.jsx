@@ -1,4 +1,4 @@
-import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, ShieldCheck, ShieldAlert, SlidersHorizontal, Tags, UsersRound } from 'lucide-react';
+import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, ShieldCheck, ShieldAlert, SlidersHorizontal, Tags, UserRound, UsersRound } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
@@ -13,7 +13,8 @@ const navItems = [
   { to: 'notifications/templates', label: 'Plantillas', icon: Layers3 },
   { to: 'notifications/channels', label: 'Canales', icon: Mail },
   { to: 'notifications/frequency', label: 'Frecuencia', icon: SlidersHorizontal },
-  { to: 'notificaciones', label: 'Notificaciones', icon: Bell }
+  { to: 'notificaciones', label: 'Notificaciones', icon: Bell },
+  { to: 'profile', label: 'Perfil', icon: UserRound }
 ];
 
 const AdminLayout = () => <AppShell navItems={navItems} roleLabel="Administrador" />;

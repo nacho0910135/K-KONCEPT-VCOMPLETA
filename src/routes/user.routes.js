@@ -13,7 +13,11 @@ const {
 
 const router = Router();
 
-router.use(verifyToken, authorizeRoles('ADMIN'));
+router.use(verifyToken);
+
+router.put('/me', validate(updateUserSchema), asyncHandler(userController.updateMe));
+
+router.use(authorizeRoles('ADMIN'));
 
 router.post('/', validate(createUserSchema), asyncHandler(userController.create));
 router.get('/', validate(userQuerySchema, 'query'), asyncHandler(userController.list));

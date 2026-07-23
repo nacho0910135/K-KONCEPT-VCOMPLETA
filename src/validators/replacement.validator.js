@@ -23,6 +23,7 @@ const newProductSchema = z.object({
 
 const deliverySchema = z.object({
   deliveryDate: z.coerce.date(),
+  deliveryType: z.string().trim().min(1),
   deliveryObservations: z.string().trim().min(1)
 });
 

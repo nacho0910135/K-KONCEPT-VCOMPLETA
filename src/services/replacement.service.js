@@ -198,6 +198,7 @@ const replacementService = {
       status: 'DELIVERED',
       deliveredById: user.id,
       deliveryDate: payload.deliveryDate,
+      deliveryType: payload.deliveryType,
       deliveryObservations: payload.deliveryObservations
     });
 
@@ -209,7 +210,8 @@ const replacementService = {
       previousValue: { status: replacement.status },
       newValue: {
         status: 'DELIVERED',
-        deliveryDate: payload.deliveryDate
+        deliveryDate: payload.deliveryDate,
+        deliveryType: payload.deliveryType
       }
     });
 
@@ -292,6 +294,7 @@ const replacementService = {
         { header: 'fechaSolicitud', value: (row) => formatDate(row.createdAt) },
         { header: 'fechaValidacion', value: (row) => formatDate(row.validatedAt) },
         { header: 'fechaEntrega', value: (row) => formatDate(row.deliveryDate) },
+        { header: 'tipoEntrega', value: 'deliveryType' },
         { header: 'codigoTicket', value: (row) => row.ticket?.code },
         { header: 'tituloTicket', value: (row) => row.ticket?.title },
         { header: 'nombreCliente', value: (row) => row.ticket?.client?.name },
@@ -309,6 +312,7 @@ const replacementService = {
         { header: 'Estado', value: 'status' },
         { header: 'razonReemplazo', value: 'reason' },
         { header: 'notasValidacion', value: 'validationNotes' },
+        { header: 'tipoEntrega', value: 'deliveryType' },
         { header: 'observacionesEntrega', value: 'deliveryObservations' },
         { header: 'constanciaPdf', value: 'pdfUrl' }
       ],

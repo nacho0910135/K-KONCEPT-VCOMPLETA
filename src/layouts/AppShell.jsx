@@ -14,6 +14,7 @@ const AppShell = ({ navItems, roleLabel }) => {
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const notificationsPath = user?.role === 'ADMIN' ? '/admin/notificaciones' : 'notifications';
+  const canSearch = user?.role !== 'CLIENT';
 
   const goToNotifications = () => {
     navigate(notificationsPath);
@@ -24,18 +25,16 @@ const AppShell = ({ navItems, roleLabel }) => {
     const q = searchTerm.trim();
     if (!q) return;
 
-    if (user?.role === 'TECHNICIAN' || user?.role === 'ADMIN' || user?.role === 'CLIENT') {
+    if (user?.role === 'TECHNICIAN' || user?.role === 'ADMIN') {
       try {
         const response = await searchTickets({ q, limit: 1 });
         const ticket = response.data?.[0];
         if (ticket) {
           if (user.role === 'ADMIN') navigate(`/admin/tickets/${ticket.id}`);
           else if (user.role === 'TECHNICIAN') navigate(`/technician/tickets/${ticket.id}`);
-          else navigate(`/client/tickets/${ticket.id}`);
         }
       } catch (_error) {
-        if (user.role !== 'CLIENT') return;
-        navigate(`/client/tickets?q=${encodeURIComponent(q)}`);
+        return;
       }
       return;
     }
@@ -44,25 +43,28 @@ const AppShell = ({ navItems, roleLabel }) => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
+    <div className="flex min-h-screen flex-col bg-neutral-50">
+      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 shadow-sm backdrop-blur-xl">
         <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
-          <button className="rounded-md p-2 text-neutral-600 hover:bg-neutral-100 lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Abrir navegacion">
+          <button className="rounded-md p-2 text-neutral-600 transition hover:bg-neutral-100 hover:text-primary-700 lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Abrir navegacion">
             <Menu className="h-5 w-5" />
           </button>
-          <NavLink to="/" className="flex items-center gap-2 font-bold text-neutral-900" aria-label="Kollab Koncepts">
-            <span className="grid h-10 w-32 place-items-center rounded-md bg-white px-2">
+          <NavLink to="/" className="flex items-center gap-2 font-bold text-neutral-900 transition hover:scale-[1.01]" aria-label="Kollab Koncepts">
+            <span className="grid h-10 w-32 place-items-center rounded-md bg-white px-2 shadow-sm ring-1 ring-neutral-100">
               <img className="max-h-8 w-full object-contain" src={kollabLogo} alt="Kollab Koncepts" />
             </span>
           </NavLink>
-          <form className="relative ml-auto hidden w-full max-w-md md:block" onSubmit={runSearch}>
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-            <input className="h-10 w-full rounded-md border border-neutral-200 bg-neutral-50 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar tickets, usuarios o categorias" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
-          </form>
+          {canSearch && (
+            <form className="relative ml-auto hidden w-full max-w-md md:block" onSubmit={runSearch}>
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
+              <input className="h-10 w-full rounded-md border border-neutral-200 bg-neutral-50 pl-10 pr-3 text-sm outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100" placeholder="Buscar tickets, usuarios o categorias" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
+            </form>
+          )}
+          {!canSearch && <div className="ml-auto hidden md:block" />}
           <div className="relative">
-            <button className="relative rounded-md p-2 text-neutral-600 hover:bg-neutral-100" onClick={goToNotifications} aria-label="Notificaciones">
+            <button className="relative rounded-md p-2 text-neutral-600 transition hover:bg-primary-50 hover:text-primary-700" onClick={goToNotifications} aria-label="Notificaciones">
               <Bell className="h-5 w-5" />
-              {unreadCount > 0 && <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">{unreadCount}</span>}
+              {unreadCount > 0 && <span className="absolute right-1 top-1 grid h-4 min-w-4 animate-pulse place-items-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">{unreadCount}</span>}
             </button>
           </div>
           <div className="hidden items-center gap-3 border-l border-neutral-200 pl-4 sm:flex">
@@ -70,15 +72,19 @@ const AppShell = ({ navItems, roleLabel }) => {
               <p className="text-sm font-semibold text-neutral-900">{user?.name || 'Usuario'}</p>
               <p className="text-xs text-neutral-500">{roleLabel}</p>
             </div>
-            <UserRound className="h-9 w-9 rounded-full bg-neutral-100 p-2 text-neutral-600" />
-            <button className="rounded-md p-2 text-neutral-500 hover:bg-neutral-100" onClick={logout} aria-label="Cerrar sesion">
+            {user?.avatarUrl ? (
+              <img className="h-9 w-9 rounded-full object-cover ring-1 ring-primary-100" src={user.avatarUrl} alt={user?.name || 'Usuario'} />
+            ) : (
+              <UserRound className="h-9 w-9 rounded-full bg-primary-50 p-2 text-primary-700 ring-1 ring-primary-100" />
+            )}
+            <button className="rounded-md p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-danger" onClick={logout} aria-label="Cerrar sesion">
               <LogOut className="h-5 w-5" />
             </button>
           </div>
         </div>
       </header>
 
-      <aside className={clsx('fixed inset-y-0 left-0 z-40 w-72 border-r border-neutral-200 bg-white p-4 transition lg:top-16 lg:z-20 lg:block lg:translate-x-0', sidebarOpen ? 'translate-x-0' : '-translate-x-full')}>
+      <aside className={clsx('fixed inset-y-0 left-0 z-40 w-72 border-r border-neutral-200 bg-white/95 p-4 shadow-soft backdrop-blur-xl transition lg:top-16 lg:z-20 lg:block lg:translate-x-0 lg:shadow-none', sidebarOpen ? 'translate-x-0' : '-translate-x-full')}>
         <div className="mb-4 flex items-center justify-between lg:hidden">
           <span className="font-semibold text-neutral-900">Menu</span>
           <button className="rounded-md p-2 hover:bg-neutral-100" onClick={() => setSidebarOpen(false)} aria-label="Cerrar navegacion">
@@ -92,7 +98,7 @@ const AppShell = ({ navItems, roleLabel }) => {
               to={to}
               end={to === ''}
               onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) => clsx('flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition', isActive ? 'bg-primary-50 text-primary-700 shadow-sm' : 'text-neutral-600 hover:bg-neutral-100')}
+              className={({ isActive }) => clsx('flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition hover:translate-x-0.5', isActive ? 'bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-100' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900')}
             >
               <Icon className="h-5 w-5" />
               {label}
@@ -103,7 +109,7 @@ const AppShell = ({ navItems, roleLabel }) => {
 
       {sidebarOpen && <button className="fixed inset-0 z-30 bg-neutral-900/30 lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Cerrar menu" />}
 
-      <main className="px-4 py-6 pb-24 lg:ml-72 lg:px-8">
+      <main className="flex-1 px-4 py-6 pb-24 lg:ml-72 lg:px-8">
         <Outlet />
       </main>
       <footer className="border-t border-neutral-200 bg-white px-4 py-4 text-center text-xs text-neutral-500 lg:ml-72">Kollab Koncepts</footer>

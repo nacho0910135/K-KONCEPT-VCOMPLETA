@@ -250,7 +250,7 @@ const ticketService = {
       }
     }
 
-    const priority = sanitizedPayload.priority || 'MEDIUM';
+    const priority = user.role === 'CLIENT' ? 'MEDIUM' : (sanitizedPayload.priority || 'MEDIUM');
     const sla = await slaService.calculateDeadlineForTicket({ priority, categoryId: sanitizedPayload.categoryId, clientId: user.id });
 
     let ticket = await ticketCounterRepository.createTicketWithSequentialCode({

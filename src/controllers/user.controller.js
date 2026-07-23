@@ -21,6 +21,11 @@ const update = async (req, res) => successResponse(res, {
   message: 'Usuario actualizado correctamente'
 });
 
+const updateMe = async (req, res) => successResponse(res, {
+  data: { user: await userService.updateMe(req.body, req.user) },
+  message: 'Perfil actualizado correctamente'
+});
+
 const updateRole = async (req, res) => successResponse(res, {
   data: { user: await userService.updateRole(req.params.id, req.body.role, req.user) },
   message: 'Rol actualizado correctamente'
@@ -36,4 +41,4 @@ const activate = async (req, res) => successResponse(res, {
   message: 'Usuario activado correctamente'
 });
 
-module.exports = { create, list, getById, update, updateRole, deactivate, activate };
+module.exports = { create, list, getById, update, updateMe, updateRole, deactivate, activate };

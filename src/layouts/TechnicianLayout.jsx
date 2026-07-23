@@ -1,4 +1,4 @@
-import { Bell, Boxes, CircleDollarSign, Gauge, ClipboardCheck, ShieldCheck } from 'lucide-react';
+import { Bell, Boxes, CircleDollarSign, Gauge, ClipboardCheck, ShieldCheck, UserRound } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
@@ -7,7 +7,8 @@ const navItems = [
   { to: 'validar-garantia', label: 'Validar garantia', icon: ShieldCheck },
   { to: 'reemplazos', label: 'Reemplazos', icon: Boxes },
   { to: 'reembolsos', label: 'Reembolsos', icon: CircleDollarSign },
-  { to: 'notifications', label: 'Notificaciones', icon: Bell }
+  { to: 'notifications', label: 'Notificaciones', icon: Bell },
+  { to: 'profile', label: 'Perfil', icon: UserRound }
 ];
 
 const TechnicianLayout = () => <AppShell navItems={navItems} roleLabel="Tecnico" />;

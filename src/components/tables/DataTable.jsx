@@ -33,13 +33,14 @@ const DataTable = ({
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState({ key: null, direction: 'asc' });
+  const rows = Array.isArray(data) ? data : [];
 
   const filteredData = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return data;
+    if (!normalized) return rows;
 
-    return data.filter((row) => JSON.stringify(row).toLowerCase().includes(normalized));
-  }, [data, query]);
+    return rows.filter((row) => JSON.stringify(row).toLowerCase().includes(normalized));
+  }, [rows, query]);
 
   const sortedData = useMemo(() => {
     if (!sort.key) return filteredData;
