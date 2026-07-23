@@ -1,4 +1,4 @@
-import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, ShieldCheck, ShieldAlert, SlidersHorizontal, Tags, UserRound, UsersRound } from 'lucide-react';
+import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, MessageCircle, ShieldCheck, ShieldAlert, SlidersHorizontal, Tags, UserRound, UsersRound } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
@@ -14,6 +14,7 @@ const navItems = [
   { to: 'notifications/channels', label: 'Canales', icon: Mail },
   { to: 'notifications/frequency', label: 'Frecuencia', icon: SlidersHorizontal },
   { to: 'notificaciones', label: 'Notificaciones', icon: Bell },
+  { to: 'chat', label: 'Chat empresarial', icon: MessageCircle },
   { to: 'profile', label: 'Perfil', icon: UserRound }
 ];
 

@@ -94,6 +94,7 @@ model User {
   phone                      String?
   company                    String?
   avatarUrl                  String?
+  chatLastSeenAt             DateTime?
   active                     Boolean           @default(true)
   lastLogin                  DateTime?
   createdAt                  DateTime          @default(now())
@@ -117,8 +118,27 @@ model User {
   scheduledReports           ScheduledReport[]
   refreshTokens              RefreshToken[]
   passwordResetCodes         PasswordResetCode[]
+  sentChatMessages           ChatMessage[]     @relation("ChatSender")
+  receivedChatMessages       ChatMessage[]     @relation("ChatRecipient")
 
   @@index([role, active])
+}
+
+model ChatMessage {
+  id             String    @id
+  senderId       String
+  sender         User      @relation("ChatSender", fields: [senderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  recipientId    String
+  recipient      User      @relation("ChatRecipient", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  body           String?
+  attachmentUrl  String?
+  attachmentType String?
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, readAt])
+  @@map("ChatMessages")
 }
 
 model Category {

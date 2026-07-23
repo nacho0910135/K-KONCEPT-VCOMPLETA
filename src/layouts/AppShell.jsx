@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import { useNotifications } from '../hooks/useNotifications.js';
 import { searchTickets } from '../services/tickets.service.js';
 import kollabLogo from '../assets/kollab-logo.png';
+import EnterpriseChat from '../components/chat/EnterpriseChat.jsx';
 
 const AppShell = ({ navItems, roleLabel }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,8 +44,8 @@ const AppShell = ({ navItems, roleLabel }) => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-neutral-50">
-      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/90 shadow-sm backdrop-blur-xl">
+    <div className="flex min-h-screen flex-col bg-[#722F37]">
+      <header className="sticky top-0 z-30 border-b border-neutral-200 bg-[#efeeee]/95 shadow-sm backdrop-blur-xl">
         <div className="flex h-16 items-center gap-3 px-4 lg:px-6">
           <button className="rounded-md p-2 text-neutral-600 transition hover:bg-neutral-100 hover:text-primary-700 lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Abrir navegacion">
             <Menu className="h-5 w-5" />
@@ -57,7 +58,7 @@ const AppShell = ({ navItems, roleLabel }) => {
           {canSearch && (
             <form className="relative ml-auto hidden w-full max-w-md md:block" onSubmit={runSearch}>
               <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-              <input className="h-10 w-full rounded-md border border-neutral-200 bg-neutral-50 pl-10 pr-3 text-sm outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100" placeholder="Buscar tickets, usuarios o categorias" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
+              <input className="h-10 w-full rounded-md border border-neutral-200 bg-white/90 pl-10 pr-3 text-sm outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-100" placeholder="Buscar tickets, usuarios o categorias" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
             </form>
           )}
           {!canSearch && <div className="ml-auto hidden md:block" />}
@@ -84,7 +85,7 @@ const AppShell = ({ navItems, roleLabel }) => {
         </div>
       </header>
 
-      <aside className={clsx('fixed inset-y-0 left-0 z-40 w-72 border-r border-neutral-200 bg-white/95 p-4 shadow-soft backdrop-blur-xl transition lg:top-16 lg:z-20 lg:block lg:translate-x-0 lg:shadow-none', sidebarOpen ? 'translate-x-0' : '-translate-x-full')}>
+      <aside className={clsx('fixed inset-y-0 left-0 z-40 w-72 border-r border-neutral-200 bg-[#f1eeee] p-4 shadow-soft transition lg:top-16 lg:z-20 lg:block lg:translate-x-0 lg:shadow-none', sidebarOpen ? 'translate-x-0' : '-translate-x-full')}>
         <div className="mb-4 flex items-center justify-between lg:hidden">
           <span className="font-semibold text-neutral-900">Menu</span>
           <button className="rounded-md p-2 hover:bg-neutral-100" onClick={() => setSidebarOpen(false)} aria-label="Cerrar navegacion">
@@ -109,10 +110,12 @@ const AppShell = ({ navItems, roleLabel }) => {
 
       {sidebarOpen && <button className="fixed inset-0 z-30 bg-neutral-900/30 lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Cerrar menu" />}
 
-      <main className="flex-1 px-4 py-6 pb-24 lg:ml-72 lg:px-8">
-        <Outlet />
+      <main className="flex-1 bg-[#722F37] px-4 py-5 pb-24 lg:ml-72 lg:px-6">
+        <div className="min-h-full rounded-xl bg-[#f7f4f4] p-4 shadow-[0_24px_70px_rgba(20,6,10,0.28)] ring-1 ring-white/10 lg:p-6">
+          <Outlet />
+        </div>
       </main>
-      <footer className="border-t border-neutral-200 bg-white px-4 py-4 text-center text-xs text-neutral-500 lg:ml-72">Kollab Koncepts</footer>
+      <footer className="border-t border-white/10 bg-[#722F37] px-4 py-4 text-center text-xs text-white/70 lg:ml-72">Kollab Koncepts</footer>
 
       <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-white lg:hidden">
         {navItems.slice(0, 4).map(({ to, label, icon: Icon }) => (
@@ -122,6 +125,7 @@ const AppShell = ({ navItems, roleLabel }) => {
           </NavLink>
         ))}
       </nav>
+      <EnterpriseChat />
     </div>
   );
 };

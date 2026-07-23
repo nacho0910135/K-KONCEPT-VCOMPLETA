@@ -139,6 +139,9 @@ const kpiService = {
         select: {
           assignedTechnicianId: true,
           status: true,
+          priority: true,
+          slaBreached: true,
+          rating: true,
           assignedTechnician: {
             select: {
               id: true,
@@ -157,16 +160,31 @@ const kpiService = {
           technicianName: ticket.assignedTechnician?.name || 'Sin asignar',
           assigned: 0,
           resolved: 0,
-          open: 0
+          open: 0,
+          critical: 0,
+          breached: 0,
+          ratingSum: 0,
+          ratingCount: 0
         };
 
         current.assigned += 1;
         if (RESOLVED_STATUSES.includes(ticket.status)) current.resolved += 1;
         if (!CLOSED_STATUSES.includes(ticket.status)) current.open += 1;
+        if (['CRITICAL', 'HIGH'].includes(ticket.priority)) current.critical += 1;
+        if (ticket.slaBreached) current.breached += 1;
+        if (ticket.rating) {
+          current.ratingSum += ticket.rating;
+          current.ratingCount += 1;
+        }
         grouped.set(key, current);
       });
 
-      return Array.from(grouped.values());
+      return Array.from(grouped.values()).map((item) => ({
+        ...item,
+        ratingAverage: item.ratingCount ? Number((item.ratingSum / item.ratingCount).toFixed(2)) : 0,
+        resolutionRate: item.assigned ? Number(((item.resolved / item.assigned) * 100).toFixed(1)) : 0,
+        score: (item.resolved * 3) + (item.ratingCount ? item.ratingSum : 0) - (item.breached * 2) - item.open
+      }));
     });
   },
 
@@ -266,6 +284,36 @@ const kpiService = {
     });
   },
 
+  async serviceOperations(filters = {}) {
+    return withCache(`serviceOperations:${serializeFilters(filters)}`, async () => {
+      const ticketWhere = buildTicketWhere(filters);
+      const [replacementsByStatus, refundsByStatus, refundAmount] = await Promise.all([
+        prisma.replacement.groupBy({
+          by: ['status'],
+          where: { ticket: ticketWhere },
+          _count: { _all: true }
+        }),
+        prisma.refund.groupBy({
+          by: ['status'],
+          where: { ticket: ticketWhere },
+          _count: { _all: true }
+        }),
+        prisma.refund.aggregate({
+          where: { ticket: ticketWhere },
+          _sum: { amount: true },
+          _count: { _all: true }
+        })
+      ]);
+
+      return {
+        replacementsByStatus: normalizeGroupRows(replacementsByStatus, 'status'),
+        refundsByStatus: normalizeGroupRows(refundsByStatus, 'status'),
+        refundCount: refundAmount._count._all,
+        refundAmount: Number(refundAmount._sum.amount || 0)
+      };
+    });
+  },
+
   async monthlyVolume(filters = {}) {
     return withCache(`monthlyVolume:${serializeFilters(filters)}`, async () => {
       const end = toDate(filters.dateTo) || new Date();
@@ -304,6 +352,7 @@ const kpiService = {
       reopenedRate,
       ratingSummary,
       replacementVsRepair,
+      serviceOperations,
       monthlyVolume
     ] = await Promise.all([
       this.ticketsByStatus(filters),
@@ -316,6 +365,7 @@ const kpiService = {
       this.reopenedRate(filters),
       this.ratingSummary(filters),
       this.replacementVsRepair(filters),
+      this.serviceOperations(filters),
       this.monthlyVolume(filters)
     ]);
 
@@ -330,6 +380,7 @@ const kpiService = {
       reopenedRate,
       ratingSummary,
       replacementVsRepair,
+      serviceOperations,
       monthlyVolume
     };
   }

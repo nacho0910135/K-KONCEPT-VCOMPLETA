@@ -15,6 +15,7 @@ const Register = lazy(() => import('../pages/auth/Register.jsx'));
 const ForgotPassword = lazy(() => import('../pages/auth/ForgotPassword.jsx'));
 const AccessDenied = lazy(() => import('../pages/shared/AccessDenied.jsx'));
 const NotFound = lazy(() => import('../pages/shared/NotFound.jsx'));
+const ChatEmpresarial = lazy(() => import('../pages/shared/ChatEmpresarial.jsx'));
 const ClientDashboard = lazy(() => import('../pages/client/Dashboard.jsx'));
 const ClientMisTickets = lazy(() => import('../pages/client/MisTickets.jsx'));
 const NuevoTicket = lazy(() => import('../pages/client/NuevoTicket.jsx'));
@@ -87,6 +88,7 @@ const AppRouter = () => (
             <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="notifications" element={<TechnicianNotificaciones />} />
             <Route path="notificaciones" element={<TechnicianNotificaciones />} />
+            <Route path="chat" element={<ChatEmpresarial />} />
             <Route path="profile" element={<Perfil />} />
             <Route path="perfil" element={<Perfil />} />
           </Route>
@@ -116,6 +118,7 @@ const AppRouter = () => (
             <Route path="notifications/frequency" element={<Frecuencia />} />
             <Route path="frecuencia" element={<Frecuencia />} />
             <Route path="notificaciones" element={<ClientNotificaciones />} />
+            <Route path="chat" element={<ChatEmpresarial />} />
             <Route path="profile" element={<Perfil />} />
             <Route path="perfil" element={<Perfil />} />
           </Route>

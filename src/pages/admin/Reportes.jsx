@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Bar, BarChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CheckCircle2, Clock3, Download, Edit, Plus, Star, TicketCheck, Trash2 } from 'lucide-react';
+import { Bar, BarChart, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { AlertTriangle, Award, CheckCircle2, Clock3, Download, Edit, PackageCheck, Plus, Star, TicketCheck, TicketPlus, Trash2, WalletCards } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -17,7 +17,7 @@ import FormSelect from '../../components/forms/FormSelect.jsx';
 import { createScheduledReport, deleteScheduledReport, exportReport, getKpiOverview, listScheduledReports, toggleScheduledReport, updateScheduledReport } from '../../services/admin.client.service.js';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
-import { frequencyLabel, reportTypeLabel } from './adminUtils.jsx';
+import { frequencyLabel, priorityLabel, reportTypeLabel } from './adminUtils.jsx';
 
 const scheduledSchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
@@ -43,6 +43,11 @@ const parseParameters = (value) => {
 const today = new Date().toISOString().slice(0, 10);
 const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
 const getCount = (rows = [], status) => rows.find((item) => item.status === status)?.count || 0;
+const colors = ['#dc2626', '#f59e0b', '#2563eb', '#0f766e', '#64748b', '#8b5cf6'];
+const statusLabel = { OPEN: 'Abiertos', ASSIGNED: 'Asignados', PENDING: 'Pendientes', IN_PROGRESS: 'En progreso', WAITING_CUSTOMER: 'Esperando cliente', RESOLVED: 'Resueltos', CLOSED: 'Cerrados', CANCELLED: 'Cancelados', REOPENED: 'Reabiertos' };
+const replacementLabel = { PENDING_APPROVAL: 'Por validar', APPROVED: 'Aprobados', IN_TRANSIT: 'En transito', DELIVERED: 'Entregados', REJECTED: 'Rechazados' };
+const pct = (value) => `${Number(value || 0).toFixed(0)}%`;
+const money = (value) => new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(value || 0);
 const downloadFile = (response, fallback) => {
   const disposition = response.headers['content-disposition'] || '';
   const filename = disposition.match(/filename="?([^"]+)"?/)?.[1] || fallback;
@@ -135,14 +140,22 @@ const Reportes = () => {
   const overview = data?.overview || {};
   const monthly = (overview.monthlyVolume || []).map((item) => ({ name: item.month, tickets: item.count || 0 }));
   const byStatus = overview.ticketsByStatus || [];
-  const byPriority = (overview.ticketsByPriority || []).map((item) => ({ name: item.priority, value: item.count || 0 }));
+  const byPriority = (overview.ticketsByPriority || []).map((item) => ({ name: priorityLabel[item.priority] || item.priority, value: item.count || 0 }));
+  const statusChart = byStatus.map((item) => ({ name: statusLabel[item.status] || item.status, value: item.count || 0 }));
+  const service = overview.serviceOperations || {};
+  const replacements = (service.replacementsByStatus || []).map((item) => ({ name: replacementLabel[item.status] || item.status, value: item.count || 0 }));
+  const technicians = [...(overview.ticketsByTechnician || [])].filter((item) => item.technicianId).sort((a, b) => b.score - a.score).slice(0, 3);
+  const active = ['OPEN', 'ASSIGNED', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'].reduce((sum, status) => sum + getCount(byStatus, status), 0);
+  const waiting = getCount(byStatus, 'WAITING_CUSTOMER') + getCount(byStatus, 'PENDING');
+  const completed = getCount(byStatus, 'RESOLVED') + getCount(byStatus, 'CLOSED');
+  const health = Math.max(0, Math.min(100, Number(overview.slaCompliance?.complianceRate || 0) - (overview.reopenedRate?.reopenedRate || 0) - Math.min(waiting * 3, 20)));
 
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Reportes</h1>
-          <p className="mt-1 text-sm text-neutral-500">KPIs, exportaciones y programacion real de reportes.</p>
+          <p className="mt-1 text-sm text-neutral-500">KPIs ejecutivos, exportaciones legibles y programacion real.</p>
         </div>
         <Button onClick={() => openScheduled()}><Plus className="h-4 w-4" />Programar nuevo</Button>
       </div>
@@ -158,13 +171,17 @@ const Reportes = () => {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Abiertos" value={getCount(byStatus, 'OPEN')} icon={Clock3} />
-        <StatCard title="Resueltos" value={getCount(byStatus, 'RESOLVED')} icon={TicketCheck} tone="success" />
-        <StatCard title="SLA cumplido" value={`${overview.slaCompliance?.complianceRate ?? 0}%`} icon={CheckCircle2} tone="success" />
-        <StatCard title="Calificacion" value={overview.ratingSummary?.average ?? 0} icon={Star} tone="warning" />
+        <StatCard title="Salud general" value={pct(health)} helper={health >= 85 ? 'Estable' : health >= 65 ? 'Vigilar' : 'Critico'} icon={AlertTriangle} tone={health >= 85 ? 'success' : health >= 65 ? 'warning' : 'danger'} />
+        <StatCard title="Activos" value={active} icon={TicketPlus} />
+        <StatCard title="En espera" value={waiting} icon={Clock3} tone={waiting > 0 ? 'warning' : 'neutral'} />
+        <StatCard title="Completados" value={completed} icon={TicketCheck} tone="success" />
+        <StatCard title="SLA cumplido" value={pct(overview.slaCompliance?.complianceRate)} helper={`${overview.slaCompliance?.breached || 0} vencidos`} icon={CheckCircle2} tone="success" />
+        <StatCard title="Respuesta promedio" value={`${overview.avgResponseTime?.averageHours || 0} h`} icon={Clock3} />
+        <StatCard title="Calificacion" value={overview.ratingSummary?.average ?? 0} helper={`${overview.ratingSummary?.count || 0} opiniones`} icon={Star} tone="warning" />
+        <StatCard title="Reabiertos" value={pct(overview.reopenedRate?.reopenedRate)} icon={AlertTriangle} tone={(overview.reopenedRate?.reopenedRate || 0) > 10 ? 'danger' : 'neutral'} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-3">
         <Card className="p-4">
           <h2 className="text-sm font-semibold text-neutral-900">Tickets por prioridad</h2>
           <div className="mt-4 h-64">
@@ -179,7 +196,7 @@ const Reportes = () => {
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="p-4 xl:col-span-2">
           <h2 className="text-sm font-semibold text-neutral-900">Volumen mensual</h2>
           <div className="mt-4 h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -193,6 +210,72 @@ const Reportes = () => {
           </div>
         </Card>
       </div>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card className="p-4">
+          <h2 className="text-sm font-semibold text-neutral-900">Estados de casos</h2>
+          <div className="mt-4 h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={statusChart} dataKey="value" nameKey="name" outerRadius={86} label={({ name, value }) => `${name}: ${value}`}>
+                  {statusChart.map((entry, index) => <Cell key={`${entry.name}-${index}`} fill={colors[index % colors.length]} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <h2 className="text-sm font-semibold text-neutral-900">Reemplazos</h2>
+          <div className="mt-4 h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={replacements} dataKey="value" nameKey="name" innerRadius={48} outerRadius={78} label={({ name, value }) => `${name}: ${value}`}>
+                  {replacements.map((entry, index) => <Cell key={`${entry.name}-${index}`} fill={colors[index % colors.length]} />)}
+                </Pie>
+                <Legend />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <h2 className="text-sm font-semibold text-neutral-900">Operacion</h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            {[
+              { label: 'Reemplazos abiertos', value: (service.replacementsByStatus || []).filter((item) => item.status !== 'DELIVERED' && item.status !== 'REJECTED').reduce((sum, item) => sum + item.count, 0), icon: PackageCheck },
+              { label: 'Reembolsos registrados', value: service.refundCount || 0, icon: WalletCards },
+              { label: 'Monto reembolsado', value: money(service.refundAmount), icon: WalletCards },
+              { label: 'Empleado del mes', value: technicians[0]?.technicianName || 'Sin datos', icon: Award }
+            ].map(({ label, value, icon: Icon }) => (
+              <div key={label} className="flex items-center gap-3 rounded-md border border-neutral-200 p-3">
+                <Icon className="h-5 w-5 text-primary-700" />
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-neutral-900">{value}</p>
+                  <p className="text-xs text-neutral-500">{label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-4">
+        <h2 className="mb-4 text-sm font-semibold text-neutral-900">Top 3 tecnicos</h2>
+        <DataTable
+          searchable={false}
+          pageSize={3}
+          loading={isLoading}
+          data={technicians}
+          columns={[
+            { key: 'technicianName', header: 'Tecnico' },
+            { key: 'resolved', header: 'Resueltos' },
+            { key: 'open', header: 'Abiertos' },
+            { key: 'resolutionRate', header: 'Resolucion', render: (row) => pct(row.resolutionRate) },
+            { key: 'ratingAverage', header: 'Rating', render: (row) => row.ratingAverage || 0 }
+          ]}
+        />
+      </Card>
 
       <Card className="p-4">
         <form className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_1fr_auto]" onSubmit={exportForm.handleSubmit(exportNow)}>

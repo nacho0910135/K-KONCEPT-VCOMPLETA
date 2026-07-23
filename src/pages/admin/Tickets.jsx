@@ -22,7 +22,20 @@ import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const statuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED', 'CANCELLED', 'REOPENED'];
 const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+const historicalStatuses = ['RESOLVED', 'CLOSED', 'CANCELLED'];
+const activeStatuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'];
 const optionize = (items, labels = {}) => items.map((item) => ({ value: item, label: labels[item] || item }));
+const isSlaRisk = (ticket) => {
+  if (ticket.slaBreached) return true;
+  if (!ticket.slaDeadline || historicalStatuses.includes(ticket.status)) return false;
+  return new Date(ticket.slaDeadline) <= new Date(Date.now() + 24 * 60 * 60 * 1000);
+};
+const isAdminAttention = (ticket) => (
+  !ticket.assignedTechnicianId
+  || ticket.status === 'REOPENED'
+  || (['HIGH', 'CRITICAL'].includes(ticket.priority) && activeStatuses.includes(ticket.status))
+  || isSlaRisk(ticket)
+);
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
 const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
 const Tickets = () => {
@@ -35,6 +48,7 @@ const Tickets = () => {
   const [priorityTicket, setPriorityTicket] = useState(null);
   const [assignmentSettings, setAssignmentSettings] = useState({ automatic: true, mode: 'AUTOMATIC' });
   const [isSavingAssignmentMode, setIsSavingAssignmentMode] = useState(false);
+  const [quickFilter, setQuickFilter] = useState('attention');
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -69,11 +83,26 @@ const Tickets = () => {
       .catch(() => {});
   }, []);
 
-  const filteredTickets = useMemo(() => tickets.filter((ticket) => (
-    (!filters.status || ticket.status === filters.status)
-    && (!filters.priority || ticket.priority === filters.priority)
-    && (!filters.technicianId || ticket.assignedTechnicianId === filters.technicianId)
-  )), [tickets, filters]);
+  const quickTabs = useMemo(() => {
+    const by = (predicate) => tickets.filter(predicate).length;
+    return [
+      { key: 'attention', label: 'Atencion Admin', count: by(isAdminAttention), predicate: isAdminAttention },
+      { key: 'unassigned', label: 'Sin asignar', count: by((ticket) => !ticket.assignedTechnicianId && activeStatuses.includes(ticket.status)), predicate: (ticket) => !ticket.assignedTechnicianId && activeStatuses.includes(ticket.status) },
+      { key: 'sla', label: 'SLA en riesgo / vencidos', count: by(isSlaRisk), predicate: isSlaRisk },
+      { key: 'active', label: 'Todos los activos', count: by((ticket) => activeStatuses.includes(ticket.status)), predicate: (ticket) => activeStatuses.includes(ticket.status) },
+      { key: 'history', label: 'Historico / cerrados', count: by((ticket) => historicalStatuses.includes(ticket.status)), predicate: (ticket) => historicalStatuses.includes(ticket.status) }
+    ];
+  }, [tickets]);
+
+  const filteredTickets = useMemo(() => {
+    const tab = quickTabs.find((item) => item.key === quickFilter) || quickTabs[0];
+    return tickets.filter((ticket) => (
+      tab.predicate(ticket)
+      && (!filters.status || ticket.status === filters.status)
+      && (!filters.priority || ticket.priority === filters.priority)
+      && (!filters.technicianId || ticket.assignedTechnicianId === filters.technicianId)
+    ));
+  }, [tickets, filters, quickFilter, quickTabs]);
 
   const assignTechnician = async ({ technicianId }) => {
     try {
@@ -156,6 +185,19 @@ const Tickets = () => {
             {technicians.map((tech) => <option key={tech.id} value={tech.id}>{tech.name}</option>)}
           </select>
         </div>
+      </Card>
+
+      <Card className="flex flex-wrap gap-2 p-2">
+        {quickTabs.map((tab) => (
+          <button
+            key={tab.key}
+            className={`rounded-md px-4 py-2 text-sm font-semibold transition ${quickFilter === tab.key ? 'bg-primary-600 text-white shadow-soft' : 'text-neutral-600 hover:bg-neutral-100'}`}
+            type="button"
+            onClick={() => setQuickFilter(tab.key)}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
       </Card>
 
       <DataTable
