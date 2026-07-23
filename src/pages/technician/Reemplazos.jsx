@@ -65,6 +65,7 @@ const Reemplazos = () => {
     const text = [replacement.ticket?.code, replacement.requestedProduct, replacement.ticket?.client?.name, replacement.ticket?.client?.company].filter(Boolean).join(' ').toLowerCase();
     return (!q || text.includes(q)) && (!filters.status || replacement.status === filters.status);
   }), [replacements, filters]);
+  const pendingDeliveryCount = useMemo(() => replacements.filter((replacement) => replacement.replacementSerialNumber && !replacement.deliveryDate).length, [replacements]);
 
   const loadReplacements = async () => {
     try {
@@ -146,6 +147,9 @@ const Reemplazos = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Reemplazos</h1>
           <p className="mt-1 text-sm text-neutral-500">Validacion, trazabilidad, entrega y constancias.</p>
         </div>
+        <Badge tone={pendingDeliveryCount > 0 ? 'warning' : 'success'} className="mr-auto">
+          {pendingDeliveryCount} {pendingDeliveryCount === 1 ? 'entrega pendiente' : 'entregas pendientes'}
+        </Badge>
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={() => exportReplacements('csv')}>Exportar CSV</Button>
           <Button onClick={() => exportReplacements('xls')}>Exportar Excel</Button>
