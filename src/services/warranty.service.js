@@ -17,6 +17,12 @@ const enrichWarranty = (warranty) => {
   };
 };
 
+const addMonths = (date, months) => {
+  const value = new Date(date);
+  value.setMonth(value.getMonth() + Number(months || 0));
+  return value;
+};
+
 const warrantyService = {
   async create(payload, actor) {
     const product = await productRepository.findById(payload.productId);
@@ -126,7 +132,12 @@ const warrantyService = {
       clientId: user.id
     });
 
-    const result = buildWarrantyValidationResponse(warranty, product);
+    const productWarranty = !warranty && product.warrantyMonths ? {
+      startDate: product.purchaseDate || product.createdAt,
+      endDate: addMonths(product.purchaseDate || product.createdAt, product.warrantyMonths),
+      product
+    } : null;
+    const result = buildWarrantyValidationResponse(warranty || productWarranty, product);
 
     await auditService.record({
       userId: user.id,

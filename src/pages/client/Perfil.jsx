@@ -103,7 +103,7 @@ const Perfil = () => {
             </label>
           </div>
           <h2 className="mt-4 font-semibold text-neutral-900">{user?.name}</h2>
-          <p className="text-sm text-neutral-500">{user?.email}</p>
+          <p className="break-all text-sm text-neutral-500">{user?.email}</p>
           <p className="mt-2 rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">{user?.role}</p>
         </Card>
 
@@ -117,7 +117,7 @@ const Perfil = () => {
               <FormInput register={profileForm.register} name="company" label="Empresa" error={profileForm.formState.errors.company} />
             </div>
             <input type="hidden" {...profileForm.register('avatarUrl')} />
-            <Button type="submit" isLoading={profileForm.formState.isSubmitting}>Guardar perfil</Button>
+            <Button className="w-full sm:w-auto" type="submit" isLoading={profileForm.formState.isSubmitting}>Guardar perfil</Button>
           </form>
         </Card>
       </div>

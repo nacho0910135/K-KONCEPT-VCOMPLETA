@@ -64,7 +64,7 @@ const MisGarantias = () => {
         <h1 className="text-2xl font-bold text-neutral-900">Mis garantias</h1>
         <p className="mt-1 text-sm text-neutral-500">Productos registrados y estado de cobertura.</p>
       </div>
-      <div className="relative max-w-md">
+      <div className="relative w-full max-w-md">
         <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
         <input className="h-10 w-full rounded-md border border-neutral-200 pl-10 pr-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Buscar por nombre o serial" value={query} onChange={(event) => setQuery(event.target.value)} />
       </div>
@@ -109,8 +109,8 @@ const MisGarantias = () => {
             return (
               <Card key={warranty.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold text-neutral-900">{product.name || 'Producto'}</h2>
+                  <div className="min-w-0">
+                    <h2 className="break-words font-semibold text-neutral-900">{product.name || 'Producto'}</h2>
                     <p className="mt-1 text-sm text-neutral-500">{product.serialNumber || product.serial || 'Sin serial'}</p>
                   </div>
                   <Badge tone={warrantyTone[status] || 'neutral'}>{status}</Badge>

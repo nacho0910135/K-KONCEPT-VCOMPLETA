@@ -43,13 +43,16 @@ const calculateWarrantyStatus = (startDate, endDate, now = new Date()) => {
 };
 
 const buildWarrantyValidationResponse = (warranty, product) => {
+  const productInfo = warranty?.product || product || null;
+
   if (!warranty) {
     return {
       isValid: false,
       status: 'NOT_APPLICABLE',
       expiresAt: null,
       daysRemaining: null,
-      productInfo: product || null
+      productInfo,
+      product: productInfo
     };
   }
 
@@ -60,7 +63,8 @@ const buildWarrantyValidationResponse = (warranty, product) => {
     status: calculated.status,
     expiresAt: warranty.endDate,
     daysRemaining: calculated.daysRemaining,
-    productInfo: warranty.product || product || null,
+    productInfo,
+    product: productInfo,
     warrantyId: warranty.id
   };
 };

@@ -81,9 +81,9 @@ const Notificaciones = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Notificaciones</h1>
           <p className="mt-1 text-sm text-neutral-500">Actualizaciones de tus tickets y servicios.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={markAll} disabled={notifications.length === 0}>Marcar todas como leidas</Button>
-          <Button variant="danger" onClick={clearAll} disabled={notifications.length === 0}>Limpiar notificaciones</Button>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+          <Button className="w-full sm:w-auto" variant="ghost" onClick={markAll} disabled={notifications.length === 0}>Marcar todas como leidas</Button>
+          <Button className="w-full sm:w-auto" variant="danger" onClick={clearAll} disabled={notifications.length === 0}>Limpiar notificaciones</Button>
         </div>
       </div>
       {notifications.length === 0 ? <IllustratedEmptyState title="Sin notificaciones" description="Cuando haya novedades apareceran aqui." /> : (
@@ -100,7 +100,7 @@ const Notificaciones = () => {
                     </span>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold text-neutral-900">{item.title}</p>
+                        <p className="break-words font-semibold text-neutral-900">{item.title}</p>
                         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.read ? 'bg-neutral-100 text-neutral-500' : 'bg-red-50 text-red-700'}`}>{item.read ? 'Leida' : 'Nueva'}</span>
                       </div>
                       <p className="mt-1 text-sm leading-6 text-neutral-600">{getMessage(item.message)}</p>

@@ -110,7 +110,7 @@ const DetalleTicket = () => {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm font-bold uppercase text-neutral-500">{ticket.code}</p>
-          <h1 className="mt-1 text-2xl font-bold text-neutral-900">{ticket.title}</h1>
+          <h1 className="mt-1 break-words text-2xl font-bold text-neutral-900">{ticket.title}</h1>
           <div className="mt-3 flex flex-wrap gap-2">
             <ClientStatusBadge status={ticket.status} />
             <ClientPriorityBadge priority={ticket.priority} />
@@ -126,8 +126,8 @@ const DetalleTicket = () => {
             <RatingStars value={rating} onChange={setRating} />
             <textarea className="min-h-24 rounded-md border border-primary-100 bg-white px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-primary-100" placeholder="Comentario sobre la solucion" value={ratingComment} onChange={(event) => setRatingComment(event.target.value)} />
             <div className="flex flex-wrap gap-3">
-              <Button onClick={confirmSolution}><Star className="h-4 w-4" />Confirmar solucion</Button>
-              <Button variant="danger" onClick={() => setRejectOpen(true)}>No, no fue solucionado</Button>
+              <Button className="w-full sm:w-auto" onClick={confirmSolution}><Star className="h-4 w-4" />Confirmar solucion</Button>
+              <Button className="w-full sm:w-auto" variant="danger" onClick={() => setRejectOpen(true)}>No, no fue solucionado</Button>
             </div>
           </div>
         </Card>
@@ -140,9 +140,9 @@ const DetalleTicket = () => {
             {technician ? (
               <div className="mt-4 flex items-center gap-3">
                 <span className="grid h-12 w-12 place-items-center rounded-full bg-primary-50 font-bold text-primary-700">{technician.name?.slice(0, 2).toUpperCase()}</span>
-                <div>
-                  <p className="font-semibold text-neutral-900">{technician.name}</p>
-                  <p className="text-sm text-neutral-500">{technician.email}</p>
+                <div className="min-w-0">
+                  <p className="break-words font-semibold text-neutral-900">{technician.name}</p>
+                  <p className="break-all text-sm text-neutral-500">{technician.email}</p>
                 </div>
               </div>
             ) : (
@@ -163,7 +163,7 @@ const DetalleTicket = () => {
         <div className="grid gap-6">
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Descripcion</h2>
-            <p className="mt-3 text-sm leading-6 text-neutral-600">{ticket.description}</p>
+            <p className="mt-3 break-words text-sm leading-6 text-neutral-600">{ticket.description}</p>
           </Card>
 
           <Card className="p-5">
@@ -190,9 +190,9 @@ const DetalleTicket = () => {
             <div className="mt-4 grid gap-3">
               {comments.length === 0 && <p className="text-sm text-neutral-500">Aun no hay comentarios registrados.</p>}
               {comments.map((comment) => (
-                <div key={comment.id} className={`max-w-[85%] rounded-lg p-3 ${comment.user?.role === 'CLIENT' ? 'ml-auto bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-800'}`}>
+                <div key={comment.id} className={`max-w-[92%] rounded-lg p-3 sm:max-w-[85%] ${comment.user?.role === 'CLIENT' ? 'ml-auto bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-800'}`}>
                   <p className="text-xs font-semibold opacity-80">{comment.user?.name || 'Usuario'}</p>
-                  <p className="mt-1 text-sm">{comment.comment || comment.body}</p>
+                  <p className="mt-1 break-words text-sm">{comment.comment || comment.body}</p>
                 </div>
               ))}
             </div>

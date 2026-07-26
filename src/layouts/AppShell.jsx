@@ -132,16 +132,16 @@ const AppShell = ({ navItems, roleLabel }) => {
 
       {sidebarOpen && <button className="fixed inset-0 z-30 bg-neutral-900/30 lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Cerrar menu" />}
 
-      <main className="flex-1 bg-[#722F37] px-4 py-5 pb-24 lg:ml-72 lg:px-6">
-        <div className="min-h-full rounded-xl bg-[#f7f4f4] p-4 shadow-[0_24px_70px_rgba(20,6,10,0.28)] ring-1 ring-white/10 lg:p-6">
+      <main className="flex-1 bg-[#722F37] px-2 py-3 pb-24 sm:px-4 sm:py-5 lg:ml-72 lg:px-6">
+        <div className="min-h-full rounded-lg bg-[#f7f4f4] p-3 shadow-[0_24px_70px_rgba(20,6,10,0.28)] ring-1 ring-white/10 sm:rounded-xl sm:p-4 lg:p-6">
           <Outlet />
         </div>
       </main>
       <footer className="border-t border-white/10 bg-[#722F37] px-4 py-4 text-center text-xs text-white/70 lg:ml-72">Kollab Koncepts</footer>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4 border-t border-neutral-200 bg-white lg:hidden">
-        {navItems.slice(0, 4).map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} end={to === ''} className={({ isActive }) => clsx('grid place-items-center gap-1 px-2 py-2 text-[11px] font-semibold', isActive ? 'text-primary-700' : 'text-neutral-500')}>
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex overflow-x-auto border-t border-neutral-200 bg-white lg:hidden">
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink key={to} to={to} end={to === ''} className={({ isActive }) => clsx('grid min-w-20 flex-1 place-items-center gap-1 px-2 py-2 text-[11px] font-semibold', isActive ? 'text-primary-700' : 'text-neutral-500')}>
             <Icon className="h-5 w-5" />
             <span className="max-w-full truncate">{label}</span>
           </NavLink>

@@ -68,14 +68,14 @@ const MisTickets = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Mis tickets</h1>
           <p className="mt-1 text-sm text-neutral-500">Consulta estado, tecnico asignado y avance.</p>
         </div>
-        <Link to="/client/tickets/new"><Button>Crear nuevo ticket</Button></Link>
+        <Link className="w-full sm:w-auto" to="/client/tickets/new"><Button className="w-full sm:w-auto">Crear nuevo ticket</Button></Link>
       </div>
 
       <Card className="grid gap-4 p-4">
-        <div className="flex flex-wrap gap-2">
-          <button className={`rounded-full px-3 py-1.5 text-sm font-semibold ${status === '' ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-700'}`} onClick={() => setStatus('')}>Todos</button>
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+          <button className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${status === '' ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-700'}`} onClick={() => setStatus('')}>Todos</button>
           {statuses.map((item) => (
-            <button key={item} className={`rounded-full px-3 py-1.5 text-sm font-semibold ${status === item ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-700'}`} onClick={() => setStatus(item)}>
+            <button key={item} className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold ${status === item ? 'bg-primary-600 text-white' : 'bg-neutral-100 text-neutral-700'}`} onClick={() => setStatus(item)}>
               {clientStatusLabels[item]}
             </button>
           ))}
@@ -103,9 +103,9 @@ const MisTickets = () => {
             <Link key={ticket.id} to={`/client/tickets/${ticket.id}`}>
               <Card className="h-full p-4 transition hover:border-primary-200 hover:shadow-md">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-bold uppercase text-neutral-500">{ticket.code}</p>
-                    <h2 className="mt-1 text-base font-semibold text-neutral-900">{ticket.title}</h2>
+                    <h2 className="mt-1 break-words text-base font-semibold text-neutral-900">{ticket.title}</h2>
                   </div>
                   <ClientStatusBadge status={ticket.status} />
                 </div>

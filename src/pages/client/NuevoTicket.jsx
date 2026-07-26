@@ -46,6 +46,7 @@ const NuevoTicket = () => {
   const selectedCategory = categories.find((category) => category.id === selectedCategoryId);
   const selectedSubcategory = selectedCategory?.subcategories?.find((subcategory) => subcategory.id === selectedSubcategoryId);
   const productOptions = (selectedSubcategory?.products || []).map((product) => ({ value: product.id, label: product.name }));
+  const warrantyProduct = warranty?.product || warranty?.productInfo;
 
   useEffect(() => {
     let mounted = true;
@@ -75,13 +76,19 @@ const NuevoTicket = () => {
   }, [showToast]);
 
   useEffect(() => {
-    form.setValue('subcategoryId', '');
-    form.setValue('productId', '');
-  }, [form, selectedCategoryId]);
+    const currentSubcategoryId = form.getValues('subcategoryId');
+    if (currentSubcategoryId && !selectedCategory?.subcategories?.some((subcategory) => subcategory.id === currentSubcategoryId)) {
+      form.setValue('subcategoryId', '');
+      form.setValue('productId', '');
+    }
+  }, [form, selectedCategory]);
 
   useEffect(() => {
-    form.setValue('productId', '');
-  }, [form, selectedSubcategoryId]);
+    const currentProductId = form.getValues('productId');
+    if (currentProductId && !selectedSubcategory?.products?.some((product) => product.id === currentProductId)) {
+      form.setValue('productId', '');
+    }
+  }, [form, selectedSubcategory]);
 
   const validateWarranty = async () => {
     if (!serial.trim()) {
@@ -102,6 +109,15 @@ const NuevoTicket = () => {
 
   const goConfirmation = form.handleSubmit(() => setStep(3));
 
+  const continueToData = () => {
+    if (warranty?.isValid && warrantyProduct) {
+      form.setValue('categoryId', warrantyProduct.categoryId || '', { shouldValidate: true });
+      form.setValue('subcategoryId', warrantyProduct.subcategoryId || '', { shouldValidate: true });
+      form.setValue('productId', warrantyProduct.id || '', { shouldValidate: true });
+    }
+    setStep(2);
+  };
+
   const buildTicketPayload = () => {
     const values = form.getValues();
     const payload = {
@@ -111,8 +127,9 @@ const NuevoTicket = () => {
       subcategoryId: values.subcategoryId
     };
 
-    if (values.productId || (warranty?.isValid && warranty.product?.id)) {
-      payload.productId = values.productId || warranty.product.id;
+    const warrantyProduct = warranty?.product || warranty?.productInfo;
+    if (values.productId || (warranty?.isValid && warrantyProduct?.id)) {
+      payload.productId = values.productId || warrantyProduct.id;
     }
 
     return payload;
@@ -177,7 +194,7 @@ const NuevoTicket = () => {
   const values = form.getValues();
   const categoryName = categories.find((category) => category.id === values.categoryId)?.name;
   const subcategoryName = selectedCategory?.subcategories.find((subcategory) => subcategory.id === values.subcategoryId)?.name;
-  const productName = selectedSubcategory?.products?.find((product) => product.id === values.productId)?.name || warranty?.product?.name || 'Sin producto asociado';
+  const productName = selectedSubcategory?.products?.find((product) => product.id === values.productId)?.name || warrantyProduct?.name || 'Sin producto asociado';
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6">
@@ -186,9 +203,9 @@ const NuevoTicket = () => {
         <p className="mt-1 text-sm text-neutral-500">Registra la solicitud con garantia, detalle y seguimiento real.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-neutral-500">
+      <div className="grid grid-cols-3 gap-1 text-[11px] font-semibold text-neutral-500 sm:gap-2 sm:text-xs">
         {['Garantia', 'Datos', 'Confirmacion'].map((label, index) => (
-          <div key={label} className={`rounded-full px-3 py-2 text-center ${step === index + 1 ? 'bg-primary-600 text-white' : 'bg-neutral-100'}`}>{index + 1}. {label}</div>
+          <div key={label} className={`rounded-full px-2 py-2 text-center sm:px-3 ${step === index + 1 ? 'bg-primary-600 text-white' : 'bg-neutral-100'}`}>{index + 1}. {label}</div>
         ))}
       </div>
 
@@ -198,16 +215,16 @@ const NuevoTicket = () => {
           <p className="mt-1 text-sm text-neutral-500">Este paso es opcional. Si el serial existe y tiene garantia vigente, se asociara al ticket.</p>
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
             <input className="h-10 rounded-md border border-neutral-200 px-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100" placeholder="Serial del producto" value={serial} onChange={(event) => setSerial(event.target.value)} />
-            <Button onClick={validateWarranty}>Validar</Button>
+            <Button className="w-full sm:w-auto" onClick={validateWarranty}>Validar</Button>
           </div>
           {warranty && (
             <div className={`mt-4 rounded-lg border p-4 text-sm ${warranty.isValid ? 'border-green-100 bg-green-50 text-green-800' : 'border-neutral-200 bg-neutral-50 text-neutral-700'}`}>
               <div className="flex items-center gap-2 font-semibold"><ShieldAlert className="h-4 w-4" />{warranty.message}</div>
-              {warranty.product?.name && <p className="mt-1">{warranty.product.name} · {warranty.product.serialNumber || warranty.product.serial}</p>}
+              {warrantyProduct?.name && <p className="mt-1">{warrantyProduct.name} · {warrantyProduct.serialNumber || warrantyProduct.serial}</p>}
             </div>
           )}
           <div className="mt-5 flex justify-end">
-            <Button onClick={() => setStep(2)}>Continuar</Button>
+            <Button className="w-full sm:w-auto" onClick={continueToData}>Continuar</Button>
           </div>
         </Card>
       )}
@@ -247,7 +264,7 @@ const NuevoTicket = () => {
                   <p className="text-sm font-semibold text-neutral-900">Evidencia</p>
                   <p className="text-xs text-neutral-500">Puedes adjuntar hasta 10 archivos, maximo 50 MB cada uno.</p>
                 </div>
-                <label className="inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700">
+                <label className="inline-flex min-h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 sm:w-auto">
                   <FileUp className="h-4 w-4" />
                   Adjuntar
                   <input className="sr-only" type="file" multiple onChange={selectEvidence} />
@@ -267,8 +284,8 @@ const NuevoTicket = () => {
               )}
             </div>
             <div className="flex flex-wrap justify-between gap-3">
-              <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft className="h-4 w-4" />Volver</Button>
-              <Button type="submit">Revisar y confirmar</Button>
+              <Button className="w-full sm:w-auto" variant="ghost" onClick={() => setStep(1)}><ArrowLeft className="h-4 w-4" />Volver</Button>
+              <Button className="w-full sm:w-auto" type="submit">Revisar y confirmar</Button>
             </div>
           </form>
         </Card>
@@ -285,8 +302,8 @@ const NuevoTicket = () => {
             <div className="sm:col-span-2"><dt className="font-semibold text-neutral-900">Descripcion</dt><dd className="text-neutral-600">{values.description}</dd></div>
           </dl>
           <div className="mt-6 flex flex-wrap justify-between gap-3">
-            <Button variant="ghost" onClick={() => setStep(2)}>Cancelar</Button>
-            <Button onClick={submit}>Confirmar y registrar</Button>
+            <Button className="w-full sm:w-auto" variant="ghost" onClick={() => setStep(2)}>Cancelar</Button>
+            <Button className="w-full sm:w-auto" onClick={submit}>Confirmar y registrar</Button>
           </div>
         </Card>
       )}

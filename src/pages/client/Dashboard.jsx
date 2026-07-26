@@ -57,7 +57,7 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Inicio</h1>
           <p className="mt-1 text-sm text-neutral-500">Resumen de tus solicitudes y notificaciones.</p>
         </div>
-        <Link to="/client/tickets/new"><Button><PlusCircle className="h-4 w-4" />Crear nuevo ticket</Button></Link>
+        <Link className="w-full sm:w-auto" to="/client/tickets/new"><Button className="w-full sm:w-auto"><PlusCircle className="h-4 w-4" />Crear nuevo ticket</Button></Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -75,7 +75,7 @@ const Dashboard = () => {
             {isLoading && Array.from({ length: 5 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-lg bg-neutral-100" />)}
             {tickets.slice(0, 5).map((ticket) => (
               <Link key={ticket.id} to={`/client/tickets/${ticket.id}`} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-3 transition hover:border-primary-200 hover:bg-primary-50">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-neutral-900">{ticket.code} · {ticket.title}</p>
                   <p className="text-xs text-neutral-500">{formatDate(ticket.createdAt)}</p>
                 </div>

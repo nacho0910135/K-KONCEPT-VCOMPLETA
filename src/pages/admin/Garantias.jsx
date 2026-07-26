@@ -24,6 +24,7 @@ const Garantias = () => {
   const [products, setProducts] = useState([]);
   const [query, setQuery] = useState('');
   const [monthsById, setMonthsById] = useState({});
+  const [serialById, setSerialById] = useState({});
   const [savingId, setSavingId] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -41,6 +42,7 @@ const Garantias = () => {
         if (!mounted) return;
         setProducts(items);
         setMonthsById(Object.fromEntries(items.map((product) => [product.id, product.warrantyMonths ?? ''])));
+        setSerialById(Object.fromEntries(items.map((product) => [product.id, product.serialNumber || ''])));
       } catch (loadError) {
         if (mounted) setError(getErrorMessage(loadError, 'No pudimos cargar los productos.'));
       } finally {
@@ -62,7 +64,7 @@ const Garantias = () => {
     setSavingId(product.id);
 
     try {
-      const response = await updateProduct(product.id, productPayload(product, warrantyMonths));
+      const response = await updateProduct(product.id, productPayload({ ...product, serialNumber: serialById[product.id] }, warrantyMonths));
       const updated = response?.product || response;
       setProducts((current) => current.map((item) => item.id === product.id ? updated : item));
       showToast({ type: 'success', title: 'Garantia actualizada', message: `${product.name} quedo con ${warrantyMonths || 0} meses de garantia.` });
@@ -97,7 +99,7 @@ const Garantias = () => {
       <div className="grid gap-3">
         {filtered.map((product) => (
           <Card key={product.id} className="p-4">
-            <div className="grid gap-4 md:grid-cols-[1fr_180px_auto] md:items-end">
+            <div className="grid gap-4 md:grid-cols-[1fr_180px_180px_auto] md:items-end">
               <div>
                 <h2 className="font-semibold text-neutral-900">{productName(product) || 'Producto'}</h2>
                 <p className="mt-1 text-sm text-neutral-500">
@@ -113,6 +115,15 @@ const Garantias = () => {
                   type="number"
                   value={monthsById[product.id] ?? ''}
                   onChange={(event) => setMonthsById((current) => ({ ...current, [product.id]: event.target.value }))}
+                />
+              </label>
+              <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                <span>Numero serial</span>
+                <input
+                  className="h-10 rounded-md border border-neutral-200 px-3 text-sm outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+                  placeholder="Serial"
+                  value={serialById[product.id] ?? ''}
+                  onChange={(event) => setSerialById((current) => ({ ...current, [product.id]: event.target.value }))}
                 />
               </label>
               <Button isLoading={savingId === product.id} onClick={() => saveWarranty(product)}>
