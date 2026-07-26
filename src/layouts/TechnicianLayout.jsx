@@ -1,4 +1,4 @@
-import { Bell, Boxes, CircleDollarSign, Gauge, ClipboardCheck, MessageCircle, ShieldCheck, UserRound } from 'lucide-react';
+import { Bell, Boxes, CircleDollarSign, Gauge, ClipboardCheck, MessageCircleMore, ShieldCheck, UserRound } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
@@ -8,7 +8,7 @@ const navItems = [
   { to: 'reemplazos', label: 'Reemplazos', icon: Boxes },
   { to: 'reembolsos', label: 'Reembolsos', icon: CircleDollarSign },
   { to: 'notifications', label: 'Notificaciones', icon: Bell },
-  { to: 'chat', label: 'Chat empresarial', icon: MessageCircle },
+  { to: 'chat', label: 'Chat del personal', icon: MessageCircleMore },
   { to: 'profile', label: 'Perfil', icon: UserRound }
 ];
 

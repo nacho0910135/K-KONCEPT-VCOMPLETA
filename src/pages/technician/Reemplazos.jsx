@@ -11,6 +11,7 @@ import EmptyState from '../../components/common/EmptyState.jsx';
 import Modal from '../../components/common/Modal.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
+import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
 import {
   downloadReplacementCertificate,
@@ -56,7 +57,9 @@ const Reemplazos = () => {
   const [active, setActive] = useState(null);
   const [action, setAction] = useState(null);
   const [filters, setFilters] = useState({ q: '', status: '' });
+  const { user } = useAuth();
   const { showToast } = useToast();
+  const ticketBasePath = user?.role === 'ADMIN' ? '/admin/tickets' : '/technician/tickets';
   const validationForm = useForm({ resolver: zodResolver(validationSchema), defaultValues: { validationNotes: '' } });
   const productForm = useForm({ resolver: zodResolver(productSchema), defaultValues: { replacementSerialNumber: '', replacementBrand: '', replacementModel: '', replacementNotes: '' } });
   const deliveryForm = useForm({ resolver: zodResolver(deliverySchema), defaultValues: { deliveryDate: new Date().toISOString().slice(0, 10), deliveryType: 'STORE_PICKUP', deliveryObservations: '' } });
@@ -180,7 +183,7 @@ const Reemplazos = () => {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase text-neutral-500">{replacement.ticket?.code}</p>
-                <Link to={`/technician/tickets/${replacement.ticketId}`} className="mt-1 block font-semibold text-neutral-900 hover:text-primary-700">{replacement.requestedProduct}</Link>
+                <Link to={`${ticketBasePath}/${replacement.ticketId}`} className="mt-1 block font-semibold text-neutral-900 hover:text-primary-700">{replacement.requestedProduct}</Link>
                 <p className="mt-1 text-sm text-neutral-500">{replacement.ticket?.client?.company || replacement.ticket?.client?.name || 'Cliente'}</p>
                 <p className="mt-1 text-sm text-neutral-500">Tecnico: {replacement.requestedBy?.name || replacement.ticket?.assignedTechnician?.name || 'No indicado'}</p>
               </div>

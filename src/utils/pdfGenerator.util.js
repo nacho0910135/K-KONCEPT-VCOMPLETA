@@ -74,4 +74,46 @@ const generateReplacementCertificate = (data) => new Promise((resolve, reject) =
   doc.end();
 });
 
-module.exports = { generateReplacementCertificate };
+const money = (value) => new Intl.NumberFormat('es-CR', {
+  style: 'currency',
+  currency: 'CRC',
+  minimumFractionDigits: 2
+}).format(Number(value || 0));
+
+const generateRefundCertificate = (refund) => new Promise((resolve, reject) => {
+  const doc = new PDFDocument({ size: 'LETTER', margin: 72 });
+  const chunks = [];
+
+  doc.on('data', (chunk) => chunks.push(chunk));
+  doc.on('end', () => resolve(Buffer.concat(chunks)));
+  doc.on('error', reject);
+
+  doc.fontSize(20).font('Helvetica-Bold').text('Kollab Koncepts', { align: 'center' });
+  doc.fontSize(12).font('Helvetica').text('Constancia de reembolso', { align: 'center' });
+
+  addSection(doc, 'Datos del ticket');
+  addKeyValue(doc, 'Codigo', refund.ticket?.code);
+  addKeyValue(doc, 'Titulo', refund.ticket?.title);
+  addKeyValue(doc, 'Fecha de emision', formatDate(refund.createdAt));
+
+  addSection(doc, 'Datos del cliente');
+  addKeyValue(doc, 'Nombre', refund.ticket?.client?.name);
+  addKeyValue(doc, 'Empresa', refund.ticket?.client?.company);
+  addKeyValue(doc, 'Email', refund.ticket?.client?.email);
+
+  addSection(doc, 'Detalle del reembolso');
+  addKeyValue(doc, 'Tipo', refund.type === 'REFUND_TOTAL' ? 'Reembolso total' : 'Reembolso parcial');
+  addKeyValue(doc, 'Monto', money(refund.amount));
+  addKeyValue(doc, 'Estado', refund.status);
+  addKeyValue(doc, 'Razon', refund.reason);
+  addKeyValue(doc, 'Registrado por', refund.requestedBy?.name);
+
+  doc.moveDown(4);
+  doc.moveTo(160, doc.y).lineTo(450, doc.y).stroke();
+  doc.moveDown(0.4);
+  doc.font('Helvetica').fontSize(10).text('Firma autorizada', { align: 'center' });
+
+  doc.end();
+});
+
+module.exports = { generateReplacementCertificate, generateRefundCertificate };

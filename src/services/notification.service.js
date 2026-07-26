@@ -131,7 +131,36 @@ const defaultCopy = {
   },
   REPLACEMENT_APPROVED: {
     subject: 'Reemplazo aprobado para {{ticketCode}}',
-    body: 'Hola {{userName}}, el reemplazo solicitado para el ticket {{ticketCode}} fue aprobado. Te avisaremos cuando el producto nuevo este listo para entrega.'
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Te informamos que para el ticket <strong>{{ticketCode}}</strong> se tomo la decision de aplicar un reemplazo.</p>
+      <ul>
+        <li><strong>Ticket:</strong> {{ticketCode}} - {{ticketTitle}}</li>
+        <li><strong>Tecnico responsable:</strong> {{technicianName}}</li>
+        <li><strong>Articulo reportado:</strong> {{productName}}</li>
+        <li><strong>Articulo de reemplazo:</strong> {{replacementProduct}}</li>
+        <li><strong>Marca / modelo:</strong> {{replacementBrand}} {{replacementModel}}</li>
+        <li><strong>Serie:</strong> {{replacementSerialNumber}}</li>
+      </ul>
+      <p>{{replacementNotes}}</p>
+      <p>Te avisaremos cualquier avance hasta completar la entrega.</p>
+    `
+  },
+  REFUND_REGISTERED: {
+    subject: 'Reembolso registrado para {{ticketCode}}',
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Te informamos que para el ticket <strong>{{ticketCode}}</strong> se aplicara un reembolso.</p>
+      <ul>
+        <li><strong>Ticket:</strong> {{ticketCode}} - {{ticketTitle}}</li>
+        <li><strong>Tecnico responsable:</strong> {{technicianName}}</li>
+        <li><strong>Articulo:</strong> {{productName}}</li>
+        <li><strong>Tipo de reembolso:</strong> {{resolutionAction}}</li>
+        <li><strong>Monto a reembolsar:</strong> {{refundAmount}}</li>
+      </ul>
+      <p><strong>Detalle:</strong> {{solution}}</p>
+      <p>Adjuntamos la constancia de reembolso cuando aplique por correo.</p>
+    `
   },
   SLA_BREACH: {
     subject: 'SLA vencido en {{ticketCode}}',
@@ -151,6 +180,7 @@ const defaultInAppCopy = {
   TICKET_CLOSED: defaultCopy.TICKET_CLOSED,
   APPOINTMENT_RESCHEDULED: defaultCopy.APPOINTMENT_RESCHEDULED,
   REPLACEMENT_APPROVED: defaultCopy.REPLACEMENT_APPROVED,
+  REFUND_REGISTERED: defaultCopy.REFUND_REGISTERED,
   SLA_BREACH: defaultCopy.SLA_BREACH
 };
 
@@ -193,7 +223,8 @@ const isLegacyTemplate = (value = '') => [
   'fue asignado a {{technicianName}}',
   'cambio de {{previousStatus}} a {{newStatus}}',
   'fue marcado como resuelto',
-  'fue abierto correctamente. Prioridad'
+  'fue abierto correctamente. Prioridad',
+  'el reemplazo solicitado para el ticket {{ticketCode}} fue aprobado'
 ].some((snippet) => String(value).includes(snippet));
 
 const getEnabledChannels = async () => {

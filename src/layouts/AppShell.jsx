@@ -1,9 +1,10 @@
 import { Bell, LogOut, Menu, Search, UserRound, X } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import clsx from 'clsx';
 import { useAuth } from '../hooks/useAuth.js';
 import { useNotifications } from '../hooks/useNotifications.js';
+import { getUnreadChatMessages } from '../services/chat.client.service.js';
 import { searchTickets } from '../services/tickets.service.js';
 import kollabLogo from '../assets/kollab-logo.png';
 import EnterpriseChat from '../components/chat/EnterpriseChat.jsx';
@@ -11,11 +12,27 @@ import EnterpriseChat from '../components/chat/EnterpriseChat.jsx';
 const AppShell = ({ navItems, roleLabel }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const notificationsPath = user?.role === 'ADMIN' ? '/admin/notificaciones' : 'notifications';
   const canSearch = user?.role !== 'CLIENT';
+  const canChat = ['ADMIN', 'TECHNICIAN'].includes(user?.role);
+
+  useEffect(() => {
+    if (!canChat) return undefined;
+    const loadUnreadChat = async () => {
+      try {
+        setChatUnreadCount((await getUnreadChatMessages()).length);
+      } catch (_error) {
+        setChatUnreadCount(0);
+      }
+    };
+    loadUnreadChat();
+    const timer = setInterval(loadUnreadChat, 5000);
+    return () => clearInterval(timer);
+  }, [canChat]);
 
   const goToNotifications = () => {
     navigate(notificationsPath);
@@ -101,8 +118,13 @@ const AppShell = ({ navItems, roleLabel }) => {
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => clsx('flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition hover:translate-x-0.5', isActive ? 'bg-primary-50 text-primary-700 shadow-sm ring-1 ring-primary-100' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900')}
             >
-              <Icon className="h-5 w-5" />
-              {label}
+              <Icon className={clsx('h-5 w-5', label === 'Chat del personal' && 'h-[22px] w-[22px] translate-y-[2px]')} />
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {label === 'Chat del personal' && chatUnreadCount > 0 && (
+                <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white ring-2 ring-white">
+                  {chatUnreadCount}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

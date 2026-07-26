@@ -51,14 +51,14 @@ const resolvedCloseSchema = z.union([
   z.object({
     status: z.literal('RESOLVED'),
     closeType: z.literal('WITH_SOLUTION'),
-    resolutionAction: z.enum(['REPAIR', 'REFUND_TOTAL', 'REFUND_PARTIAL']).optional(),
+    resolutionAction: z.enum(['REPAIR', 'REPLACEMENT', 'REFUND_TOTAL', 'REFUND_PARTIAL']).optional(),
     diagnosis: z.string().trim().min(1),
     solution: z.string().trim().min(1),
     refundAmount: z.coerce.number().positive().optional(),
     comment: z.string().trim().optional()
-  }).refine((data) => data.resolutionAction !== 'REFUND_PARTIAL' || Boolean(data.refundAmount), {
+  }).refine((data) => !['REFUND_TOTAL', 'REFUND_PARTIAL'].includes(data.resolutionAction) || Boolean(data.refundAmount), {
     path: ['refundAmount'],
-    message: 'El monto es obligatorio para reembolso parcial'
+    message: 'El monto es obligatorio para reembolsos'
   }),
   z.object({
     status: z.literal('RESOLVED'),

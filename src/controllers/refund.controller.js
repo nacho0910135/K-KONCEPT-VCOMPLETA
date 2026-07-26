@@ -19,4 +19,11 @@ const exportFile = async (req, res) => {
   return res.send(file.buffer);
 };
 
-module.exports = { list, exportPdf, exportFile };
+const downloadCertificate = async (req, res) => {
+  const pdf = await refundService.certificate(req.params.id, req.user);
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${pdf.filename}"`);
+  return res.send(pdf.buffer);
+};
+
+module.exports = { list, exportPdf, exportFile, downloadCertificate };

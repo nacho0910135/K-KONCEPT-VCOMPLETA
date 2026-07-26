@@ -2,6 +2,7 @@ const { refundRepository } = require('../repositories/refund.repository');
 const { ticketRepository } = require('../repositories/ticket.repository');
 const { auditService } = require('./audit.service');
 const { exportPdf } = require('../utils/pdfExporter.util');
+const { generateRefundCertificate } = require('../utils/pdfGenerator.util');
 const { exportTable } = require('../utils/tableExport.util');
 const { ForbiddenError, NotFoundError } = require('../utils/errors');
 
@@ -12,6 +13,7 @@ const assertTicketAccess = (ticket, user) => {
 
 const formatDate = (value) => value ? new Date(value).toISOString().slice(0, 10) : '';
 const productName = (product) => [product?.brand || product?.name, product?.model, product?.serialNumber].filter(Boolean).join(' ');
+const moneyAmount = (value) => value == null || value === '' ? null : (Math.round(Number(value) * 100) / 100).toFixed(2);
 
 const refundService = {
   async createForTicket(ticketId, payload, user) {
@@ -23,7 +25,7 @@ const refundService = {
       ticketId,
       requestedById: user.id,
       type: payload.type,
-      amount: payload.amount || null,
+      amount: moneyAmount(payload.amount),
       reason: payload.reason
     });
 
@@ -36,6 +38,17 @@ const refundService = {
     });
 
     return refund;
+  },
+
+  async certificate(id, user) {
+    const refund = await refundRepository.findById(id);
+    if (!refund) throw new NotFoundError('Reembolso no encontrado');
+    assertTicketAccess(refund.ticket, user);
+
+    return {
+      buffer: await generateRefundCertificate(refund),
+      filename: `constancia-reembolso-${refund.ticket?.code || id}.pdf`
+    };
   },
 
   list(user) {

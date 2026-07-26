@@ -173,6 +173,12 @@ const transactionalEmailService = {
         ].filter(Boolean)
       : [];
 
+    const attachments = update.refundCertificateBuffer ? [{
+      filename: `constancia-reembolso-${ticket.code}.pdf`,
+      content: update.refundCertificateBuffer,
+      contentType: 'application/pdf'
+    }] : [];
+
     return sendSafely({
       to: user.email,
       subject: `Actualizacion del ticket ${ticket.code}`,
@@ -205,7 +211,8 @@ const transactionalEmailService = {
         ...resolutionText,
         update.comment ? `Comentario: ${update.comment}` : '',
         `Ver ticket: ${ticketUrl}`
-      ].filter(Boolean).join('\n')
+      ].filter(Boolean).join('\n'),
+      attachments
     }, { type: 'TICKET_STATUS_EMAIL', userId: user.id, ticketId: ticket.id });
   },
 
@@ -306,7 +313,9 @@ const transactionalEmailService = {
         preview: 'Confirmamos el producto que se entregara como reemplazo.',
         body: `
           <p>Hola ${escapeHtml(getRecipientName(user))},</p>
-          <p>Se aprobo la entrega del siguiente producto como reemplazo para tu ticket <strong>${escapeHtml(replacement.ticket.code)}</strong>.</p>
+          <p>Para tu ticket <strong>${escapeHtml(replacement.ticket.code)}</strong> se tomo la decision de aplicar un reemplazo.</p>
+          <p><strong>Ticket:</strong> ${escapeHtml(replacement.ticket.code)} - ${escapeHtml(replacement.ticket.title)}</p>
+          <p><strong>Tecnico responsable:</strong> ${escapeHtml(replacement.requestedBy?.name || replacement.ticket?.assignedTechnician?.name || 'No indicado')}</p>
           <p><strong>Producto anterior:</strong> ${escapeHtml(previousProduct)}</p>
           <p><strong>Producto nuevo:</strong> ${escapeHtml(replacement.replacementBrand)} ${escapeHtml(replacement.replacementModel)}</p>
           <p><strong>Serie del producto nuevo:</strong> ${escapeHtml(replacement.replacementSerialNumber)}</p>
@@ -315,7 +324,9 @@ const transactionalEmailService = {
       }),
       text: [
         `Hola ${getRecipientName(user)},`,
-        `Se aprobo la entrega del siguiente producto como reemplazo para tu ticket ${replacement.ticket.code}.`,
+        `Para tu ticket ${replacement.ticket.code} se tomo la decision de aplicar un reemplazo.`,
+        `Ticket: ${replacement.ticket.code} - ${replacement.ticket.title}`,
+        `Tecnico responsable: ${replacement.requestedBy?.name || replacement.ticket?.assignedTechnician?.name || 'No indicado'}`,
         `Producto anterior: ${previousProduct}`,
         `Producto nuevo: ${replacement.replacementBrand} ${replacement.replacementModel}`,
         `Serie del producto nuevo: ${replacement.replacementSerialNumber}`,

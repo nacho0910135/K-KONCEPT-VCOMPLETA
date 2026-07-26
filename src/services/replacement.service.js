@@ -41,6 +41,22 @@ const hasNewProductData = (replacement) => Boolean(
 
 const formatDate = (value) => value ? new Date(value).toISOString().slice(0, 10) : '';
 const productName = (product) => [product?.brand || product?.name, product?.model, product?.serialNumber].filter(Boolean).join(' ');
+const replacementProductName = (replacement) => [
+  replacement.replacementProduct?.brand || replacement.replacementBrand,
+  replacement.replacementProduct?.model || replacement.replacementModel,
+  replacement.replacementProduct?.serialNumber || replacement.replacementSerialNumber
+].filter(Boolean).join(' ');
+const replacementPayload = (replacement, user) => ({
+  ticketCode: replacement.ticket?.code,
+  ticketTitle: replacement.ticket?.title,
+  technicianName: user?.name || replacement.requestedBy?.name || replacement.ticket?.assignedTechnician?.name,
+  productName: productName(replacement.ticket?.product) || replacement.requestedProduct,
+  replacementProduct: replacementProductName(replacement) || replacement.requestedProduct || 'Pendiente de registrar',
+  replacementBrand: replacement.replacementBrand || replacement.replacementProduct?.brand || '',
+  replacementModel: replacement.replacementModel || replacement.replacementProduct?.model || '',
+  replacementSerialNumber: replacement.replacementSerialNumber || replacement.replacementProduct?.serialNumber || '',
+  replacementNotes: replacement.replacementNotes || replacement.validationNotes || replacement.reason || ''
+});
 
 const replacementService = {
   async request(ticketId, payload, user) {
@@ -67,11 +83,7 @@ const replacementService = {
       recipients: admins,
       entityType: 'Replacement',
       entityId: replacement.id,
-      payload: {
-        ticketCode: ticket.code,
-        ticketTitle: ticket.title,
-        replacementStatus: replacement.status
-      }
+      payload: replacementPayload(replacement, user)
     });
 
     await auditService.record({
@@ -116,8 +128,7 @@ const replacementService = {
       entityType: 'Replacement',
       entityId: id,
       payload: {
-        ticketCode: replacement.ticket.code,
-        ticketTitle: replacement.ticket.title,
+        ...replacementPayload(updated, user),
         newStatus: nextStatus,
         replacementStatus: nextStatus
       }
@@ -174,6 +185,14 @@ const replacementService = {
     });
 
     await transactionalEmailService.sendReplacementProductEmail(updated.ticket.client, updated).catch(() => null);
+    await notificationService.dispatchNotification({
+      userId: updated.ticket.clientId,
+      event: 'REPLACEMENT_APPROVED',
+      entityType: 'Replacement',
+      entityId: id,
+      payload: replacementPayload(updated, user),
+      skipChannels: ['EMAIL']
+    });
 
     return updated;
   },
@@ -225,8 +244,7 @@ const replacementService = {
       entityType: 'Replacement',
       entityId: id,
       payload: {
-        ticketCode: replacement.ticket.code,
-        ticketTitle: replacement.ticket.title,
+        ...replacementPayload(updated, user),
         replacementStatus: 'DELIVERED'
       },
       skipChannels: ['EMAIL']

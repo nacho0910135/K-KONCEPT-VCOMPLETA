@@ -11,6 +11,7 @@ const { slaService } = require('./sla.service');
 const { ticketAssignmentService } = require('./ticketAssignment.service');
 const { transactionalEmailService } = require('./transactionalEmail.service');
 const { warrantyService } = require('./warranty.service');
+const { generateRefundCertificate } = require('../utils/pdfGenerator.util');
 const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
 const { canTransition } = require('../utils/ticketTransitions.util');
@@ -44,6 +45,7 @@ const closeTypeLabel = {
 };
 const resolutionActionLabel = {
   REPAIR: 'Reparacion',
+  REPLACEMENT: 'Reemplazo',
   REFUND_TOTAL: 'Reembolso total',
   REFUND_PARTIAL: 'Reembolso parcial'
 };
@@ -53,6 +55,9 @@ const resolutionSummary = (payload) => {
   if (payload.closeType === 'WITHOUT_SOLUTION') return 'Sin solucion';
   return resolutionActionLabel[payload.resolutionAction] || payload.resolutionAction || 'Con solucion';
 };
+
+const money = (value) => value ? new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(Number(value)) : '';
+const productName = (product) => [product?.brand || product?.name, product?.model, product?.serialNumber].filter(Boolean).join(' ');
 
 const replacementProductSummary = (replacement) => [replacement.replacementBrand, replacement.replacementModel, replacement.replacementSerialNumber]
   .filter(Boolean)
@@ -418,7 +423,7 @@ const ticketService = {
       await transactionalEmailService.sendReturnItemRequestEmail(ticket.client, ticket, user).catch(() => null);
     }
 
-    if (payload.status === 'RESOLVED' && payload.closeType === 'REPLACEMENT') {
+    if (payload.status === 'RESOLVED' && (payload.closeType === 'REPLACEMENT' || payload.resolutionAction === 'REPLACEMENT')) {
       const activeReplacement = await replacementRepository.findActiveByTicketId(id);
       if (!activeReplacement) {
         await replacementRepository.create({
@@ -434,17 +439,35 @@ const ticketService = {
       }
     }
 
+    let refundCertificateBuffer = null;
     if (payload.status === 'RESOLVED' && ['REFUND_TOTAL', 'REFUND_PARTIAL'].includes(payload.resolutionAction)) {
-      await refundService.createForTicket(id, {
+      const refund = await refundService.createForTicket(id, {
         type: payload.resolutionAction,
-        amount: payload.resolutionAction === 'REFUND_PARTIAL' ? payload.refundAmount : null,
+        amount: payload.refundAmount,
         reason: payload.solution || payload.comment || 'Reembolso indicado en resolucion'
       }, user);
+      refundCertificateBuffer = await generateRefundCertificate(refund);
+      await notificationService.dispatchNotification({
+        userId: ticket.clientId,
+        event: 'REFUND_REGISTERED',
+        entityType: 'Refund',
+        entityId: refund.id,
+        payload: {
+          ticketCode: ticket.code,
+          ticketTitle: ticket.title,
+          technicianName: user.name,
+          productName: productName(ticket.product) || 'Sin producto asociado',
+          resolutionAction: resolutionActionLabel[payload.resolutionAction],
+          refundAmount: money(refund.amount),
+          solution: payload.solution || payload.comment || 'Reembolso indicado en resolucion'
+        },
+        skipChannels: ['EMAIL']
+      });
     }
 
     const notificationPayload = buildStatusNotificationPayload({ ticket, payload, user, comment });
 
-    await transactionalEmailService.sendTicketStatusEmail(ticket.client, ticket, notificationPayload).catch(() => null);
+    await transactionalEmailService.sendTicketStatusEmail(ticket.client, ticket, { ...notificationPayload, refundCertificateBuffer }).catch(() => null);
 
     await notificationService.dispatchNotification({
       userId: ticket.clientId,

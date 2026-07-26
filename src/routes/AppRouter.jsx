@@ -106,6 +106,8 @@ const AppRouter = () => (
             <Route path="categorias" element={<Categorias />} />
             <Route path="warranties" element={<AdminGarantias />} />
             <Route path="garantias" element={<AdminGarantias />} />
+            <Route path="reemplazos" element={<Reemplazos />} />
+            <Route path="reembolsos" element={<Reembolsos />} />
             <Route path="slas" element={<SLAs />} />
             <Route path="reports" element={<Reportes />} />
             <Route path="reportes" element={<Reportes />} />

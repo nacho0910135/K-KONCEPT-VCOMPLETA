@@ -4,12 +4,21 @@ const unwrap = (response) => response.data?.data ?? response.data;
 
 export const listRefunds = async () => unwrap(await api.get('/refunds'));
 
-export const exportRefunds = async (format) => {
-  const response = await api.get(`/refunds/export/${format}`, { responseType: 'blob' });
-  const url = URL.createObjectURL(response.data);
+const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `reembolsos.${format}`;
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+};
+
+export const exportRefunds = async (format) => {
+  const response = await api.get(`/refunds/export/${format}`, { responseType: 'blob' });
+  downloadBlob(response.data, `reembolsos.${format}`);
+};
+
+export const downloadRefundCertificate = async (id) => {
+  const response = await api.get(`/refunds/${id}/certificate/download`, { responseType: 'blob' });
+  downloadBlob(response.data, 'constancia-reembolso.pdf');
 };

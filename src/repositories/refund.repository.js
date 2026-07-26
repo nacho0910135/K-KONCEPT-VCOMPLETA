@@ -19,6 +19,10 @@ const refundRepository = {
     return prisma.refund.findMany({ where: { ticketId }, orderBy: { createdAt: 'desc' }, include: refundInclude });
   },
 
+  findById(id) {
+    return prisma.refund.findUnique({ where: { id }, include: refundInclude });
+  },
+
   list(where = {}) {
     return prisma.refund.findMany({ where, orderBy: { createdAt: 'desc' }, include: refundInclude });
   }

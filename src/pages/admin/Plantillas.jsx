@@ -46,7 +46,16 @@ const variables = [
   '{{ticketUrl}}',
   '{{slaDueAt}}',
   '{{deadlineAt}}',
-  '{{appointmentDate}}'
+  '{{appointmentDate}}',
+  '{{closeType}}',
+  '{{resolutionAction}}',
+  '{{refundAmount}}',
+  '{{productName}}',
+  '{{replacementProduct}}',
+  '{{replacementBrand}}',
+  '{{replacementModel}}',
+  '{{replacementSerialNumber}}',
+  '{{replacementNotes}}'
 ];
 const sampleValues = {
   '{{userName}}': 'Laura Campos',
@@ -67,7 +76,16 @@ const sampleValues = {
   '{{ticketUrl}}': 'https://app.kollabkoncepts.com/client/tickets/123',
   '{{slaDueAt}}': '21/05/2026 16:00',
   '{{deadlineAt}}': '21/05/2026 16:00',
-  '{{appointmentDate}}': '22/05/2026 09:00'
+  '{{appointmentDate}}': '22/05/2026 09:00',
+  '{{closeType}}': 'Con solucion',
+  '{{resolutionAction}}': 'Reembolso total',
+  '{{refundAmount}}': '₡30,000.00',
+  '{{productName}}': 'Jabra Engage 50 II',
+  '{{replacementProduct}}': 'Jabra Engage 50 II nuevo',
+  '{{replacementBrand}}': 'Jabra',
+  '{{replacementModel}}': 'Engage 50 II',
+  '{{replacementSerialNumber}}': 'SN-88991',
+  '{{replacementNotes}}': 'Equipo validado y listo para entrega'
 };
 
 const renderPreview = (value = '') => variables.reduce((text, variable) => text.replaceAll(variable, sampleValues[variable]), value);
@@ -78,7 +96,7 @@ const stripPreviewHtml = (value = '') => String(value)
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();
-const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 const channelOptions = ['EMAIL', 'IN_APP', 'SMS', 'PUSH'].map((value) => ({ value, label: channelLabel[value] || value }));
 
 const Plantillas = () => {

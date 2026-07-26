@@ -37,7 +37,7 @@ const statusSchema = z.object({
       if (!value.resolutionAction) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['resolutionAction'], message: 'Selecciona la accion' });
       if (!value.diagnosis?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['diagnosis'], message: 'Diagnostico obligatorio' });
       if (!value.solution?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['solution'], message: 'Solucion obligatoria' });
-      if (value.resolutionAction === 'REFUND_PARTIAL' && !value.refundAmount?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['refundAmount'], message: 'Monto obligatorio' });
+      if (['REFUND_TOTAL', 'REFUND_PARTIAL'].includes(value.resolutionAction) && !value.refundAmount?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['refundAmount'], message: 'Monto obligatorio' });
     }
     if (value.closeType === 'REPLACEMENT') {
       if (!value.diagnosis?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['diagnosis'], message: 'Diagnostico obligatorio' });
@@ -121,7 +121,7 @@ const DetalleTicket = () => {
         ...values,
         status: values.status === 'RETURN_ITEM_REQUEST' ? 'WAITING_CUSTOMER' : values.status,
         returnItemRequested: values.status === 'RETURN_ITEM_REQUEST',
-        refundAmount: values.refundAmount ? Number(values.refundAmount) : undefined,
+        refundAmount: values.refundAmount || undefined,
         requestedProduct: ticket.product?.name || ticket.title
       });
       statusForm.reset();
@@ -251,7 +251,6 @@ const DetalleTicket = () => {
                     error={statusForm.formState.errors.closeType}
                     options={[
                       { value: 'WITH_SOLUTION', label: 'Con solucion' },
-                      { value: 'REPLACEMENT', label: 'Reemplazo' },
                       { value: 'WITHOUT_SOLUTION', label: 'Sin solucion' }
                     ]}
                   />
@@ -264,22 +263,27 @@ const DetalleTicket = () => {
                         error={statusForm.formState.errors.resolutionAction}
                         options={[
                           { value: 'REPAIR', label: 'Reparacion' },
+                          { value: 'REPLACEMENT', label: 'Reemplazo' },
                           { value: 'REFUND_TOTAL', label: 'Reembolso total' },
                           { value: 'REFUND_PARTIAL', label: 'Reembolso parcial' }
                         ]}
                       />
-                      {watchedResolutionAction === 'REFUND_PARTIAL' && (
-                        <input
-                          className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
-                          placeholder="Monto del reembolso parcial"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          {...statusForm.register('refundAmount')}
-                        />
+                      {['REFUND_TOTAL', 'REFUND_PARTIAL'].includes(watchedResolutionAction) && (
+                        <label className="grid gap-1.5 text-sm font-medium text-neutral-700">
+                          <span>Monto del reembolso</span>
+                          <input
+                            className="min-h-10 rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
+                            placeholder="0.00"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...statusForm.register('refundAmount')}
+                          />
+                          {statusForm.formState.errors.refundAmount && <span className="text-xs font-medium text-danger">{statusForm.formState.errors.refundAmount.message}</span>}
+                        </label>
                       )}
                       <FormTextarea register={statusForm.register} name="diagnosis" label="Diagnostico" error={statusForm.formState.errors.diagnosis} />
-                      <FormTextarea register={statusForm.register} name="solution" label="Solucion" error={statusForm.formState.errors.solution} />
+                      <FormTextarea register={statusForm.register} name="solution" label={watchedResolutionAction === 'REPLACEMENT' ? 'Detalle del reemplazo' : 'Solucion'} error={statusForm.formState.errors.solution} />
                     </div>
                   )}
                   {watchedCloseType === 'REPLACEMENT' && (

@@ -28,8 +28,8 @@ const ChatEmpresarial = () => {
   return (
     <div className="grid gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Chat empresarial</h1>
-        <p className="mt-1 text-sm text-neutral-500">Abre hasta 3 chats rapidos con administradores o tecnicos disponibles.</p>
+        <h1 className="text-2xl font-bold text-neutral-900">Chat del personal</h1>
+        <p className="mt-1 text-sm text-neutral-500">Comunicate con administradores y tecnicos en tiempo real.</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">

@@ -57,6 +57,7 @@ export const eventLabel = {
   NEW_COMMENT: 'Nuevo comentario',
   APPOINTMENT_RESCHEDULED: 'Cita reprogramada',
   REPLACEMENT_APPROVED: 'Reemplazo aprobado',
+  REFUND_REGISTERED: 'Reembolso registrado',
   COMMENT_CREATED: 'Comentario creado',
   SLA_RISK: 'Riesgo de SLA',
   SLA_BREACH: 'SLA vencido',

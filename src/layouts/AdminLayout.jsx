@@ -1,4 +1,4 @@
-import { Bell, ChartNoAxesCombined, Clock3, FileText, Gauge, Layers3, Mail, MessageCircle, ShieldCheck, ShieldAlert, SlidersHorizontal, Tags, UserRound, UsersRound } from 'lucide-react';
+import { Bell, Boxes, ChartNoAxesCombined, CircleDollarSign, Clock3, FileText, Gauge, Layers3, Mail, MessageCircleMore, ShieldCheck, ShieldAlert, SlidersHorizontal, Tags, UserRound, UsersRound } from 'lucide-react';
 import AppShell from './AppShell.jsx';
 
 const navItems = [
@@ -7,6 +7,8 @@ const navItems = [
   { to: 'users', label: 'Usuarios', icon: UsersRound },
   { to: 'categories', label: 'Categorias', icon: Tags },
   { to: 'garantias', label: 'Garantias', icon: ShieldCheck },
+  { to: 'reemplazos', label: 'Reemplazos', icon: Boxes },
+  { to: 'reembolsos', label: 'Reembolsos', icon: CircleDollarSign },
   { to: 'slas', label: 'SLAs', icon: Clock3 },
   { to: 'reports', label: 'Reportes', icon: ChartNoAxesCombined },
   { to: 'audit', label: 'Auditoria', icon: ShieldAlert },
@@ -14,7 +16,7 @@ const navItems = [
   { to: 'notifications/channels', label: 'Canales', icon: Mail },
   { to: 'notifications/frequency', label: 'Frecuencia', icon: SlidersHorizontal },
   { to: 'notificaciones', label: 'Notificaciones', icon: Bell },
-  { to: 'chat', label: 'Chat empresarial', icon: MessageCircle },
+  { to: 'chat', label: 'Chat del personal', icon: MessageCircleMore },
   { to: 'profile', label: 'Perfil', icon: UserRound }
 ];
 

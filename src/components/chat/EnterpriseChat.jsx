@@ -134,26 +134,32 @@ const EnterpriseChat = () => {
   const [messages, setMessages] = useState({});
   const [unread, setUnread] = useState({});
   const openPeersRef = useRef(openPeers);
+  const unreadIdsRef = useRef(new Set());
+  const minimizedRef = useRef(minimized);
   openPeersRef.current = openPeers;
+  minimizedRef.current = minimized;
 
   useEffect(() => {
     if (!enabled) return undefined;
-    setOpenPeers(readStored());
+    const storedPeers = readStored();
+    setOpenPeers(storedPeers);
+    setMinimized(Object.fromEntries(storedPeers.map((id) => [id, true])));
     const refresh = async () => {
       const [nextUsers, unreadMessages] = await Promise.all([getChatUsers(), getUnreadChatMessages()]);
       setUsers(nextUsers);
+      const unreadIds = new Set(unreadMessages.map((message) => message.id));
+      const hasNewUnread = unreadMessages.some((message) => !unreadIdsRef.current.has(message.id));
+      unreadIdsRef.current = unreadIds;
       const grouped = unreadMessages.reduce((acc, message) => ({ ...acc, [message.senderId]: (acc[message.senderId] || 0) + 1 }), {});
       if (unreadMessages.length) {
-        const incoming = unreadMessages[0].senderId;
-        if (!openPeersRef.current.includes(incoming)) {
-          setOpenPeers((peers) => {
-            const next = [incoming, ...peers.filter((id) => id !== incoming)].slice(0, 3);
-            writeStored(next);
-            return next;
-          });
-          setMinimized((state) => ({ ...state, [incoming]: true }));
-        }
-        beep();
+        const incomingIds = [...new Set(unreadMessages.map((message) => message.senderId))];
+        setOpenPeers((peers) => {
+          const next = [...incomingIds, ...peers.filter((id) => !incomingIds.includes(id))].slice(0, 3);
+          writeStored(next);
+          return next;
+        });
+        setMinimized((state) => ({ ...state, ...Object.fromEntries(incomingIds.map((id) => [id, true])) }));
+        if (hasNewUnread) beep();
       }
       setUnread(grouped);
     };
@@ -165,7 +171,7 @@ const EnterpriseChat = () => {
   useEffect(() => {
     if (!enabled || openPeers.length === 0) return undefined;
     const load = async () => {
-      const visiblePeers = openPeers.filter((id) => !minimized[id]);
+      const visiblePeers = openPeers.filter((id) => !minimizedRef.current[id]);
       const entries = await Promise.all(visiblePeers.map(async (id) => [id, await getChatMessages(id)]));
       setMessages(Object.fromEntries(entries));
       setUnread((state) => ({ ...state, ...Object.fromEntries(visiblePeers.map((id) => [id, 0])) }));
@@ -195,10 +201,14 @@ const EnterpriseChat = () => {
   return (
     <div className="fixed bottom-0 right-4 z-50 flex items-end gap-3">
       {peers.map((peer) => minimized[peer.id] ? (
-        <button key={peer.id} className="mb-2 flex min-w-44 items-center gap-2 rounded-t-lg border border-[#722F37]/20 bg-[#f8f4f4] px-4 py-3 text-sm font-semibold text-[#722F37] shadow-[0_18px_45px_rgba(36,12,18,0.35)] ring-1 ring-white/60 transition hover:-translate-y-0.5 hover:bg-white" type="button" onClick={() => setMinimized((state) => ({ ...state, [peer.id]: false }))}>
+        <button key={peer.id} className="relative mb-2 flex w-72 items-center gap-2 rounded-t-lg border border-[#722F37]/20 bg-[#f8f4f4] px-4 py-3 text-sm font-semibold text-[#722F37] shadow-[0_18px_45px_rgba(36,12,18,0.35)] ring-1 ring-white/60 transition hover:-translate-y-0.5 hover:bg-white" type="button" onClick={() => setMinimized((state) => ({ ...state, [peer.id]: false }))}>
           {peer.avatarUrl ? <img className="h-7 w-7 rounded-full object-cover ring-2 ring-white" src={peer.avatarUrl} alt={peer.name} /> : <span className="grid h-7 w-7 place-items-center rounded-full bg-[#722F37] text-xs text-white">{peer.name?.[0] || '?'}</span>}
-          <span className="max-w-36 truncate">{peer.name}</span>
-          {(unread[peer.id] || 0) > 0 && <span className="ml-auto h-2.5 w-2.5 animate-pulse rounded-full bg-green-500 ring-4 ring-green-100" />}
+          <span className="min-w-0 flex-1 truncate">{peer.name}</span>
+          {(unread[peer.id] || 0) > 0 && (
+            <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white ring-2 ring-white">
+              {unread[peer.id]}
+            </span>
+          )}
         </button>
       ) : (
         <ChatWindow

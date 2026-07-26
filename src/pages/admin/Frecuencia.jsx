@@ -28,7 +28,7 @@ const frequencySchema = z.object({
   }
 });
 
-const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 
 const Frecuencia = () => {
   const { data, setData, isLoading, error } = useAdminResource(listNotificationFrequencyRules, []);

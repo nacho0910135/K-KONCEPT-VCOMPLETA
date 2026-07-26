@@ -9,6 +9,7 @@ const eventSchema = z.enum([
   'TICKET_CLOSED',
   'APPOINTMENT_RESCHEDULED',
   'REPLACEMENT_APPROVED',
+  'REFUND_REGISTERED',
   'SLA_BREACH'
 ]);
 
