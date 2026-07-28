@@ -4,7 +4,6 @@ const { userRepository } = require('../repositories/user.repository');
 const { auditService } = require('./audit.service');
 const { notificationService } = require('./notification.service');
 const { pdfGenerationService } = require('./pdfGeneration.service');
-const { transactionalEmailService } = require('./transactionalEmail.service');
 const { exportPdf } = require('../utils/pdfExporter.util');
 const { exportTable } = require('../utils/tableExport.util');
 const { generateReplacementCertificate } = require('../utils/pdfGenerator.util');
@@ -184,14 +183,12 @@ const replacementService = {
       }
     });
 
-    await transactionalEmailService.sendReplacementProductEmail(updated.ticket.client, updated).catch(() => null);
     await notificationService.dispatchNotification({
       userId: updated.ticket.clientId,
       event: 'REPLACEMENT_APPROVED',
       entityType: 'Replacement',
       entityId: id,
-      payload: replacementPayload(updated, user),
-      skipChannels: ['EMAIL']
+      payload: replacementPayload(updated, user)
     });
 
     return updated;
@@ -245,12 +242,14 @@ const replacementService = {
       entityId: id,
       payload: {
         ...replacementPayload(updated, user),
-        replacementStatus: 'DELIVERED'
-      },
-      skipChannels: ['EMAIL']
+        replacementStatus: 'DELIVERED',
+        attachments: certificateBuffer ? [{
+          filename: `constancia-${updated.ticket.code}.pdf`,
+          content: certificateBuffer,
+          contentType: 'application/pdf'
+        }] : []
+      }
     });
-
-    await transactionalEmailService.sendReplacementDeliveredEmail(updated.ticket.client, updated, certificateBuffer).catch(() => null);
 
     await auditService.record({
       userId: user.id,

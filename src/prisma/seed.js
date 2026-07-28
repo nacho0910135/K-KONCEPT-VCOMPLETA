@@ -118,8 +118,8 @@ const templateCopy = {
     `
   },
   TICKET_CLOSED: {
-    subject: 'Ticket {{ticketCode}} cerrado',
-    body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo cerrado. Gracias por confirmar la atencion recibida.'
+    subject: 'Ticket {{ticketCode}} resuelto',
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo finalizado. Gracias por confirmar la atencion recibida.'
   },
   TICKET_APPEALED: {
     subject: 'Apelacion abierta para {{ticketCode}}',

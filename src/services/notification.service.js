@@ -26,7 +26,7 @@ const statusLabel = {
   IN_PROGRESS: 'En proceso',
   WAITING_CUSTOMER: 'Esperando respuesta del cliente',
   RESOLVED: 'Resuelto',
-  CLOSED: 'Cerrado',
+  CLOSED: 'Resuelto',
   CANCELLED: 'Cancelado',
   REOPENED: 'Reabierto'
 };
@@ -122,8 +122,8 @@ const defaultCopy = {
     `
   },
   TICKET_CLOSED: {
-    subject: 'Ticket {{ticketCode}} cerrado',
-    body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo cerrado. Gracias por confirmar la atencion recibida.'
+    subject: 'Ticket {{ticketCode}} resuelto',
+    body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo finalizado. Gracias por confirmar la atencion recibida.'
   },
   TICKET_APPEALED: {
     subject: 'Apelacion abierta para {{ticketCode}}',
@@ -361,7 +361,8 @@ const dispatchNow = async ({ userId, event, entityType, entityId, payload = {}, 
         entityType,
         entityId,
         channel,
-        payload: renderedPayload
+        payload: renderedPayload,
+        attachments: payload.attachments
       });
 
       if (result?.skipped) {
