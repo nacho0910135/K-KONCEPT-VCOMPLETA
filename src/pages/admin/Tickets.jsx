@@ -93,6 +93,7 @@ const Tickets = () => {
   const quickTabs = useMemo(() => {
     const by = (predicate) => tickets.filter(predicate).length;
     return [
+      { key: 'appeals', label: 'Apelaciones', count: by((ticket) => Boolean(ticket.appealedAt)), predicate: (ticket) => Boolean(ticket.appealedAt) },
       { key: 'attention', label: 'Atencion Admin', count: by(isAdminAttention), predicate: isAdminAttention },
       { key: 'unassigned', label: 'Sin asignar', count: by((ticket) => !ticket.assignedTechnicianId && activeStatuses.includes(ticket.status)), predicate: (ticket) => !ticket.assignedTechnicianId && activeStatuses.includes(ticket.status) },
       { key: 'sla', label: 'SLA en riesgo / vencidos', count: by(isSlaRisk), predicate: isSlaRisk },

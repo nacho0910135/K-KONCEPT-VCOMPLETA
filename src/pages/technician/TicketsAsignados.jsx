@@ -11,10 +11,12 @@ import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const priorityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
 const tabs = {
+  appeals: { label: 'Apelaciones', predicate: (ticket) => Boolean(ticket.appealedAt) },
   attention: { label: 'Pendientes', statuses: ['OPEN', 'IN_PROGRESS', 'REOPENED'] },
   waiting: { label: 'En espera', statuses: ['WAITING_CUSTOMER', 'PENDING'] },
   completed: { label: 'Completados', statuses: ['RESOLVED', 'CLOSED', 'CANCELLED'] }
 };
+const tabIncludes = (tab, ticket) => (tab.predicate ? tab.predicate(ticket) : tab.statuses.includes(ticket.status));
 const isDueToday = (ticket) => {
   if (!ticket.slaDeadline) return false;
   const deadline = new Date(ticket.slaDeadline);
@@ -30,7 +32,7 @@ const slaWeight = (ticket) => {
   return 0;
 };
 const matchesSearch = (ticket, query) => JSON.stringify(ticket).toLowerCase().includes(query.trim().toLowerCase());
-const ticketTab = (ticket) => Object.entries(tabs).find(([, tab]) => tab.statuses.includes(ticket.status))?.[0];
+const ticketTab = (ticket) => Object.entries(tabs).find(([, tab]) => tabIncludes(tab, ticket))?.[0];
 
 const TicketsAsignados = () => {
   const [tickets, setTickets] = useState([]);
@@ -65,7 +67,7 @@ const TicketsAsignados = () => {
 
   useEffect(() => {
     const normalized = searchTerm.trim();
-    if (!normalized || tickets.some((ticket) => tabs[activeTab].statuses.includes(ticket.status) && matchesSearch(ticket, normalized))) return;
+    if (!normalized || tickets.some((ticket) => tabIncludes(tabs[activeTab], ticket) && matchesSearch(ticket, normalized))) return;
 
     const match = tickets.find((ticket) => matchesSearch(ticket, normalized));
     const nextTab = match && ticketTab(match);
@@ -75,7 +77,7 @@ const TicketsAsignados = () => {
   const rows = useMemo(() => {
     const filtered = tickets.filter((ticket) => (
       (!filters.priority || ticket.priority === filters.priority)
-      && tabs[activeTab].statuses.includes(ticket.status)
+      && tabIncludes(tabs[activeTab], ticket)
     ));
 
     return [...filtered].sort((a, b) => {
@@ -89,12 +91,12 @@ const TicketsAsignados = () => {
 
   const counts = useMemo(() => Object.fromEntries(Object.entries(tabs).map(([key, tab]) => [
     key,
-    tickets.filter((ticket) => tab.statuses.includes(ticket.status)).length
+    tickets.filter((ticket) => tabIncludes(tab, ticket)).length
   ])), [tickets]);
   const kpis = useMemo(() => ({
     answer: counts.attention || 0,
     waiting: counts.waiting || 0,
-    dueToday: tickets.filter((ticket) => tabs.attention.statuses.includes(ticket.status) && isDueToday(ticket)).length
+    dueToday: tickets.filter((ticket) => tabIncludes(tabs.attention, ticket) && isDueToday(ticket)).length
   }), [counts, tickets]);
 
   return (
