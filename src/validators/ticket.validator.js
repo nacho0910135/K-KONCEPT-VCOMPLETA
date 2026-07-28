@@ -106,7 +106,8 @@ const updateDiagnosisSchema = z.object({
 });
 
 const assignmentSettingsSchema = z.object({
-  automatic: z.boolean()
+  automatic: z.boolean(),
+  onlineOnly: z.boolean().optional()
 });
 
 const searchTicketsQuerySchema = paginationQuerySchema.extend({

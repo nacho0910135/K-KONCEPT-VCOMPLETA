@@ -9,6 +9,7 @@ const userSelect = {
   phone: true,
   company: true,
   avatarUrl: true,
+  chatLastSeenAt: true,
   active: true,
   lastLogin: true,
   createdAt: true,
@@ -23,6 +24,7 @@ const publicUserSelect = {
   phone: true,
   company: true,
   avatarUrl: true,
+  chatLastSeenAt: true,
   active: true,
   lastLogin: true,
   createdAt: true,
@@ -62,6 +64,14 @@ const authRepository = {
       where: { id },
       data: { lastLogin: new Date() },
       select: publicUserSelect
+    });
+  },
+
+  touchPresence(id) {
+    return prisma.user.update({
+      where: { id },
+      data: { chatLastSeenAt: new Date() },
+      select: { id: true }
     });
   },
 

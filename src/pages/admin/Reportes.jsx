@@ -44,7 +44,8 @@ const today = new Date().toISOString().slice(0, 10);
 const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
 const getCount = (rows = [], status) => rows.find((item) => item.status === status)?.count || 0;
 const colors = ['#dc2626', '#f59e0b', '#2563eb', '#0f766e', '#64748b', '#8b5cf6'];
-const statusLabel = { OPEN: 'Abiertos', ASSIGNED: 'Asignados', PENDING: 'Pendientes', IN_PROGRESS: 'En progreso', WAITING_CUSTOMER: 'Esperando cliente', RESOLVED: 'Resueltos', CLOSED: 'Cerrados', CANCELLED: 'Cancelados', REOPENED: 'Reabiertos' };
+const activeStatuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'];
+const statusLabel = { OPEN: 'Abiertos', PENDING: 'Pendientes', IN_PROGRESS: 'En progreso', WAITING_CUSTOMER: 'Esperando cliente', RESOLVED: 'Resueltos', CLOSED: 'Cerrados', CANCELLED: 'Cancelados', REOPENED: 'Reabiertos' };
 const replacementLabel = { PENDING_APPROVAL: 'Por validar', APPROVED: 'Aprobados', IN_TRANSIT: 'En transito', DELIVERED: 'Entregados', REJECTED: 'Rechazados' };
 const pct = (value) => `${Number(value || 0).toFixed(0)}%`;
 const money = (value) => new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(value || 0);
@@ -143,12 +144,14 @@ const Reportes = () => {
   const byPriority = (overview.ticketsByPriority || []).map((item) => ({ name: priorityLabel[item.priority] || item.priority, value: item.count || 0 }));
   const statusChart = byStatus.map((item) => ({ name: statusLabel[item.status] || item.status, value: item.count || 0 }));
   const service = overview.serviceOperations || {};
+  const repairMix = overview.replacementVsRepair || {};
   const replacements = (service.replacementsByStatus || []).map((item) => ({ name: replacementLabel[item.status] || item.status, value: item.count || 0 }));
   const technicians = [...(overview.ticketsByTechnician || [])].filter((item) => item.technicianId).sort((a, b) => b.score - a.score).slice(0, 3);
-  const active = ['OPEN', 'ASSIGNED', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'].reduce((sum, status) => sum + getCount(byStatus, status), 0);
+  const categories = [...(overview.ticketsByCategory || [])].sort((a, b) => b.count - a.count).slice(0, 8);
+  const totalTickets = byStatus.reduce((sum, item) => sum + (item.count || 0), 0);
+  const active = activeStatuses.reduce((sum, status) => sum + getCount(byStatus, status), 0);
   const waiting = getCount(byStatus, 'WAITING_CUSTOMER') + getCount(byStatus, 'PENDING');
   const completed = getCount(byStatus, 'RESOLVED') + getCount(byStatus, 'CLOSED');
-  const health = Math.max(0, Math.min(100, Number(overview.slaCompliance?.complianceRate || 0) - (overview.reopenedRate?.reopenedRate || 0) - Math.min(waiting * 3, 20)));
 
   return (
     <div className="grid gap-6">
@@ -171,12 +174,13 @@ const Reportes = () => {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Salud general" value={pct(health)} helper={health >= 85 ? 'Estable' : health >= 65 ? 'Vigilar' : 'Critico'} icon={AlertTriangle} tone={health >= 85 ? 'success' : health >= 65 ? 'warning' : 'danger'} />
+        <StatCard title="Total de casos" value={totalTickets} icon={TicketCheck} />
         <StatCard title="Activos" value={active} icon={TicketPlus} />
         <StatCard title="En espera" value={waiting} icon={Clock3} tone={waiting > 0 ? 'warning' : 'neutral'} />
         <StatCard title="Completados" value={completed} icon={TicketCheck} tone="success" />
         <StatCard title="SLA cumplido" value={pct(overview.slaCompliance?.complianceRate)} helper={`${overview.slaCompliance?.breached || 0} vencidos`} icon={CheckCircle2} tone="success" />
         <StatCard title="Respuesta promedio" value={`${overview.avgResponseTime?.averageHours || 0} h`} icon={Clock3} />
+        <StatCard title="Resolucion promedio" value={`${overview.avgResolutionTime?.averageHours || 0} h`} icon={Clock3} />
         <StatCard title="Calificacion" value={overview.ratingSummary?.average ?? 0} helper={`${overview.ratingSummary?.count || 0} opiniones`} icon={Star} tone="warning" />
         <StatCard title="Reabiertos" value={pct(overview.reopenedRate?.reopenedRate)} icon={AlertTriangle} tone={(overview.reopenedRate?.reopenedRate || 0) > 10 ? 'danger' : 'neutral'} />
       </div>
@@ -246,7 +250,8 @@ const Reportes = () => {
               { label: 'Reemplazos abiertos', value: (service.replacementsByStatus || []).filter((item) => item.status !== 'DELIVERED' && item.status !== 'REJECTED').reduce((sum, item) => sum + item.count, 0), icon: PackageCheck },
               { label: 'Reembolsos registrados', value: service.refundCount || 0, icon: WalletCards },
               { label: 'Monto reembolsado', value: money(service.refundAmount), icon: WalletCards },
-              { label: 'Empleado del mes', value: technicians[0]?.technicianName || 'Sin datos', icon: Award }
+              { label: 'Reparaciones', value: repairMix.repairs || 0, icon: Award },
+              { label: 'Reemplazos', value: repairMix.replacements || 0, icon: PackageCheck }
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="flex items-center gap-3 rounded-md border border-neutral-200 p-3">
                 <Icon className="h-5 w-5 text-primary-700" />
@@ -260,22 +265,38 @@ const Reportes = () => {
         </Card>
       </div>
 
-      <Card className="p-4">
-        <h2 className="mb-4 text-sm font-semibold text-neutral-900">Top 3 tecnicos</h2>
-        <DataTable
-          searchable={false}
-          pageSize={3}
-          loading={isLoading}
-          data={technicians}
-          columns={[
-            { key: 'technicianName', header: 'Tecnico' },
-            { key: 'resolved', header: 'Resueltos' },
-            { key: 'open', header: 'Abiertos' },
-            { key: 'resolutionRate', header: 'Resolucion', render: (row) => pct(row.resolutionRate) },
-            { key: 'ratingAverage', header: 'Rating', render: (row) => row.ratingAverage || 0 }
-          ]}
-        />
-      </Card>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Card className="p-4">
+          <h2 className="mb-4 text-sm font-semibold text-neutral-900">Top 3 tecnicos</h2>
+          <DataTable
+            searchable={false}
+            pageSize={3}
+            loading={isLoading}
+            data={technicians}
+            columns={[
+              { key: 'technicianName', header: 'Tecnico' },
+              { key: 'resolved', header: 'Resueltos' },
+              { key: 'open', header: 'Abiertos' },
+              { key: 'resolutionRate', header: 'Resolucion', render: (row) => pct(row.resolutionRate) },
+              { key: 'ratingAverage', header: 'Rating', render: (row) => row.ratingAverage || 0 }
+            ]}
+          />
+        </Card>
+        <Card className="p-4">
+          <h2 className="mb-4 text-sm font-semibold text-neutral-900">Categorias con mas casos</h2>
+          <DataTable
+            searchable={false}
+            pageSize={8}
+            loading={isLoading}
+            data={categories}
+            columns={[
+              { key: 'categoryName', header: 'Categoria', render: (row) => row.categoryName || 'Sin categoria' },
+              { key: 'subcategoryName', header: 'Subcategoria', render: (row) => row.subcategoryName || 'General' },
+              { key: 'count', header: 'Casos' }
+            ]}
+          />
+        </Card>
+      </div>
 
       <Card className="p-4">
         <form className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_1fr_auto]" onSubmit={exportForm.handleSubmit(exportNow)}>

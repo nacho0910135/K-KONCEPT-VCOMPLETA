@@ -10,7 +10,6 @@ const PDFDocument = require('pdfkit');
 
 const statusLabel = {
   OPEN: 'Abiertos',
-  ASSIGNED: 'Asignados',
   PENDING: 'Pendientes',
   IN_PROGRESS: 'En progreso',
   WAITING_CUSTOMER: 'Esperando cliente',
@@ -19,6 +18,7 @@ const statusLabel = {
   CANCELLED: 'Cancelados',
   REOPENED: 'Reabiertos'
 };
+const activeStatuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'];
 const priorityLabel = { CRITICAL: 'Critica', HIGH: 'Alta', MEDIUM: 'Media', LOW: 'Baja' };
 const replacementLabel = {
   PENDING_APPROVAL: 'Por validar',
@@ -214,7 +214,7 @@ const buildKpiPdf = (overview, filters = {}) => new Promise((resolve, reject) =>
   doc.on('error', reject);
 
   const statusRows = overview.ticketsByStatus || [];
-  const active = ['OPEN', 'ASSIGNED', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'].reduce((sum, status) => sum + getCount(statusRows, status), 0);
+  const active = activeStatuses.reduce((sum, status) => sum + getCount(statusRows, status), 0);
   const completed = getCount(statusRows, 'RESOLVED') + getCount(statusRows, 'CLOSED');
   const service = overview.serviceOperations || {};
   const technicians = [...(overview.ticketsByTechnician || [])].filter((item) => item.technicianId).sort((a, b) => b.score - a.score);

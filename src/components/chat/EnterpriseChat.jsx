@@ -1,6 +1,5 @@
-import { Image, Maximize2, MessageCircle, Mic, Minus, Send, Smile, X } from 'lucide-react';
+import { Image, Maximize2, Mic, Minus, Send, SquarePen, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Button from '../common/Button.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { getChatMessages, getChatUsers, getUnreadChatMessages, sendChatMessage } from '../../services/chat.client.service.js';
 
@@ -133,6 +132,7 @@ const EnterpriseChat = () => {
   const [minimized, setMinimized] = useState({});
   const [messages, setMessages] = useState({});
   const [unread, setUnread] = useState({});
+  const [composerOpen, setComposerOpen] = useState(false);
   const openPeersRef = useRef(openPeers);
   const unreadIdsRef = useRef(new Set());
   const minimizedRef = useRef(minimized);
@@ -181,17 +181,20 @@ const EnterpriseChat = () => {
     return () => clearInterval(timer);
   }, [enabled, openPeers, minimized]);
 
-  useEffect(() => { window.openEnterpriseChat = (id) => {
+  const openChat = (id) => {
     setOpenPeers((peers) => {
       const next = [id, ...peers.filter((peerId) => peerId !== id)].slice(0, 3);
       writeStored(next);
       return next;
     });
     setMinimized((state) => ({ ...state, [id]: false }));
-  }; return () => { delete window.openEnterpriseChat; }; }, []);
+    setComposerOpen(false);
+  };
+
+  useEffect(() => { window.openEnterpriseChat = openChat; return () => { delete window.openEnterpriseChat; }; }, []);
 
   const peers = useMemo(() => openPeers.map((id) => users.find((item) => item.id === id)).filter(Boolean), [openPeers, users]);
-  if (!enabled || peers.length === 0) return null;
+  if (!enabled) return null;
 
   const send = async (recipientId, payload) => {
     const message = await sendChatMessage({ recipientId, ...payload });
@@ -200,6 +203,46 @@ const EnterpriseChat = () => {
 
   return (
     <div className="fixed bottom-0 right-4 z-50 flex items-end gap-3">
+      {peers.length === 0 && (
+        <div className="fixed bottom-24 right-6 z-50">
+          {composerOpen && (
+            <div className="mb-4 w-[min(92vw,24rem)] overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-[0_24px_70px_rgba(36,12,18,0.28)]">
+              <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900">Nuevo mensaje</h2>
+                  <p className="mt-3 text-sm text-neutral-600">Para:</p>
+                </div>
+                <button className="rounded-md p-2 text-primary-700 transition hover:bg-primary-50" type="button" onClick={() => setComposerOpen(false)} aria-label="Cerrar">
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="max-h-96 overflow-y-auto p-3">
+                {users.length === 0 && <p className="px-2 py-4 text-sm text-neutral-500">No hay administradores o tecnicos disponibles.</p>}
+                {users.map((person) => (
+                  <button
+                    key={person.id}
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition hover:bg-primary-50"
+                    type="button"
+                    onClick={() => openChat(person.id)}
+                  >
+                    {person.avatarUrl ? <img className="h-11 w-11 rounded-full object-cover" src={person.avatarUrl} alt={person.name} /> : <span className="grid h-11 w-11 place-items-center rounded-full bg-neutral-100 font-bold text-neutral-600">{person.name?.[0] || '?'}</span>}
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-neutral-900">{person.name}</span>
+                      <span className="mt-0.5 flex items-center gap-1 text-xs text-neutral-500">
+                        <span className={`h-2 w-2 rounded-full ${person.online ? 'bg-green-500' : 'bg-neutral-300'}`} />
+                        {person.online ? 'Online' : 'No activo'}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <button className="grid h-16 w-16 place-items-center rounded-full bg-white text-[#722F37] shadow-[0_18px_45px_rgba(36,12,18,0.28)] ring-1 ring-neutral-200 transition hover:-translate-y-0.5 hover:bg-primary-50" type="button" onClick={() => setComposerOpen((value) => !value)} aria-label="Nuevo mensaje">
+            <SquarePen className="h-7 w-7" />
+          </button>
+        </div>
+      )}
       {peers.map((peer) => minimized[peer.id] ? (
         <button key={peer.id} className="relative mb-2 flex w-72 items-center gap-2 rounded-t-lg border border-[#722F37]/20 bg-[#f8f4f4] px-4 py-3 text-sm font-semibold text-[#722F37] shadow-[0_18px_45px_rgba(36,12,18,0.35)] ring-1 ring-white/60 transition hover:-translate-y-0.5 hover:bg-white" type="button" onClick={() => setMinimized((state) => ({ ...state, [peer.id]: false }))}>
           {peer.avatarUrl ? <img className="h-7 w-7 rounded-full object-cover ring-2 ring-white" src={peer.avatarUrl} alt={peer.name} /> : <span className="grid h-7 w-7 place-items-center rounded-full bg-[#722F37] text-xs text-white">{peer.name?.[0] || '?'}</span>}

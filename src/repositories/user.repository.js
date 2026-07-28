@@ -55,11 +55,12 @@ const userRepository = {
     });
   },
 
-  async findLeastBusyActiveTechnician({ openStatuses = [] } = {}) {
+  async findLeastBusyActiveTechnician({ openStatuses = [], onlineOnly = false, onlineCutoff = null } = {}) {
     const technicians = await prisma.user.findMany({
       where: {
         role: 'TECHNICIAN',
-        active: true
+        active: true,
+        ...(onlineOnly ? { chatLastSeenAt: { gte: onlineCutoff || new Date(Date.now() - 60 * 1000) } } : {})
       },
       select: publicUserSelect,
       orderBy: { createdAt: 'asc' }
@@ -85,7 +86,7 @@ const userRepository = {
         ...technician,
         activeTicketCount: workloadByTechnician.get(technician.id) || 0
       }))
-      .sort((left, right) => left.activeTicketCount - right.activeTicketCount || left.createdAt - right.createdAt)[0];
+      .sort((left, right) => left.activeTicketCount - right.activeTicketCount || new Date(left.createdAt) - new Date(right.createdAt))[0];
   },
 
   findActiveClientById(id) {

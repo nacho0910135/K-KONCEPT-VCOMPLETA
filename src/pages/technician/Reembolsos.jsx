@@ -71,10 +71,7 @@ const Reembolsos = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Reembolsos</h1>
           <p className="mt-1 text-sm text-neutral-500">Reembolsos registrados desde resoluciones de tickets.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={() => exportRefunds('csv')}>Exportar CSV</Button>
-          <Button onClick={() => exportRefunds('xls')}>Exportar Excel</Button>
-        </div>
+        <Button variant="danger" onClick={() => exportRefunds('csv')}>Exportar CSV</Button>
       </div>
       <Card className="p-4">
         <input

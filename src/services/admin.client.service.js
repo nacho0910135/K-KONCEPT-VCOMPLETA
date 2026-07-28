@@ -6,6 +6,19 @@ const unwrap = (response) => ({
 });
 
 export const listAuditLogs = async (params) => unwrap(await api.get('/audit-logs', { params }));
+const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+export const exportAuditLogsCsv = async (params) => {
+  const response = await api.get('/audit-logs/export', { params, responseType: 'blob' });
+  downloadBlob(response.data, 'auditoria.csv');
+};
 
 export const listNotificationChannels = async () => unwrap(await api.get('/notification-channels')).data?.channels || [];
 export const updateNotificationChannel = async (channel, payload) => unwrap(await api.patch(`/notification-channels/${channel}`, payload)).data?.channel;

@@ -52,7 +52,7 @@ const Tickets = () => {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [assignTicket, setAssignTicket] = useState(null);
   const [priorityTicket, setPriorityTicket] = useState(null);
-  const [assignmentSettings, setAssignmentSettings] = useState({ automatic: true, mode: 'AUTOMATIC' });
+  const [assignmentSettings, setAssignmentSettings] = useState({ automatic: true, mode: 'AUTOMATIC', onlineOnly: true });
   const [isSavingAssignmentMode, setIsSavingAssignmentMode] = useState(false);
   const [quickFilter, setQuickFilter] = useState('attention');
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
@@ -142,15 +142,15 @@ const Tickets = () => {
     }
   };
 
-  const toggleAssignmentMode = async (automatic) => {
+  const saveAssignmentSettings = async (nextSettings) => {
     setIsSavingAssignmentMode(true);
     try {
-      const settings = await updateTicketAssignmentSettings({ automatic });
+      const settings = await updateTicketAssignmentSettings(nextSettings);
       setAssignmentSettings(settings);
       showToast({
         type: 'success',
-        title: automatic ? 'Asignacion automatica activada' : 'Asignacion manual activada',
-        message: automatic ? 'Los casos nuevos se asignaran al tecnico con menor carga.' : 'El admin asignara los casos manualmente.'
+        title: settings.automatic ? 'Asignacion automatica activada' : 'Asignacion manual activada',
+        message: settings.automatic ? 'Los casos nuevos se asignaran al tecnico con menor carga.' : 'El admin asignara los casos manualmente.'
       });
     } catch (err) {
       showToast({ type: 'error', title: 'No se pudo cambiar el modo', message: getErrorMessage(err) });
@@ -158,6 +158,8 @@ const Tickets = () => {
       setIsSavingAssignmentMode(false);
     }
   };
+  const toggleAssignmentMode = (automatic) => saveAssignmentSettings({ automatic, onlineOnly: assignmentSettings.onlineOnly });
+  const changeAssignmentScope = (onlineOnly) => saveAssignmentSettings({ automatic: assignmentSettings.automatic, onlineOnly });
 
   return (
     <div className="grid gap-6">
@@ -181,8 +183,14 @@ const Tickets = () => {
               onChange={toggleAssignmentMode}
               disabled={isSavingAssignmentMode}
               label={assignmentSettings.automatic ? 'Modo automatico activo' : 'Modo manual activo'}
-              description={assignmentSettings.automatic ? 'Los casos nuevos se asignan sin intervencion del admin.' : 'El admin asigna cada caso con el boton Asignar.'}
+              description={assignmentSettings.automatic ? 'Los casos nuevos se asignan al tecnico con menor carga.' : 'El admin asigna cada caso con el boton Asignar.'}
             />
+            {assignmentSettings.automatic && (
+              <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={assignmentSettings.onlineOnly ? 'online' : 'all'} onChange={(event) => changeAssignmentScope(event.target.value === 'online')} disabled={isSavingAssignmentMode}>
+                <option value="online">Solo tecnicos online</option>
+                <option value="all">Online y offline</option>
+              </select>
+            )}
           </div>
         </div>
         <div className="grid gap-3 md:grid-cols-3">

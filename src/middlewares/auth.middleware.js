@@ -21,6 +21,10 @@ const verifyToken = async (req, res, next) => {
     req.user = user;
     req.auth = payload;
 
+    if (['ADMIN', 'TECHNICIAN'].includes(user.role) && (!user.chatLastSeenAt || Date.now() - new Date(user.chatLastSeenAt).getTime() > 30 * 1000)) {
+      authRepository.touchPresence(user.id).catch(() => {});
+    }
+
     return next();
   } catch (error) {
     return next(error);

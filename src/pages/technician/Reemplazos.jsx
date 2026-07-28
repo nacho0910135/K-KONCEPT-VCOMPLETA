@@ -153,10 +153,7 @@ const Reemplazos = () => {
         <Badge tone={pendingDeliveryCount > 0 ? 'warning' : 'success'} className="mr-auto">
           {pendingDeliveryCount} {pendingDeliveryCount === 1 ? 'entrega pendiente' : 'entregas pendientes'}
         </Badge>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={() => exportReplacements('csv')}>Exportar CSV</Button>
-          <Button onClick={() => exportReplacements('xls')}>Exportar Excel</Button>
-        </div>
+        <Button variant="danger" onClick={() => exportReplacements('csv')}>Exportar CSV</Button>
       </div>
       <Card className="grid gap-3 p-4 md:grid-cols-2">
         <input

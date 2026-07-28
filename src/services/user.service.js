@@ -1,5 +1,6 @@
 const { userRepository } = require('../repositories/user.repository');
 const { auditService } = require('./audit.service');
+const { notificationService } = require('./notification.service');
 const { ConflictError, NotFoundError } = require('../utils/errors');
 const { hashPassword } = require('../utils/password.util');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
@@ -91,6 +92,25 @@ const userService = {
       previousValue: { role: previous.role },
       newValue: { role }
     });
+
+    if (previous.role !== role) {
+      const roleLabel = { ADMIN: 'Administrador', TECHNICIAN: 'Tecnico', CLIENT: 'Cliente' };
+      const promoted = ['ADMIN', 'TECHNICIAN'].includes(role);
+      await notificationService.dispatchNotification({
+        userId: updated.id,
+        event: 'USER_ROLE_CHANGED',
+        entityType: 'User',
+        entityId: updated.id,
+        payload: {
+          actorName: actor.name || actor.email || 'Administrador',
+          previousRole: roleLabel[previous.role] || previous.role,
+          newRole: roleLabel[role] || role,
+          roleChangeMessage: promoted
+            ? `Felicidades, ${actor.name || actor.email || 'un administrador'} te promovio a ${roleLabel[role] || role}.`
+            : `${actor.name || actor.email || 'Un administrador'} actualizo tu rol a ${roleLabel[role] || role}.`
+        }
+      });
+    }
 
     return updated;
   },

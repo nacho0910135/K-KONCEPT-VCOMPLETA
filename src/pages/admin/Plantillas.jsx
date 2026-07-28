@@ -29,6 +29,10 @@ const templateSchema = z.object({
 
 const variables = [
   '{{userName}}',
+  '{{actorName}}',
+  '{{previousRole}}',
+  '{{newRole}}',
+  '{{roleChangeMessage}}',
   '{{ticketCode}}',
   '{{ticketTitle}}',
   '{{ticketDescription}}',
@@ -59,6 +63,10 @@ const variables = [
 ];
 const sampleValues = {
   '{{userName}}': 'Laura Campos',
+  '{{actorName}}': 'Admin Kollab',
+  '{{previousRole}}': 'Cliente',
+  '{{newRole}}': 'Tecnico',
+  '{{roleChangeMessage}}': 'Felicidades, Admin Kollab te promovio a Tecnico.',
   '{{ticketCode}}': 'KK-1025',
   '{{ticketTitle}}': 'Impresora sin conexion',
   '{{ticketDescription}}': 'El equipo no responde al enviar trabajos de impresion.',
@@ -96,7 +104,7 @@ const stripPreviewHtml = (value = '') => String(value)
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();
-const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'USER_ROLE_CHANGED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 const channelOptions = ['EMAIL', 'IN_APP', 'SMS', 'PUSH'].map((value) => ({ value, label: channelLabel[value] || value }));
 
 const Plantillas = () => {

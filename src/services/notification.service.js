@@ -125,6 +125,19 @@ const defaultCopy = {
     subject: 'Ticket {{ticketCode}} cerrado',
     body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo cerrado. Gracias por confirmar la atencion recibida.'
   },
+  USER_ROLE_CHANGED: {
+    subject: 'Tu rol en Kollab Koncepts ahora es {{newRole}}',
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>{{roleChangeMessage}}</p>
+      <p>El administrador <strong>{{actorName}}</strong> actualizo tu acceso en la plataforma.</p>
+      <ul>
+        <li><strong>Rol anterior:</strong> {{previousRole}}</li>
+        <li><strong>Rol nuevo:</strong> {{newRole}}</li>
+      </ul>
+      <p>Ya puedes iniciar sesion y usar las opciones disponibles para tu nuevo rol.</p>
+    `
+  },
   APPOINTMENT_RESCHEDULED: {
     subject: 'Cita reprogramada para {{ticketCode}}',
     body: 'Hola {{userName}}, la cita del ticket {{ticketCode}} fue reprogramada para {{appointmentDate}}.'
@@ -178,6 +191,7 @@ const defaultInAppCopy = {
   NEW_COMMENT: defaultCopy.NEW_COMMENT,
   TICKET_RESOLVED: defaultCopy.TICKET_RESOLVED,
   TICKET_CLOSED: defaultCopy.TICKET_CLOSED,
+  USER_ROLE_CHANGED: defaultCopy.USER_ROLE_CHANGED,
   APPOINTMENT_RESCHEDULED: defaultCopy.APPOINTMENT_RESCHEDULED,
   REPLACEMENT_APPROVED: defaultCopy.REPLACEMENT_APPROVED,
   REFUND_REGISTERED: defaultCopy.REFUND_REGISTERED,
