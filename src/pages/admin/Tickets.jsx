@@ -36,6 +36,12 @@ const isAdminAttention = (ticket) => (
   || (['HIGH', 'CRITICAL'].includes(ticket.priority) && activeStatuses.includes(ticket.status))
   || isSlaRisk(ticket)
 );
+const matchesSearch = (ticket, query) => JSON.stringify(ticket).toLowerCase().includes(query.trim().toLowerCase());
+const matchesFilters = (ticket, filters) => (
+  (!filters.status || ticket.status === filters.status)
+  && (!filters.priority || ticket.priority === filters.priority)
+  && (!filters.technicianId || ticket.assignedTechnicianId === filters.technicianId)
+);
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
 const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
 const Tickets = () => {
@@ -50,6 +56,7 @@ const Tickets = () => {
   const [isSavingAssignmentMode, setIsSavingAssignmentMode] = useState(false);
   const [quickFilter, setQuickFilter] = useState('attention');
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
+  const [searchTerm, setSearchTerm] = useState('');
   const { showToast } = useToast();
   const navigate = useNavigate();
   const assignForm = useForm({ resolver: zodResolver(assignSchema), defaultValues: { technicianId: '' } });
@@ -98,11 +105,18 @@ const Tickets = () => {
     const tab = quickTabs.find((item) => item.key === quickFilter) || quickTabs[0];
     return tickets.filter((ticket) => (
       tab.predicate(ticket)
-      && (!filters.status || ticket.status === filters.status)
-      && (!filters.priority || ticket.priority === filters.priority)
-      && (!filters.technicianId || ticket.assignedTechnicianId === filters.technicianId)
+      && matchesFilters(ticket, filters)
     ));
   }, [tickets, filters, quickFilter, quickTabs]);
+
+  useEffect(() => {
+    const normalized = searchTerm.trim();
+    const activeTab = quickTabs.find((item) => item.key === quickFilter) || quickTabs[0];
+    if (!normalized || tickets.some((ticket) => activeTab.predicate(ticket) && matchesFilters(ticket, filters) && matchesSearch(ticket, normalized))) return;
+
+    const nextTab = quickTabs.find((tab) => tickets.some((ticket) => tab.predicate(ticket) && matchesFilters(ticket, filters) && matchesSearch(ticket, normalized)));
+    if (nextTab) setQuickFilter(nextTab.key);
+  }, [filters, quickFilter, quickTabs, searchTerm, tickets]);
 
   const assignTechnician = async ({ technicianId }) => {
     try {
@@ -205,6 +219,8 @@ const Tickets = () => {
         loading={isLoading}
         error={error}
         searchPlaceholder="Buscar por codigo, cliente o titulo"
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
         onRowClick={setSelectedTicket}
         columns={[
           { key: 'code', header: 'Codigo', sortable: true },

@@ -28,12 +28,21 @@ const DataTable = ({
   error = null,
   emptyTitle = 'Sin resultados',
   emptyDescription = 'No encontramos datos para los filtros actuales.',
+  searchValue,
+  onSearchChange,
   onRowClick
 }) => {
-  const [query, setQuery] = useState('');
+  const [internalQuery, setInternalQuery] = useState('');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState({ key: null, direction: 'asc' });
   const rows = Array.isArray(data) ? data : [];
+  const query = searchValue ?? internalQuery;
+
+  const updateQuery = (value) => {
+    setPage(1);
+    if (onSearchChange) onSearchChange(value);
+    else setInternalQuery(value);
+  };
 
   const filteredData = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -66,7 +75,7 @@ const DataTable = ({
       {searchable && (
         <div className="relative max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-neutral-400" />
-          <Input className="pl-10" placeholder={searchPlaceholder} value={query} onChange={(event) => setQuery(event.target.value)} />
+          <Input className="pl-10" placeholder={searchPlaceholder} value={query} onChange={(event) => updateQuery(event.target.value)} />
         </div>
       )}
       {error && <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{error}</div>}

@@ -29,6 +29,8 @@ const slaWeight = (ticket) => {
   if (hours <= 24) return 1;
   return 0;
 };
+const matchesSearch = (ticket, query) => JSON.stringify(ticket).toLowerCase().includes(query.trim().toLowerCase());
+const ticketTab = (ticket) => Object.entries(tabs).find(([, tab]) => tab.statuses.includes(ticket.status))?.[0];
 
 const TicketsAsignados = () => {
   const [tickets, setTickets] = useState([]);
@@ -37,6 +39,7 @@ const TicketsAsignados = () => {
   const [activeTab, setActiveTab] = useState('attention');
   const [filters, setFilters] = useState({ priority: '' });
   const [sortMode, setSortMode] = useState('priority');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -59,6 +62,15 @@ const TicketsAsignados = () => {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const normalized = searchTerm.trim();
+    if (!normalized || tickets.some((ticket) => tabs[activeTab].statuses.includes(ticket.status) && matchesSearch(ticket, normalized))) return;
+
+    const match = tickets.find((ticket) => matchesSearch(ticket, normalized));
+    const nextTab = match && ticketTab(match);
+    if (nextTab) setActiveTab(nextTab);
+  }, [activeTab, searchTerm, tickets]);
 
   const rows = useMemo(() => {
     const filtered = tickets.filter((ticket) => (
@@ -136,6 +148,8 @@ const TicketsAsignados = () => {
         loading={isLoading}
         error={error}
         searchPlaceholder="Buscar por codigo o cliente"
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
         emptyTitle="No se encontraron tickets"
         emptyDescription="No hay casos asignados que coincidan con la busqueda o filtros activos."
         columns={[
