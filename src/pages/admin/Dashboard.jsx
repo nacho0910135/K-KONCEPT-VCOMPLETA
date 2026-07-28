@@ -17,7 +17,7 @@ const statusLabel = {
   IN_PROGRESS: 'En progreso',
   WAITING_CUSTOMER: 'Esperando cliente',
   RESOLVED: 'Resueltos',
-  CLOSED: 'Cerrados',
+  CLOSED: 'Resueltos',
   CANCELLED: 'Cancelados',
   REOPENED: 'Reabiertos'
 };

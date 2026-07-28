@@ -7,7 +7,7 @@ export const technicianStatusLabels = {
   IN_PROGRESS: 'En progreso',
   WAITING_CUSTOMER: 'Esperando cliente',
   RESOLVED: 'Resuelto',
-  CLOSED: 'Cerrado',
+  CLOSED: 'Resuelto',
   CANCELLED: 'Cancelado',
   REOPENED: 'Reabierto'
 };
@@ -19,7 +19,7 @@ export const technicianStatusTone = {
   IN_PROGRESS: 'warning',
   WAITING_CUSTOMER: 'neutral',
   RESOLVED: 'success',
-  CLOSED: 'neutral',
+  CLOSED: 'success',
   CANCELLED: 'danger',
   REOPENED: 'warning'
 };

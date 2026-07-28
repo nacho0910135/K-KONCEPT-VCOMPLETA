@@ -45,7 +45,7 @@ const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).
 const getCount = (rows = [], status) => rows.find((item) => item.status === status)?.count || 0;
 const colors = ['#dc2626', '#f59e0b', '#2563eb', '#0f766e', '#64748b', '#8b5cf6'];
 const activeStatuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'];
-const statusLabel = { OPEN: 'Abiertos', PENDING: 'Pendientes', IN_PROGRESS: 'En progreso', WAITING_CUSTOMER: 'Esperando cliente', RESOLVED: 'Resueltos', CLOSED: 'Cerrados', CANCELLED: 'Cancelados', REOPENED: 'Reabiertos' };
+const statusLabel = { OPEN: 'Abiertos', PENDING: 'Pendientes', IN_PROGRESS: 'En progreso', WAITING_CUSTOMER: 'Esperando cliente', RESOLVED: 'Resueltos', CLOSED: 'Resueltos', CANCELLED: 'Cancelados', REOPENED: 'Reabiertos' };
 const replacementLabel = { PENDING_APPROVAL: 'Por validar', APPROVED: 'Aprobados', IN_TRANSIT: 'En transito', DELIVERED: 'Entregados', REJECTED: 'Rechazados' };
 const pct = (value) => `${Number(value || 0).toFixed(0)}%`;
 const money = (value) => new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', maximumFractionDigits: 0 }).format(value || 0);

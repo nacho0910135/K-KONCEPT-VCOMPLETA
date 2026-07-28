@@ -15,6 +15,7 @@ const notificationEvents = [
   'NEW_COMMENT',
   'TICKET_RESOLVED',
   'TICKET_CLOSED',
+  'TICKET_APPEALED',
   'APPOINTMENT_RESCHEDULED',
   'REPLACEMENT_APPROVED',
   'REFUND_REGISTERED',
@@ -120,6 +121,16 @@ const templateCopy = {
     subject: 'Ticket {{ticketCode}} cerrado',
     body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo cerrado. Gracias por confirmar la atencion recibida.'
   },
+  TICKET_APPEALED: {
+    subject: 'Apelacion abierta para {{ticketCode}}',
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Has abierto una apelacion sobre el ticket <strong>{{ticketCode}}</strong>: <strong>{{ticketTitle}}</strong>.</p>
+      <p><strong>Motivo enviado:</strong> {{appealReason}}</p>
+      <p>Pronto recibiras una respuesta. Gracias por la preferencia.</p>
+      <p>Puedes dar seguimiento desde: <a href="{{ticketUrl}}">{{ticketUrl}}</a></p>
+    `
+  },
   APPOINTMENT_RESCHEDULED: {
     subject: 'Cita reprogramada para {{ticketCode}}',
     body: 'Hola {{userName}}, la cita del ticket {{ticketCode}} fue reprogramada para {{appointmentDate}}.'
@@ -173,6 +184,7 @@ const inAppTemplateCopy = {
   NEW_COMMENT: templateCopy.NEW_COMMENT,
   TICKET_RESOLVED: templateCopy.TICKET_RESOLVED,
   TICKET_CLOSED: templateCopy.TICKET_CLOSED,
+  TICKET_APPEALED: templateCopy.TICKET_APPEALED,
   APPOINTMENT_RESCHEDULED: templateCopy.APPOINTMENT_RESCHEDULED,
   REPLACEMENT_APPROVED: templateCopy.REPLACEMENT_APPROVED,
   REFUND_REGISTERED: templateCopy.REFUND_REGISTERED,

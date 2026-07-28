@@ -45,6 +45,7 @@ const variables = [
   '{{previousStatus}}',
   '{{newStatus}}',
   '{{comment}}',
+  '{{appealReason}}',
   '{{commentAuthor}}',
   '{{commentText}}',
   '{{ticketUrl}}',
@@ -79,6 +80,7 @@ const sampleValues = {
   '{{previousStatus}}': 'Pendiente',
   '{{newStatus}}': 'En espera del cliente',
   '{{comment}}': 'Necesitamos una foto del error en pantalla.',
+  '{{appealReason}}': 'El equipo fallo igual despues de la revision y adjunte nuevas evidencias.',
   '{{commentAuthor}}': 'Andres Mora',
   '{{commentText}}': 'Necesitamos una foto del error en pantalla.',
   '{{ticketUrl}}': 'https://app.kollabkoncepts.com/client/tickets/123',
@@ -104,7 +106,7 @@ const stripPreviewHtml = (value = '') => String(value)
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();
-const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'USER_ROLE_CHANGED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'TICKET_APPEALED', 'USER_ROLE_CHANGED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 const channelOptions = ['EMAIL', 'IN_APP', 'SMS', 'PUSH'].map((value) => ({ value, label: channelLabel[value] || value }));
 
 const Plantillas = () => {

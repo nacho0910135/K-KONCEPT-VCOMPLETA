@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FileUp, Mail, MessageSquare, Phone, RefreshCw, Save, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { FileUp, Mail, Phone, RefreshCw, Save, Send, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -68,6 +68,7 @@ const DetalleTicket = () => {
   const [evidenceFiles, setEvidenceFiles] = useState([]);
   const [emails, setEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
+  const manualMessagesRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [error, setError] = useState('');
@@ -107,6 +108,7 @@ const DetalleTicket = () => {
     .filter((status) => status !== ticket?.status)
     .map((status) => ({ value: status, label: transitionLabel(status) })), [ticket?.status, user?.role]);
   const evidences = history.evidence || ticket.evidence || [];
+  const manualMessages = useMemo(() => [...(history.comments || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)), [history.comments]);
   const timeline = history.timeline || (history.statuses || []).map((event) => ({
     id: event.id,
     title: `${technicianStatusLabels[event.previousStatus] || 'Nuevo'} -> ${technicianStatusLabels[event.newStatus] || event.newStatus}`,
@@ -114,6 +116,11 @@ const DetalleTicket = () => {
     actor: event.changedBy,
     createdAt: event.createdAt
   }));
+
+  useEffect(() => {
+    const node = manualMessagesRef.current;
+    if (node) node.scrollTop = node.scrollHeight;
+  }, [manualMessages.length]);
 
   const saveStatus = async (values) => {
     try {
@@ -348,7 +355,7 @@ const DetalleTicket = () => {
 
           <Card className="p-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-neutral-900">Correos enviados al usuario</h2>
+              <h2 className="text-sm font-semibold text-neutral-900">Correos Automaticos de Sistema</h2>
               <Button variant="ghost" className="min-h-8 px-2 py-1" onClick={loadEmails}><RefreshCw className="h-4 w-4" />Actualizar</Button>
             </div>
             <div className="mt-4 grid max-h-44 divide-y divide-neutral-100 overflow-y-auto pr-2">
@@ -364,20 +371,33 @@ const DetalleTicket = () => {
           </Card>
 
           <Card className="p-5">
-            <h2 className="text-sm font-semibold text-neutral-900">Comentarios</h2>
-            <div className="mt-4 grid gap-3">
-              {history.comments?.length === 0 && <p className="text-sm text-neutral-500">Aun no hay comentarios registrados.</p>}
-              {history.comments?.map((comment) => (
-                <div key={comment.id} className="rounded-lg border border-neutral-200 p-3">
-                  <p className="text-sm font-semibold text-neutral-900">{comment.user?.name || 'Usuario'}</p>
-                  <p className="mt-2 text-sm text-neutral-600">{comment.comment || comment.body}</p>
-                  <p className="mt-1 text-xs text-neutral-500">{formatDateTime(comment.createdAt)}</p>
-                </div>
-              ))}
+            <h2 className="text-sm font-semibold text-neutral-900">Correos Manuales enviado por Tecnico</h2>
+            <p className="mt-1 text-sm text-neutral-500">Enviar correo a {ticket.client?.name || ticket.client?.email || 'cliente'}</p>
+            <div className="mt-4 grid gap-4 lg:grid-cols-[12rem_1fr]">
+              <aside className="max-h-64 overflow-y-auto rounded-lg border border-neutral-200 bg-neutral-50 p-2">
+                <p className="px-2 py-1 text-xs font-semibold uppercase text-neutral-500">Viejos a recientes</p>
+                {manualMessages.length === 0 && <p className="px-2 py-1 text-sm text-neutral-500">Sin mensajes</p>}
+                {manualMessages.map((comment) => (
+                  <button key={comment.id} type="button" className="block w-full rounded-md px-2 py-2 text-left text-xs text-neutral-600 hover:bg-white" onClick={() => document.getElementById(`manual-message-${comment.id}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })}>
+                    <span className="block truncate font-semibold text-neutral-800">{comment.user?.name || 'Usuario'}</span>
+                    <span>{formatDateTime(comment.createdAt)}</span>
+                  </button>
+                ))}
+              </aside>
+              <div ref={manualMessagesRef} className="grid max-h-64 gap-3 overflow-y-auto pr-2">
+                {manualMessages.length === 0 && <p className="text-sm text-neutral-500">Aun no hay correos manuales registrados.</p>}
+                {manualMessages.map((comment) => (
+                  <div id={`manual-message-${comment.id}`} key={comment.id} className="rounded-lg border border-neutral-200 p-3">
+                    <p className="text-sm font-semibold text-neutral-900">{comment.user?.name || 'Usuario'}</p>
+                    <p className="mt-2 text-sm text-neutral-600">{comment.comment || comment.body}</p>
+                    <p className="mt-1 text-xs text-neutral-500">{formatDateTime(comment.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
             </div>
             <form className="mt-4 grid gap-3" onSubmit={commentForm.handleSubmit(publishComment)}>
-              <FormTextarea register={commentForm.register} name="body" label="Nuevo comentario" error={commentForm.formState.errors.body} />
-              <Button type="submit" isLoading={commentForm.formState.isSubmitting}><MessageSquare className="h-4 w-4" />Publicar</Button>
+              <FormTextarea register={commentForm.register} name="body" label="Mensaje" error={commentForm.formState.errors.body} />
+              <Button type="submit" variant="danger" isLoading={commentForm.formState.isSubmitting}><Send className="h-4 w-4" />Enviar</Button>
             </form>
           </Card>
 

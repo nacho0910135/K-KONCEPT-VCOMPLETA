@@ -13,7 +13,7 @@ export const statusTone = {
   IN_PROGRESS: 'purple',
   WAITING_CUSTOMER: 'warning',
   RESOLVED: 'success',
-  CLOSED: 'neutral',
+  CLOSED: 'success',
   CANCELLED: 'danger',
   REOPENED: 'primary'
 };
@@ -43,7 +43,7 @@ export const statusLabel = {
   IN_PROGRESS: 'En progreso',
   WAITING_CUSTOMER: 'En espera del cliente',
   RESOLVED: 'Resuelto',
-  CLOSED: 'Cerrado',
+  CLOSED: 'Resuelto',
   CANCELLED: 'Cancelado',
   REOPENED: 'Reabierto'
 };
@@ -52,7 +52,7 @@ export const eventLabel = {
   TICKET_CREATED: 'Ticket creado',
   TICKET_ASSIGNED: 'Ticket asignado',
   TICKET_RESOLVED: 'Ticket resuelto',
-  TICKET_CLOSED: 'Ticket cerrado',
+  TICKET_CLOSED: 'Ticket resuelto',
   STATUS_CHANGED: 'Cambio de estado',
   NEW_COMMENT: 'Nuevo comentario',
   APPOINTMENT_RESCHEDULED: 'Cita reprogramada',

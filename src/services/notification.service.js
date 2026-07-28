@@ -125,6 +125,16 @@ const defaultCopy = {
     subject: 'Ticket {{ticketCode}} cerrado',
     body: 'Hola {{userName}}, el ticket {{ticketCode}} quedo cerrado. Gracias por confirmar la atencion recibida.'
   },
+  TICKET_APPEALED: {
+    subject: 'Apelacion abierta para {{ticketCode}}',
+    body: `
+      <p>Hola {{userName}},</p>
+      <p>Has abierto una apelacion sobre el ticket <strong>{{ticketCode}}</strong>: <strong>{{ticketTitle}}</strong>.</p>
+      <p><strong>Motivo enviado:</strong> {{appealReason}}</p>
+      <p>Pronto recibiras una respuesta. Gracias por la preferencia.</p>
+      <p>Puedes dar seguimiento desde: <a href="{{ticketUrl}}">{{ticketUrl}}</a></p>
+    `
+  },
   USER_ROLE_CHANGED: {
     subject: 'Tu rol en Kollab Koncepts ahora es {{newRole}}',
     body: `
@@ -191,6 +201,7 @@ const defaultInAppCopy = {
   NEW_COMMENT: defaultCopy.NEW_COMMENT,
   TICKET_RESOLVED: defaultCopy.TICKET_RESOLVED,
   TICKET_CLOSED: defaultCopy.TICKET_CLOSED,
+  TICKET_APPEALED: defaultCopy.TICKET_APPEALED,
   USER_ROLE_CHANGED: defaultCopy.USER_ROLE_CHANGED,
   APPOINTMENT_RESCHEDULED: defaultCopy.APPOINTMENT_RESCHEDULED,
   REPLACEMENT_APPROVED: defaultCopy.REPLACEMENT_APPROVED,

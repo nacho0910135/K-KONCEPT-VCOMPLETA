@@ -24,17 +24,16 @@ const statuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVE
 const priorities = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 const historicalStatuses = ['RESOLVED', 'CLOSED', 'CANCELLED'];
 const activeStatuses = ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'];
+const activeAppeal = (ticket) => Boolean(ticket.appealedAt) && activeStatuses.includes(ticket.status);
 const optionize = (items, labels = {}) => items.map((item) => ({ value: item, label: labels[item] || item }));
 const isSlaRisk = (ticket) => {
+  if (!activeStatuses.includes(ticket.status)) return false;
   if (ticket.slaBreached) return true;
-  if (!ticket.slaDeadline || historicalStatuses.includes(ticket.status)) return false;
+  if (!ticket.slaDeadline) return false;
   return new Date(ticket.slaDeadline) <= new Date(Date.now() + 24 * 60 * 60 * 1000);
 };
 const isAdminAttention = (ticket) => (
-  !ticket.assignedTechnicianId
-  || ticket.status === 'REOPENED'
-  || (['HIGH', 'CRITICAL'].includes(ticket.priority) && activeStatuses.includes(ticket.status))
-  || isSlaRisk(ticket)
+  !historicalStatuses.includes(ticket.status)
 );
 const matchesSearch = (ticket, query) => JSON.stringify(ticket).toLowerCase().includes(query.trim().toLowerCase());
 const matchesFilters = (ticket, filters) => (
@@ -42,6 +41,14 @@ const matchesFilters = (ticket, filters) => (
   && (!filters.priority || ticket.priority === filters.priority)
   && (!filters.technicianId || ticket.assignedTechnicianId === filters.technicianId)
 );
+const caseTypeMatches = (ticket, type) => {
+  if (!type) return true;
+  if (type === 'refund') return (ticket.refunds || []).length > 0;
+  if (type === 'replacement') return (ticket.replacements || []).length > 0;
+  if (type === 'appeal') return Boolean(ticket.appealedAt);
+  if (type === 'cancelled') return ticket.status === 'CANCELLED';
+  return true;
+};
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
 const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
 const Tickets = () => {
@@ -56,6 +63,7 @@ const Tickets = () => {
   const [isSavingAssignmentMode, setIsSavingAssignmentMode] = useState(false);
   const [quickFilter, setQuickFilter] = useState('attention');
   const [filters, setFilters] = useState({ status: '', priority: '', technicianId: '' });
+  const [caseType, setCaseType] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -93,12 +101,11 @@ const Tickets = () => {
   const quickTabs = useMemo(() => {
     const by = (predicate) => tickets.filter(predicate).length;
     return [
-      { key: 'appeals', label: 'Apelaciones', count: by((ticket) => Boolean(ticket.appealedAt)), predicate: (ticket) => Boolean(ticket.appealedAt) },
       { key: 'attention', label: 'Atencion Admin', count: by(isAdminAttention), predicate: isAdminAttention },
+      { key: 'appeals', label: 'Apelaciones', count: by(activeAppeal), predicate: activeAppeal },
       { key: 'unassigned', label: 'Sin asignar', count: by((ticket) => !ticket.assignedTechnicianId && activeStatuses.includes(ticket.status)), predicate: (ticket) => !ticket.assignedTechnicianId && activeStatuses.includes(ticket.status) },
       { key: 'sla', label: 'SLA en riesgo / vencidos', count: by(isSlaRisk), predicate: isSlaRisk },
-      { key: 'active', label: 'Todos los activos', count: by((ticket) => activeStatuses.includes(ticket.status)), predicate: (ticket) => activeStatuses.includes(ticket.status) },
-      { key: 'history', label: 'Historico / cerrados', count: by((ticket) => historicalStatuses.includes(ticket.status)), predicate: (ticket) => historicalStatuses.includes(ticket.status) }
+      { key: 'history', label: 'Historico / resueltos', count: by((ticket) => historicalStatuses.includes(ticket.status)), predicate: (ticket) => historicalStatuses.includes(ticket.status) }
     ];
   }, [tickets]);
 
@@ -107,8 +114,9 @@ const Tickets = () => {
     return tickets.filter((ticket) => (
       tab.predicate(ticket)
       && matchesFilters(ticket, filters)
+      && (quickFilter !== 'history' || caseTypeMatches(ticket, caseType))
     ));
-  }, [tickets, filters, quickFilter, quickTabs]);
+  }, [tickets, filters, quickFilter, quickTabs, caseType]);
 
   useEffect(() => {
     const normalized = searchTerm.trim();
@@ -194,7 +202,7 @@ const Tickets = () => {
             )}
           </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className={`grid gap-3 ${quickFilter === 'history' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
           <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })}>
             <option value="">Estado</option>
             {statuses.map((item) => <option key={item} value={item}>{statusLabel[item] || item}</option>)}
@@ -207,6 +215,15 @@ const Tickets = () => {
             <option value="">Tecnico</option>
             {technicians.map((tech) => <option key={tech.id} value={tech.id}>{tech.name}</option>)}
           </select>
+          {quickFilter === 'history' && (
+            <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={caseType} onChange={(event) => setCaseType(event.target.value)}>
+              <option value="">Todos los resueltos</option>
+              <option value="refund">Reembolso</option>
+              <option value="replacement">Reemplazo</option>
+              <option value="appeal">Apelacion</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+          )}
         </div>
       </Card>
 

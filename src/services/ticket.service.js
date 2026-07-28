@@ -634,6 +634,20 @@ const ticketService = {
         comment: reason
       }
     });
+    await notificationService.notifyUsers({
+      event: 'TICKET_APPEALED',
+      title: 'Apelacion abierta',
+      message: `Abriste una apelacion sobre el ticket ${ticket.code}.`,
+      recipients: [ticket.client],
+      entityType: 'Ticket',
+      entityId: ticket.id,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title,
+        appealReason: reason,
+        ticketUrl: `/client/tickets/${ticket.id}`
+      }
+    });
 
     return updated;
   },

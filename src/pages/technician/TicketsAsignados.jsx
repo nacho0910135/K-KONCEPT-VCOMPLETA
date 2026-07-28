@@ -10,13 +10,23 @@ import { getAssignedTickets } from '../../services/tickets.service.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const priorityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+const completedStatuses = ['RESOLVED', 'CLOSED', 'CANCELLED'];
+const activeAppeal = (ticket) => Boolean(ticket.appealedAt) && !completedStatuses.includes(ticket.status);
 const tabs = {
-  attention: { label: 'Pendientes', statuses: ['OPEN', 'IN_PROGRESS', 'REOPENED'] },
-  appeals: { label: 'Apelaciones', predicate: (ticket) => Boolean(ticket.appealedAt) },
+  attention: { label: 'Pendientes', statuses: ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'] },
+  appeals: { label: 'Apelaciones', predicate: activeAppeal },
   waiting: { label: 'En espera', statuses: ['WAITING_CUSTOMER', 'PENDING'] },
-  completed: { label: 'Completados', statuses: ['RESOLVED', 'CLOSED', 'CANCELLED'] }
+  completed: { label: 'Completados', statuses: completedStatuses }
 };
 const tabIncludes = (tab, ticket) => (tab.predicate ? tab.predicate(ticket) : tab.statuses.includes(ticket.status));
+const completedTypeMatches = (ticket, type) => {
+  if (!type) return true;
+  if (type === 'refund') return (ticket.refunds || []).length > 0;
+  if (type === 'replacement') return (ticket.replacements || []).length > 0;
+  if (type === 'appeal') return Boolean(ticket.appealedAt);
+  if (type === 'cancelled') return ticket.status === 'CANCELLED';
+  return true;
+};
 const isDueToday = (ticket) => {
   if (!ticket.slaDeadline) return false;
   const deadline = new Date(ticket.slaDeadline);
@@ -40,6 +50,7 @@ const TicketsAsignados = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('attention');
   const [filters, setFilters] = useState({ priority: '' });
+  const [completedType, setCompletedType] = useState('');
   const [sortMode, setSortMode] = useState('priority');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -78,6 +89,7 @@ const TicketsAsignados = () => {
     const filtered = tickets.filter((ticket) => (
       (!filters.priority || ticket.priority === filters.priority)
       && tabIncludes(tabs[activeTab], ticket)
+      && (activeTab !== 'completed' || completedTypeMatches(ticket, completedType))
     ));
 
     return [...filtered].sort((a, b) => {
@@ -87,7 +99,7 @@ const TicketsAsignados = () => {
         || Number(b.status === 'REOPENED') - Number(a.status === 'REOPENED')
         || new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
     });
-  }, [tickets, filters, sortMode, activeTab]);
+  }, [tickets, filters, sortMode, activeTab, completedType]);
 
   const counts = useMemo(() => Object.fromEntries(Object.entries(tabs).map(([key, tab]) => [
     key,
@@ -134,10 +146,17 @@ const TicketsAsignados = () => {
         ))}
       </Card>
 
-      <Card className="grid gap-3 p-4 md:grid-cols-2">
+      <Card className="grid gap-3 p-4 md:grid-cols-3">
         <select className={`rounded-md border px-3 py-2 text-sm ${filters.priority === 'CRITICAL' || filters.priority === 'HIGH' ? 'border-danger bg-red-50 text-danger' : 'border-neutral-200'}`} value={filters.priority} onChange={(event) => setFilters({ ...filters, priority: event.target.value })}>
           <option value="">Todas las prioridades</option>
           {Object.entries(priorityLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+        <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={completedType} onChange={(event) => setCompletedType(event.target.value)} disabled={activeTab !== 'completed'}>
+          <option value="">Todos los completados</option>
+          <option value="refund">Reembolso</option>
+          <option value="replacement">Reemplazo</option>
+          <option value="appeal">Apelacion</option>
+          <option value="cancelled">Cancelado</option>
         </select>
         <select className="rounded-md border border-neutral-200 px-3 py-2 text-sm" value={sortMode} onChange={(event) => setSortMode(event.target.value)}>
           <option value="priority">Orden inteligente</option>
