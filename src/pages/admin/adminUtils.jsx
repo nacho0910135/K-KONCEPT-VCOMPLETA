@@ -70,6 +70,7 @@ export const eventLabel = {
   USER_ROLE_CHANGED: 'Rol de usuario actualizado',
   USER_ACTIVATED: 'Usuario activado',
   TICKET_STATUS_CHANGED: 'Estado de ticket actualizado',
+  TICKET_APPEALED: 'Ticket apelado',
   TICKET_AUTO_ASSIGNED: 'Ticket autoasignado',
   TICKET_PRIORITY_CHANGED: 'Prioridad actualizada',
   TICKET_UPDATED: 'Ticket actualizado',

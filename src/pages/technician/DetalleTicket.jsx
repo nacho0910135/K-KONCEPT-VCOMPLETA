@@ -196,10 +196,18 @@ const DetalleTicket = () => {
         <div className="flex flex-wrap gap-2">
           <PriorityBadge priority={ticket.priority} />
           <TechnicianStatusBadge status={ticket.status} />
+          {ticket.appealedAt && <Badge tone="warning">Apelacion</Badge>}
         </div>
       </div>
 
       <div className="grid gap-6">
+        {ticket.appealedAt && (
+          <Card className="border-amber-200 bg-amber-50 p-5">
+            <h2 className="text-sm font-semibold text-amber-900">Apelacion del cliente</h2>
+            <p className="mt-2 text-sm text-amber-800">{ticket.appealReason}</p>
+          </Card>
+        )}
+
         <div className="grid gap-6 xl:grid-cols-3">
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Informacion del caso</h2>

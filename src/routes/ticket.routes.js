@@ -14,6 +14,7 @@ const {
   changeStatusSchema,
   confirmSolutionSchema,
   rejectSolutionSchema,
+  appealTicketSchema,
   assignTicketSchema,
   updatePrioritySchema,
   updateDiagnosisSchema,
@@ -45,6 +46,7 @@ router.patch('/:id/priority', authorizeRoles('ADMIN'), validate(ticketIdParamSch
 router.delete('/:id', authorizeRoles('ADMIN'), validate(ticketIdParamSchema, 'params'), asyncHandler(ticketController.remove));
 router.post('/:id/confirm-solution', authorizeRoles('CLIENT'), validate(ticketIdParamSchema, 'params'), validate(confirmSolutionSchema), asyncHandler(ticketController.confirmSolution));
 router.post('/:id/reject-solution', authorizeRoles('CLIENT'), validate(ticketIdParamSchema, 'params'), validate(rejectSolutionSchema), asyncHandler(ticketController.rejectSolution));
+router.post('/:id/appeal', authorizeRoles('CLIENT'), validate(ticketIdParamSchema, 'params'), validate(appealTicketSchema), asyncHandler(ticketController.appeal));
 router.post('/:id/comments', authorizeRoles('CLIENT', 'TECHNICIAN', 'ADMIN'), validate(ticketIdParamSchema, 'params'), validate(createTicketCommentSchema), asyncHandler(ticketCommentController.create));
 
 module.exports = router;

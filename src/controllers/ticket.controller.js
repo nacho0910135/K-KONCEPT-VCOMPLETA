@@ -61,6 +61,11 @@ const rejectSolution = async (req, res) => {
   return successResponse(res, { data: { ticket }, message: 'Solucion rechazada correctamente' });
 };
 
+const appeal = async (req, res) => {
+  const ticket = await ticketService.appeal(req.params.id, req.body, req.user);
+  return successResponse(res, { data: { ticket }, message: 'Apelacion registrada correctamente' });
+};
+
 const updateDiagnosis = async (req, res) => {
   const ticket = await ticketService.updateDiagnosis(req.params.id, req.body, req.user);
   return successResponse(res, { data: { ticket }, message: 'Diagnostico actualizado correctamente' });
@@ -103,6 +108,7 @@ module.exports = {
   changeStatus,
   confirmSolution,
   rejectSolution,
+  appeal,
   updateDiagnosis,
   assignTechnician,
   updatePriority,

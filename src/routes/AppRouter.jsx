@@ -18,6 +18,7 @@ const NotFound = lazy(() => import('../pages/shared/NotFound.jsx'));
 const ChatEmpresarial = lazy(() => import('../pages/shared/ChatEmpresarial.jsx'));
 const ClientDashboard = lazy(() => import('../pages/client/Dashboard.jsx'));
 const ClientMisTickets = lazy(() => import('../pages/client/MisTickets.jsx'));
+const ClientApelaciones = lazy(() => import('../pages/client/Apelaciones.jsx'));
 const NuevoTicket = lazy(() => import('../pages/client/NuevoTicket.jsx'));
 const ClientDetalleTicket = lazy(() => import('../pages/client/DetalleTicket.jsx'));
 const MisGarantias = lazy(() => import('../pages/client/MisGarantias.jsx'));
@@ -65,6 +66,8 @@ const AppRouter = () => (
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<ClientDashboard />} />
             <Route path="tickets" element={<ClientMisTickets />} />
+            <Route path="appeals" element={<ClientApelaciones />} />
+            <Route path="apelaciones" element={<ClientApelaciones />} />
             <Route path="tickets/new" element={<NuevoTicket />} />
             <Route path="nuevo-ticket" element={<NuevoTicket />} />
             <Route path="tickets/:id" element={<ClientDetalleTicket />} />

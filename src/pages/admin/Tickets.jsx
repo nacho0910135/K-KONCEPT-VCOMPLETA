@@ -232,7 +232,7 @@ const Tickets = () => {
         onRowClick={setSelectedTicket}
         columns={[
           { key: 'code', header: 'Codigo', sortable: true },
-          { key: 'title', header: 'Titulo', sortable: true },
+          { key: 'title', header: 'Titulo', render: (row) => <span className="inline-flex items-center gap-2">{row.title} {row.appealedAt && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Apelacion</span>}</span>, sortable: true },
           { key: 'client', header: 'Cliente', render: (row) => row.client?.name || row.client?.email || 'Cliente', sortable: true },
           { key: 'status', header: 'Estado', render: (row) => <StateBadge value={row.status} /> },
           { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge value={row.priority} /> },
@@ -257,6 +257,7 @@ const Tickets = () => {
           <div className="grid gap-4">
             <p className="text-sm"><span className="font-semibold">Cliente:</span> {selectedTicket.client?.name || selectedTicket.client?.email}</p>
             <p className="text-sm"><span className="font-semibold">Tecnico:</span> {selectedTicket.assignedTechnician?.name || 'Sin asignar'}</p>
+            {selectedTicket.appealedAt && <p className="text-sm"><span className="font-semibold">Apelacion:</span> {selectedTicket.appealReason}</p>}
             <p className="text-sm"><span className="font-semibold">Categoria:</span> {selectedTicket.category?.name || 'Sin categoria'}</p>
             <p className="text-sm"><span className="font-semibold">Descripcion:</span> {selectedTicket.description}</p>
             <div>

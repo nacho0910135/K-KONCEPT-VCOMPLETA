@@ -23,6 +23,7 @@ export const addComment = async (ticketId, payload) => unwrap(await api.post(`/t
 })).data;
 export const confirmTicketSolution = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/confirm-solution`, payload)).data;
 export const rejectTicketSolution = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/reject-solution`, payload)).data;
+export const appealTicket = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/appeal`, payload)).data;
 export const requestTicketReschedule = async (ticketId, payload) => unwrap(await api.post(`/tickets/${ticketId}/reschedule-requests`, payload)).data;
 export const updateTicketStatus = async (ticketId, payload) => unwrap(await api.patch(`/tickets/${ticketId}/status`, payload)).data;
 export const saveTicketDiagnosis = async (ticketId, payload) => unwrap(await api.patch(`/tickets/${ticketId}/diagnosis`, payload)).data;

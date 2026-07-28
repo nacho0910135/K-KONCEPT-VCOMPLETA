@@ -93,6 +93,10 @@ const rejectSolutionSchema = z.object({
   reason: z.string().trim().min(1)
 });
 
+const appealTicketSchema = z.object({
+  reason: z.string().trim().min(15, 'Explica mejor el motivo de la apelacion')
+});
+
 const assignTicketSchema = z.object({
   technicianId: z.string().uuid()
 });
@@ -124,6 +128,7 @@ module.exports = {
   changeStatusSchema,
   confirmSolutionSchema,
   rejectSolutionSchema,
+  appealTicketSchema,
   assignTicketSchema,
   updatePrioritySchema,
   updateDiagnosisSchema,

@@ -155,7 +155,7 @@ const TicketsAsignados = () => {
         columns={[
           { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge priority={row.priority} /> },
           { key: 'code', header: 'Codigo', sortable: true },
-          { key: 'title', header: 'Titulo', render: (row) => <span className="inline-flex items-center gap-2">{['OPEN', 'REOPENED'].includes(row.status) && <span className="h-2 w-2 rounded-full bg-danger" />} {row.title}</span>, sortable: true },
+          { key: 'title', header: 'Titulo', render: (row) => <span className="inline-flex items-center gap-2">{['OPEN', 'REOPENED'].includes(row.status) && <span className="h-2 w-2 rounded-full bg-danger" />} {row.title} {row.appealedAt && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Apelacion</span>}</span>, sortable: true },
           { key: 'client', header: 'Cliente', render: (row) => row.client?.company || row.client?.name || 'Cliente', sortable: true },
           { key: 'status', header: 'Estado', render: (row) => <TechnicianStatusBadge status={row.status} /> },
           { key: 'createdAt', header: 'Fecha', render: (row) => formatDate(row.createdAt), sortable: true },

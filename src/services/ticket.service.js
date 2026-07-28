@@ -588,6 +588,56 @@ const ticketService = {
     return updated;
   },
 
+  async appeal(id, payload, user) {
+    const ticket = await ensureTicketExists(id);
+    if (ticket.clientId !== user.id) throw new ForbiddenError('Solo el cliente solicitante puede apelar este ticket');
+    if (!['RESOLVED', 'CLOSED', 'CANCELLED'].includes(ticket.status)) throw new BadRequestError('Solo se pueden apelar tickets finalizados');
+    if (ticket.appealedAt) throw new BadRequestError('Este producto ya tuvo una apelacion');
+    if ((ticket.refunds || []).length || (ticket.replacements || []).length || (ticket.status !== 'CANCELLED' && ticket.closeType !== 'WITHOUT_SOLUTION')) {
+      throw new BadRequestError('Solo aplican apelaciones para casos finalizados sin reembolso ni reemplazo');
+    }
+
+    const reason = sanitizePlainText(payload.reason);
+    const updated = await ticketRepository.updateStatusWithHistory(id, {
+      status: 'REOPENED',
+      appealReason: reason,
+      appealedAt: new Date()
+    }, {
+      previousStatus: ticket.status,
+      newStatus: 'REOPENED',
+      changedById: user.id,
+      comment: `Apelacion del cliente: ${reason}`
+    });
+
+    await auditService.record({
+      userId: user.id,
+      action: 'TICKET_APPEALED',
+      entity: 'Ticket',
+      entityId: id,
+      previousValue: { status: ticket.status },
+      newValue: { status: 'REOPENED', appealReason: reason }
+    });
+
+    const admins = await userRepository.findActiveAdmins();
+    await notificationService.notifyUsers({
+      event: 'STATUS_CHANGED',
+      title: 'Nueva apelacion',
+      message: `El cliente apelo el ticket ${ticket.code}.`,
+      recipients: [ticket.assignedTechnician, ...admins],
+      entityType: 'Ticket',
+      entityId: ticket.id,
+      payload: {
+        ticketCode: ticket.code,
+        ticketTitle: ticket.title,
+        previousStatus: statusLabel[ticket.status] || ticket.status,
+        newStatus: 'Apelacion',
+        comment: reason
+      }
+    });
+
+    return updated;
+  },
+
   async updateDiagnosis(id, payload, user) {
     const ticket = await ensureTicketExists(id);
     assertTechnicianAssigned(ticket, user);

@@ -254,6 +254,8 @@ model Ticket {
   solution             String?
   closeType            CloseType?
   closeJustification   String?
+  appealReason         String?
+  appealedAt           DateTime?
   /// Validar en service: valor entre 1 y 5.
   rating               Int?
   ratingComment        String?

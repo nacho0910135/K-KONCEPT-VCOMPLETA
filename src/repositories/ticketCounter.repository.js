@@ -84,6 +84,8 @@ const ticketInclude = {
   product: true,
   warranty: true,
   sla: true,
+  replacements: true,
+  refunds: true,
   evidence: {
     orderBy: { createdAt: 'desc' },
     include: {
