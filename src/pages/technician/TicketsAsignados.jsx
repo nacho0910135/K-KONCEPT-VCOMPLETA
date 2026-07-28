@@ -27,6 +27,16 @@ const completedTypeMatches = (ticket, type) => {
   if (type === 'cancelled') return ticket.status === 'CANCELLED';
   return true;
 };
+const refundTypeLabel = { REFUND_TOTAL: 'Reembolso total', REFUND_PARTIAL: 'Reembolso parcial' };
+const closeReason = (ticket) => {
+  if (ticket.status === 'CANCELLED') return 'Cancelado';
+  const refund = (ticket.refunds || [])[0];
+  if (refund) return refundTypeLabel[refund.type] || 'Reembolso';
+  if ((ticket.replacements || []).length) return 'Reemplazo';
+  if (ticket.appealedAt) return 'Apelacion';
+  if (ticket.closeType === 'WITHOUT_SOLUTION') return 'Sin solucion';
+  return 'Resuelto';
+};
 const isDueToday = (ticket) => {
   if (!ticket.slaDeadline) return false;
   const deadline = new Date(ticket.slaDeadline);
@@ -179,6 +189,7 @@ const TicketsAsignados = () => {
           { key: 'title', header: 'Titulo', render: (row) => <span className="inline-flex items-center gap-2">{['OPEN', 'REOPENED'].includes(row.status) && <span className="h-2 w-2 rounded-full bg-danger" />} {row.title} {row.appealedAt && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Apelacion</span>}</span>, sortable: true },
           { key: 'client', header: 'Cliente', render: (row) => row.client?.company || row.client?.name || 'Cliente', sortable: true },
           { key: 'status', header: 'Estado', render: (row) => <TechnicianStatusBadge status={row.status} /> },
+          ...(activeTab === 'completed' ? [{ key: 'reason', header: 'Motivo', render: closeReason }] : []),
           { key: 'createdAt', header: 'Fecha', render: (row) => formatDate(row.createdAt), sortable: true },
           { key: 'actions', header: 'Acciones', render: (row) => <Link to={`/technician/tickets/${row.id}`}><Button variant="ghost"><Eye className="h-4 w-4" />Abrir</Button></Link> }
         ]}

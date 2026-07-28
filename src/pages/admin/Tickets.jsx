@@ -49,6 +49,16 @@ const caseTypeMatches = (ticket, type) => {
   if (type === 'cancelled') return ticket.status === 'CANCELLED';
   return true;
 };
+const refundTypeLabel = { REFUND_TOTAL: 'Reembolso total', REFUND_PARTIAL: 'Reembolso parcial' };
+const closeReason = (ticket) => {
+  if (ticket.status === 'CANCELLED') return 'Cancelado';
+  const refund = (ticket.refunds || [])[0];
+  if (refund) return refundTypeLabel[refund.type] || 'Reembolso';
+  if ((ticket.replacements || []).length) return 'Reemplazo';
+  if (ticket.appealedAt) return 'Apelacion';
+  if (ticket.closeType === 'WITHOUT_SOLUTION') return 'Sin solucion';
+  return 'Resuelto';
+};
 const assignSchema = z.object({ technicianId: z.string().min(1, 'Selecciona un tecnico activo') });
 const prioritySchema = z.object({ priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']) });
 const Tickets = () => {
@@ -253,6 +263,7 @@ const Tickets = () => {
           { key: 'title', header: 'Titulo', render: (row) => <span className="inline-flex items-center gap-2">{row.title} {row.appealedAt && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Apelacion</span>}</span>, sortable: true },
           { key: 'client', header: 'Cliente', render: (row) => row.client?.name || row.client?.email || 'Cliente', sortable: true },
           { key: 'status', header: 'Estado', render: (row) => <StateBadge value={row.status} /> },
+          ...(quickFilter === 'history' ? [{ key: 'reason', header: 'Motivo', render: closeReason }] : []),
           { key: 'priority', header: 'Prioridad', render: (row) => <PriorityBadge value={row.priority} /> },
           { key: 'technician', header: 'Tecnico', render: (row) => row.assignedTechnician?.name || 'Sin asignar', sortable: true },
           { key: 'createdAt', header: 'Fecha', render: (row) => formatDate(row.createdAt) },
