@@ -244,14 +244,6 @@ const decodeTemplateHtml = (value = '') => String(value)
   .replace(/&#39;/g, "'")
   .replace(/&amp;/g, '&');
 
-const isLegacyTemplate = (value = '') => [
-  'fue asignado a {{technicianName}}',
-  'cambio de {{previousStatus}} a {{newStatus}}',
-  'fue marcado como resuelto',
-  'fue abierto correctamente. Prioridad',
-  'el reemplazo solicitado para el ticket {{ticketCode}} fue aprobado'
-].some((snippet) => String(value).includes(snippet));
-
 const getEnabledChannels = async () => {
   const configured = await notificationConfigRepository.listChannels();
   const enabled = new Set(configured.filter((channel) => channel.enabled).map((channel) => channel.channel));
@@ -263,12 +255,11 @@ const renderForChannel = async ({ event, channel, payload }) => {
   const template = await notificationConfigRepository.findActiveTemplate({ event, channel });
   const fallbackCopies = channel === 'IN_APP' ? defaultInAppCopy : defaultCopy;
   const fallback = fallbackCopies[event] || { subject: event, body: payload.message || event };
-  const activeTemplate = isLegacyTemplate(template?.bodyTemplate) ? null : template;
   const escape = channel === 'EMAIL';
-  const subjectTemplate = activeTemplate?.subject || fallback.subject;
+  const subjectTemplate = template?.subject || fallback.subject;
   const bodyTemplate = channel === 'EMAIL'
-    ? decodeTemplateHtml(activeTemplate?.bodyTemplate || fallback.body)
-    : activeTemplate?.bodyTemplate || fallback.body;
+    ? decodeTemplateHtml(template?.bodyTemplate || fallback.body)
+    : template?.bodyTemplate || fallback.body;
 
   const rendered = {
     subject: renderTemplate(subjectTemplate, payload, { escape }),

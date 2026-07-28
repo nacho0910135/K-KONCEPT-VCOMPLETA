@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FileUp, Mail, Phone, RefreshCw, Save, Send, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -68,6 +68,7 @@ const DetalleTicket = () => {
   const [evidenceFiles, setEvidenceFiles] = useState([]);
   const [emails, setEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
+  const manualNavRef = useRef(null);
   const manualMessagesRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
@@ -117,9 +118,12 @@ const DetalleTicket = () => {
     createdAt: event.createdAt
   }));
 
-  useEffect(() => {
-    const node = manualMessagesRef.current;
-    if (node) node.scrollTop = node.scrollHeight;
+  useLayoutEffect(() => {
+    requestAnimationFrame(() => {
+      [manualNavRef.current, manualMessagesRef.current].forEach((node) => {
+        if (node) node.scrollTop = node.scrollHeight;
+      });
+    });
   }, [manualMessages.length]);
 
   const saveStatus = async (values) => {
@@ -374,7 +378,7 @@ const DetalleTicket = () => {
             <h2 className="text-sm font-semibold text-neutral-900">Correos Manuales enviado por Tecnico</h2>
             <p className="mt-1 text-sm text-neutral-500">Enviar correo a {ticket.client?.name || ticket.client?.email || 'cliente'}</p>
             <div className="mt-4 grid gap-4 lg:grid-cols-[12rem_1fr]">
-              <aside className="max-h-64 overflow-y-auto rounded-lg border border-neutral-200 bg-neutral-50 p-2">
+              <aside ref={manualNavRef} className="max-h-64 overflow-y-auto rounded-lg border border-neutral-200 bg-neutral-50 p-2">
                 <p className="px-2 py-1 text-xs font-semibold uppercase text-neutral-500">Viejos a recientes</p>
                 {manualMessages.length === 0 && <p className="px-2 py-1 text-sm text-neutral-500">Sin mensajes</p>}
                 {manualMessages.map((comment) => (

@@ -9,9 +9,7 @@ const { deleteFromCloudinary } = require('./cloudinary.service');
 const { notificationService } = require('./notification.service');
 const { slaService } = require('./sla.service');
 const { ticketAssignmentService } = require('./ticketAssignment.service');
-const { transactionalEmailService } = require('./transactionalEmail.service');
 const { warrantyService } = require('./warranty.service');
-const { generateRefundCertificate } = require('../utils/pdfGenerator.util');
 const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
 const { canTransition } = require('../utils/ticketTransitions.util');
@@ -419,10 +417,6 @@ const ticketService = {
       newValue: { status: payload.status }
     });
 
-    if (payload.returnItemRequested && payload.status === 'WAITING_CUSTOMER') {
-      await transactionalEmailService.sendReturnItemRequestEmail(ticket.client, ticket, user).catch(() => null);
-    }
-
     if (payload.status === 'RESOLVED' && (payload.closeType === 'REPLACEMENT' || payload.resolutionAction === 'REPLACEMENT')) {
       const activeReplacement = await replacementRepository.findActiveByTicketId(id);
       if (!activeReplacement) {
@@ -439,14 +433,12 @@ const ticketService = {
       }
     }
 
-    let refundCertificateBuffer = null;
     if (payload.status === 'RESOLVED' && ['REFUND_TOTAL', 'REFUND_PARTIAL'].includes(payload.resolutionAction)) {
       const refund = await refundService.createForTicket(id, {
         type: payload.resolutionAction,
         amount: payload.refundAmount,
         reason: payload.solution || payload.comment || 'Reembolso indicado en resolucion'
       }, user);
-      refundCertificateBuffer = await generateRefundCertificate(refund);
       await notificationService.dispatchNotification({
         userId: ticket.clientId,
         event: 'REFUND_REGISTERED',
@@ -460,22 +452,18 @@ const ticketService = {
           resolutionAction: resolutionActionLabel[payload.resolutionAction],
           refundAmount: money(refund.amount),
           solution: payload.solution || payload.comment || 'Reembolso indicado en resolucion'
-        },
-        skipChannels: ['EMAIL']
+        }
       });
     }
 
     const notificationPayload = buildStatusNotificationPayload({ ticket, payload, user, comment });
-
-    await transactionalEmailService.sendTicketStatusEmail(ticket.client, ticket, { ...notificationPayload, refundCertificateBuffer }).catch(() => null);
 
     await notificationService.dispatchNotification({
       userId: ticket.clientId,
       event: payload.status === 'RESOLVED' ? 'TICKET_RESOLVED' : 'STATUS_CHANGED',
       entityType: 'Ticket',
       entityId: id,
-      payload: notificationPayload,
-      skipChannels: ['EMAIL']
+      payload: notificationPayload
     });
 
     if (user.role === 'TECHNICIAN') {
