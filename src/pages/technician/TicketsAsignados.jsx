@@ -11,8 +11,8 @@ import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const priorityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
 const tabs = {
-  appeals: { label: 'Apelaciones', predicate: (ticket) => Boolean(ticket.appealedAt) },
   attention: { label: 'Pendientes', statuses: ['OPEN', 'IN_PROGRESS', 'REOPENED'] },
+  appeals: { label: 'Apelaciones', predicate: (ticket) => Boolean(ticket.appealedAt) },
   waiting: { label: 'En espera', statuses: ['WAITING_CUSTOMER', 'PENDING'] },
   completed: { label: 'Completados', statuses: ['RESOLVED', 'CLOSED', 'CANCELLED'] }
 };
