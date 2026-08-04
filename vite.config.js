@@ -11,6 +11,9 @@ module.exports = async () => {
         '/api': 'http://localhost:4000'
       }
     },
+    preview: {
+      allowedHosts: ['kollab-frontend-production.up.railway.app']
+    },
     build: {
       outDir: 'dist-web'
     }
