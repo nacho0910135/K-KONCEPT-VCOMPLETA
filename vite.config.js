@@ -12,7 +12,11 @@ module.exports = async () => {
       }
     },
     preview: {
-      allowedHosts: ['kollab-frontend-production.up.railway.app']
+      allowedHosts: [
+        'kollab-frontend-production.up.railway.app',
+        'kollabkoncepts.me',
+        'www.kollabkoncepts.me'
+      ]
     },
     build: {
       outDir: 'dist-web'
