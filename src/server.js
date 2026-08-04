@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const app = require('./app');
+app.set('trust proxy', 1);
 const { env } = require('./config/env');
 const { prisma } = require('./config/database');
 const { logger } = require('./utils/logger');

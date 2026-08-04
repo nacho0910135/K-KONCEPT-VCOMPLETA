@@ -42,6 +42,7 @@ const parseAddress = (address) => {
 
 const normalizeRecipients = (value) => {
   if (Array.isArray(value)) return value.map(parseAddress);
+
   return String(value || '')
     .split(',')
     .map((item) => item.trim())
@@ -73,7 +74,9 @@ const sendWithBrevoApi = async (options) => {
   if (options.bcc) payload.bcc = normalizeRecipients(options.bcc);
   if (options.replyTo) payload.replyTo = parseAddress(options.replyTo);
   if (options.headers) payload.headers = options.headers;
-  if (options.attachments?.length) payload.attachment = normalizeAttachments(options.attachments);
+  if (options.attachments?.length) {
+    payload.attachment = normalizeAttachments(options.attachments);
+  }
 
   const response = await fetch(BREVO_API_URL, {
     method: 'POST',
@@ -107,12 +110,7 @@ const sendWithBrevoApi = async (options) => {
 const mailer = {
   async sendMail(options) {
     if (env.brevo.apiKey) {
-      try {
-        return await sendWithBrevoApi(options);
-      } catch (error) {
-        if (!transporter) throw error;
-        error.apiFallback = true;
-      }
+      return sendWithBrevoApi(options);
     }
 
     if (!transporter) {
