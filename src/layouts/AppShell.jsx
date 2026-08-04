@@ -127,6 +127,16 @@ const AppShell = ({ navItems, roleLabel }) => {
               )}
             </NavLink>
           ))}
+          {user?.role === 'CLIENT' && (
+            <button
+              type="button"
+              className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-neutral-600 transition hover:translate-x-0.5 hover:bg-neutral-100 hover:text-danger lg:hidden"
+              onClick={logout}
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="min-w-0 flex-1 truncate text-left">Salir</span>
+            </button>
+          )}
         </nav>
       </aside>
 
