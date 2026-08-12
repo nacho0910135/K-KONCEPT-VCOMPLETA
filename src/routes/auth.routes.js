@@ -9,6 +9,7 @@ const {
   loginSchema,
   passwordResetRequestSchema,
   passwordResetSchema,
+  changePasswordSchema,
   refreshSchema,
   logoutSchema
 } = require('../validators/auth.validator');
@@ -19,6 +20,7 @@ router.post('/register', validate(registerSchema), asyncHandler(authController.r
 router.post('/login', validate(loginSchema), asyncHandler(authController.login));
 router.post('/forgot-password/request', validate(passwordResetRequestSchema), asyncHandler(authController.requestPasswordReset));
 router.post('/forgot-password/reset', validate(passwordResetSchema), asyncHandler(authController.resetPassword));
+router.patch('/password', verifyToken, validate(changePasswordSchema), asyncHandler(authController.changePassword));
 router.post('/refresh', validate(refreshSchema), asyncHandler(authController.refresh));
 router.post('/logout', verifyToken, validate(logoutSchema), asyncHandler(authController.logout));
 router.get('/me', verifyToken, asyncHandler(authController.me));

@@ -29,6 +29,14 @@ const passwordResetSchema = z.object({
   password: passwordSchema
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'La contrasena actual es obligatoria'),
+  newPassword: passwordSchema
+}).refine((data) => data.currentPassword !== data.newPassword, {
+  message: 'La nueva contrasena debe ser diferente',
+  path: ['newPassword']
+});
+
 const refreshSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token requerido')
 });
@@ -42,6 +50,7 @@ module.exports = {
   loginSchema,
   passwordResetRequestSchema,
   passwordResetSchema,
+  changePasswordSchema,
   refreshSchema,
   logoutSchema
 };

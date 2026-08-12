@@ -8,6 +8,7 @@ import Card from '../../components/common/Card.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
+import { changePassword } from '../../services/auth.client.service.js';
 import { updateMyProfile } from '../../services/users.service.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 
@@ -16,6 +17,22 @@ const profileSchema = z.object({
   phone: z.string().optional(),
   company: z.string().optional(),
   avatarUrl: z.string().optional()
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, 'Contrasena actual requerida'),
+  newPassword: z
+    .string()
+    .min(8, 'Minimo 8 caracteres')
+    .regex(/[A-Z]/, 'Incluye al menos una mayuscula')
+    .regex(/[0-9]/, 'Incluye al menos un numero'),
+  confirmPassword: z.string().min(1, 'Confirma la nueva contrasena')
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Las contrasenas no coinciden',
+  path: ['confirmPassword']
+}).refine((data) => data.currentPassword !== data.newPassword, {
+  message: 'La nueva contrasena debe ser diferente',
+  path: ['newPassword']
 });
 
 const imageToThumbnail = (file) => new Promise((resolve, reject) => {
@@ -46,6 +63,7 @@ const Perfil = () => {
   const { showToast } = useToast();
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || '');
   const profileForm = useForm({ resolver: zodResolver(profileSchema), defaultValues: { name: '', phone: '', company: '', avatarUrl: '' } });
+  const passwordForm = useForm({ resolver: zodResolver(passwordSchema), defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' } });
 
   useEffect(() => {
     profileForm.reset({
@@ -77,6 +95,16 @@ const Perfil = () => {
       showToast({ type: 'success', title: 'Perfil actualizado' });
     } catch (error) {
       showToast({ type: 'error', title: 'No se pudo guardar', message: getErrorMessage(error) });
+    }
+  };
+
+  const savePassword = async ({ currentPassword, newPassword }) => {
+    try {
+      await changePassword({ currentPassword, newPassword });
+      passwordForm.reset();
+      showToast({ type: 'success', title: 'Contrasena actualizada' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo cambiar', message: getErrorMessage(error) });
     }
   };
 
@@ -118,6 +146,18 @@ const Perfil = () => {
             </div>
             <input type="hidden" {...profileForm.register('avatarUrl')} />
             <Button className="w-full sm:w-auto" type="submit" isLoading={profileForm.formState.isSubmitting}>Guardar perfil</Button>
+          </form>
+        </Card>
+
+        <Card className="p-5 xl:col-start-2">
+          <h2 className="text-sm font-semibold text-neutral-900">Cambiar contrasena</h2>
+          <form className="mt-4 grid gap-4" onSubmit={passwordForm.handleSubmit(savePassword)}>
+            <FormInput register={passwordForm.register} name="currentPassword" type="password" autoComplete="current-password" label="Contrasena actual" error={passwordForm.formState.errors.currentPassword} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormInput register={passwordForm.register} name="newPassword" type="password" autoComplete="new-password" label="Nueva contrasena" error={passwordForm.formState.errors.newPassword} />
+              <FormInput register={passwordForm.register} name="confirmPassword" type="password" autoComplete="new-password" label="Confirmar contrasena" error={passwordForm.formState.errors.confirmPassword} />
+            </div>
+            <Button className="w-full sm:w-auto" type="submit" isLoading={passwordForm.formState.isSubmitting}>Cambiar contrasena</Button>
           </form>
         </Card>
       </div>

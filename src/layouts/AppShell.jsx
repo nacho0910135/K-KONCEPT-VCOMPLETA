@@ -1,10 +1,10 @@
 import { Bell, LogOut, Menu, Search, UserRound, X } from 'lucide-react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import clsx from 'clsx';
 import { useAuth } from '../hooks/useAuth.js';
+import { useChat } from '../hooks/useChat.js';
 import { useNotifications } from '../hooks/useNotifications.js';
-import { getUnreadChatMessages } from '../services/chat.client.service.js';
 import { searchTickets } from '../services/tickets.service.js';
 import kollabLogo from '../assets/kollab-logo.png';
 import EnterpriseChat from '../components/chat/EnterpriseChat.jsx';
@@ -12,27 +12,12 @@ import EnterpriseChat from '../components/chat/EnterpriseChat.jsx';
 const AppShell = ({ navItems, roleLabel }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { unreadCount: chatUnreadCount } = useChat();
   const { unreadCount } = useNotifications();
   const notificationsPath = user?.role === 'ADMIN' ? '/admin/notificaciones' : 'notifications';
   const canSearch = user?.role !== 'CLIENT';
-  const canChat = ['ADMIN', 'TECHNICIAN'].includes(user?.role);
-
-  useEffect(() => {
-    if (!canChat) return undefined;
-    const loadUnreadChat = async () => {
-      try {
-        setChatUnreadCount((await getUnreadChatMessages()).length);
-      } catch (_error) {
-        setChatUnreadCount(0);
-      }
-    };
-    loadUnreadChat();
-    const timer = setInterval(loadUnreadChat, 5000);
-    return () => clearInterval(timer);
-  }, [canChat]);
 
   const goToNotifications = () => {
     navigate(notificationsPath);

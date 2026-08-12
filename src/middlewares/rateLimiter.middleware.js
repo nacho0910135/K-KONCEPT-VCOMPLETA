@@ -4,7 +4,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 
 const generalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: isDevelopment ? 2000 : 300,
+  limit: 2000,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: {

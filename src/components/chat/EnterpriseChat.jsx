@@ -1,9 +1,11 @@
 import { Image, Maximize2, Mic, Minus, Send, SquarePen, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth.js';
-import { getChatMessages, getChatUsers, getUnreadChatMessages, sendChatMessage } from '../../services/chat.client.service.js';
+import { useChat } from '../../hooks/useChat.js';
+import { getChatMessages, sendChatMessage } from '../../services/chat.client.service.js';
 
 const storageKey = 'kollab-open-chat-peers';
+const MESSAGE_REFRESH_MS = 15000;
 const emojis = ['👍', '🙏', '✅', '🙌', '🙂'];
 const readStored = () => JSON.parse(localStorage.getItem(storageKey) || '[]');
 const writeStored = (items) => localStorage.setItem(storageKey, JSON.stringify(items.slice(0, 3)));
@@ -126,17 +128,16 @@ const ChatWindow = ({ peer, messages, unread, onClose, onMinimize, onSend }) => 
 
 const EnterpriseChat = () => {
   const { user } = useAuth();
+  const { users, unreadMessages, unreadBySender, refreshChat } = useChat();
   const enabled = ['ADMIN', 'TECHNICIAN'].includes(user?.role);
-  const [users, setUsers] = useState([]);
   const [openPeers, setOpenPeers] = useState([]);
   const [minimized, setMinimized] = useState({});
   const [messages, setMessages] = useState({});
   const [unread, setUnread] = useState({});
   const [composerOpen, setComposerOpen] = useState(false);
-  const openPeersRef = useRef(openPeers);
+  const loadingMessagesRef = useRef(false);
   const unreadIdsRef = useRef(new Set());
   const minimizedRef = useRef(minimized);
-  openPeersRef.current = openPeers;
   minimizedRef.current = minimized;
 
   useEffect(() => {
@@ -144,44 +145,50 @@ const EnterpriseChat = () => {
     const storedPeers = readStored();
     setOpenPeers(storedPeers);
     setMinimized(Object.fromEntries(storedPeers.map((id) => [id, true])));
-    const refresh = async () => {
-      const [nextUsers, unreadMessages] = await Promise.all([getChatUsers(), getUnreadChatMessages()]);
-      setUsers(nextUsers);
-      const unreadIds = new Set(unreadMessages.map((message) => message.id));
-      const hasNewUnread = unreadMessages.some((message) => !unreadIdsRef.current.has(message.id));
-      unreadIdsRef.current = unreadIds;
-      const grouped = unreadMessages.reduce((acc, message) => ({ ...acc, [message.senderId]: (acc[message.senderId] || 0) + 1 }), {});
-      if (unreadMessages.length) {
-        const incomingIds = [...new Set(unreadMessages.map((message) => message.senderId))];
-        setOpenPeers((peers) => {
-          const next = [...incomingIds, ...peers.filter((id) => !incomingIds.includes(id))].slice(0, 3);
-          writeStored(next);
-          return next;
-        });
-        setMinimized((state) => ({ ...state, ...Object.fromEntries(incomingIds.map((id) => [id, true])) }));
-        if (hasNewUnread) beep();
-      }
-      setUnread(grouped);
-    };
-    refresh();
-    const timer = setInterval(refresh, 5000);
-    return () => clearInterval(timer);
+    return undefined;
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled || openPeers.length === 0) return undefined;
+    if (!enabled) return;
+    const unreadIds = new Set(unreadMessages.map((message) => message.id));
+    const hasNewUnread = unreadMessages.some((message) => !unreadIdsRef.current.has(message.id));
+    unreadIdsRef.current = unreadIds;
+    if (unreadMessages.length) {
+      const incomingIds = [...new Set(unreadMessages.map((message) => message.senderId))];
+      setOpenPeers((peers) => {
+        const next = [...incomingIds, ...peers.filter((id) => !incomingIds.includes(id))].slice(0, 3);
+        writeStored(next);
+        return next;
+      });
+      setMinimized((state) => ({ ...state, ...Object.fromEntries(incomingIds.map((id) => [id, true])) }));
+      if (hasNewUnread) beep();
+    }
+    setUnread(unreadBySender);
+  }, [enabled, unreadMessages, unreadBySender]);
+
+  const visiblePeerIds = useMemo(() => openPeers.filter((id) => !minimized[id]), [openPeers, minimized]);
+  const visiblePeerKey = visiblePeerIds.join(',');
+
+  useEffect(() => {
+    if (!enabled || visiblePeerIds.length === 0) return undefined;
     const load = async () => {
-      const visiblePeers = openPeers.filter((id) => !minimizedRef.current[id]);
-      const entries = await Promise.all(visiblePeers.map(async (id) => [id, await getChatMessages(id)]));
-      setMessages(Object.fromEntries(entries));
-      setUnread((state) => ({ ...state, ...Object.fromEntries(visiblePeers.map((id) => [id, 0])) }));
+      if (loadingMessagesRef.current) return;
+      loadingMessagesRef.current = true;
+      try {
+        const ids = visiblePeerIds.filter((id) => !minimizedRef.current[id]);
+        const entries = await Promise.all(ids.map(async (id) => [id, await getChatMessages(id)]));
+        setMessages(Object.fromEntries(entries));
+        setUnread((state) => ({ ...state, ...Object.fromEntries(ids.map((id) => [id, 0])) }));
+      } finally {
+        loadingMessagesRef.current = false;
+      }
     };
     load();
-    const timer = setInterval(load, 3000);
-    return () => clearInterval(timer);
-  }, [enabled, openPeers, minimized]);
+    const timer = window.setInterval(load, MESSAGE_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, [enabled, visiblePeerKey]);
 
-  const openChat = (id) => {
+  const openChat = useCallback((id) => {
     setOpenPeers((peers) => {
       const next = [id, ...peers.filter((peerId) => peerId !== id)].slice(0, 3);
       writeStored(next);
@@ -189,9 +196,9 @@ const EnterpriseChat = () => {
     });
     setMinimized((state) => ({ ...state, [id]: false }));
     setComposerOpen(false);
-  };
+  }, []);
 
-  useEffect(() => { window.openEnterpriseChat = openChat; return () => { delete window.openEnterpriseChat; }; }, []);
+  useEffect(() => { window.openEnterpriseChat = openChat; return () => { delete window.openEnterpriseChat; }; }, [openChat]);
 
   const peers = useMemo(() => openPeers.map((id) => users.find((item) => item.id === id)).filter(Boolean), [openPeers, users]);
   if (!enabled) return null;
@@ -199,6 +206,7 @@ const EnterpriseChat = () => {
   const send = async (recipientId, payload) => {
     const message = await sendChatMessage({ recipientId, ...payload });
     setMessages((state) => ({ ...state, [recipientId]: [...(state[recipientId] || []), message] }));
+    refreshChat();
   };
 
   return (

@@ -9,3 +9,4 @@ export const getCurrentUser = async () => unwrap(await api.get('/auth/me'));
 export const registerClient = async (payload) => unwrap(await api.post('/auth/register', payload));
 export const requestPasswordResetCode = async (payload) => unwrap(await api.post('/auth/forgot-password/request', payload));
 export const resetPasswordWithCode = async (payload) => unwrap(await api.post('/auth/forgot-password/reset', payload));
+export const changePassword = async (payload) => unwrap(await api.patch('/auth/password', payload));

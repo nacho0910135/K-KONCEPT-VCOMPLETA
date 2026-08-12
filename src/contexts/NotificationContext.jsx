@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { getLatestNotifications, getUnreadNotificationCount } from '../services/notifications.service.js';
 
 const NotificationContext = createContext(null);
+const NOTIFICATION_REFRESH_MS = 60000;
 
 const unwrapUnreadCount = (response) => {
   const data = response?.data ?? response;
@@ -38,7 +39,7 @@ export const NotificationProvider = ({ children, isAuthenticated = false }) => {
     refreshNotifications().catch(() => {});
     const id = window.setInterval(() => {
       refreshNotifications().catch(() => {});
-    }, 30000);
+    }, NOTIFICATION_REFRESH_MS);
 
     return () => window.clearInterval(id);
   }, [isAuthenticated, refreshNotifications]);

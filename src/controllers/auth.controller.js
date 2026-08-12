@@ -41,6 +41,14 @@ const resetPassword = async (req, res) => {
   });
 };
 
+const changePassword = async (req, res) => {
+  await authService.changePassword(req.user.id, req.body, getRequestContext(req));
+
+  return successResponse(res, {
+    message: 'Contrasena actualizada correctamente'
+  });
+};
+
 const refresh = async (req, res) => {
   const result = await authService.refresh(req.body.refreshToken);
 
@@ -75,6 +83,7 @@ module.exports = {
   login,
   requestPasswordReset,
   resetPassword,
+  changePassword,
   refresh,
   logout,
   me

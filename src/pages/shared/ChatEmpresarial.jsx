@@ -1,24 +1,13 @@
 import { MessageCircle } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Badge from '../../components/common/Badge.jsx';
 import Card from '../../components/common/Card.jsx';
-import { getChatUsers } from '../../services/chat.client.service.js';
+import { useChat } from '../../hooks/useChat.js';
 
 const roleLabel = { ADMIN: 'Administradores', TECHNICIAN: 'Tecnicos' };
 
 const ChatEmpresarial = () => {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      const rows = await getChatUsers();
-      if (mounted) setUsers(rows);
-    };
-    load();
-    const timer = setInterval(load, 10000);
-    return () => { mounted = false; clearInterval(timer); };
-  }, []);
+  const { users } = useChat();
 
   const grouped = useMemo(() => ({
     ADMIN: users.filter((user) => user.role === 'ADMIN'),

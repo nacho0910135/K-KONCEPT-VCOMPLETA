@@ -256,6 +256,34 @@ const authService = {
     return updatedUser;
   },
 
+  async changePassword(userId, { currentPassword, newPassword }, context = {}) {
+    const user = await authRepository.findByIdWithPassword(userId);
+
+    if (!user || !user.active) {
+      throw new UnauthorizedError('Usuario no encontrado o inactivo');
+    }
+
+    const passwordMatches = await comparePassword(currentPassword, user.password);
+    if (!passwordMatches) {
+      throw new UnauthorizedError('Contrasena actual incorrecta');
+    }
+
+    const updatedUser = await authRepository.updatePassword(user.id, await hashPassword(newPassword));
+    await refreshTokenRepository.revokeAllByUserId(user.id);
+
+    await auditService.logEvent({
+      userId: user.id,
+      action: 'PASSWORD_CHANGED',
+      entity: 'Auth',
+      entityId: user.id,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      result: 'SUCCESS'
+    });
+
+    return updatedUser;
+  },
+
   async refresh(refreshToken) {
     const tokenHash = hashRefreshToken(refreshToken);
     const storedToken = await refreshTokenRepository.findValidByHash(tokenHash);

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { clearAccessToken, clearStoredRefreshToken, getStoredRefreshToken, setAccessToken, setStoredRefreshToken, setUnauthorizedHandler } from '../services/api.js';
 import { getCurrentUser, loginRequest, logoutRequest, refreshRequest } from '../services/auth.client.service.js';
+import { ChatProvider } from './ChatContext.jsx';
 import { NotificationProvider } from './NotificationContext.jsx';
 
 const AuthContext = createContext(null);
@@ -99,7 +100,9 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       <NotificationProvider isAuthenticated={value.isAuthenticated}>
-        {children}
+        <ChatProvider enabled={['ADMIN', 'TECHNICIAN'].includes(user?.role)}>
+          {children}
+        </ChatProvider>
       </NotificationProvider>
     </AuthContext.Provider>
   );

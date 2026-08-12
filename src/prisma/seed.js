@@ -213,9 +213,9 @@ async function upsertUser({ email, name, password, role, active }) {
 }
 
 async function seedUsers() {
-  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'ChangeMe.Admin.2026!';
-  const technicianPassword = process.env.TECHNICIAN_INITIAL_PASSWORD || 'ChangeMe.Tech.2026!';
-  const clientPassword = process.env.CLIENT_INITIAL_PASSWORD || 'ChangeMe.Client.2026!';
+  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD || 'Qdtb123456*';
+  const technicianPassword = process.env.TECHNICIAN_INITIAL_PASSWORD || 'Qdtb123456*';
+  const clientPassword = process.env.CLIENT_INITIAL_PASSWORD || 'Qdtb123456*';
   const systemPassword = process.env.SYSTEM_INITIAL_PASSWORD || 'system-account-disabled';
 
   const admin = await upsertUser({

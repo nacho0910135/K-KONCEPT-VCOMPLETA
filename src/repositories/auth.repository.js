@@ -39,6 +39,13 @@ const authRepository = {
     });
   },
 
+  findByIdWithPassword(id) {
+    return prisma.user.findUnique({
+      where: { id },
+      select: userSelect
+    });
+  },
+
   findActiveById(id) {
     return prisma.user.findFirst({
       where: {
