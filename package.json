@@ -52,6 +52,7 @@
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
     "postcss": "^8.5.15",
+    "qrcode": "^1.5.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.76.0",

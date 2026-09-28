@@ -34,4 +34,4 @@ En la bandeja técnica cada caso se lee como una tarjeta con las mismas acciones
 
 ## Acceso
 
-Registro e inicio de sesión conservan las tarjetas y campos existentes. La confirmación de seguridad se presenta como segundo paso en la misma tarjeta; el código de configuración se muestra en un bloque legible y se retira de la pantalla después de vincularlo.
+Registro e inicio de sesión conservan las tarjetas y campos existentes. La confirmación de seguridad se presenta como segundo paso en la misma tarjeta; el QR es la acción principal y la clave manual queda disponible como alternativa. Ambos se retiran de la pantalla después de vincular la cuenta.

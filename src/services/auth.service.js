@@ -28,6 +28,10 @@ const getChallenge = async (id) => {
 };
 
 const generateResetCode = () => crypto.randomInt(100000, 1000000).toString();
+const maskEmail = (email) => {
+  const [name, domain] = email.split('@');
+  return `${name.slice(0, Math.min(3, name.length))}${name.length > 3 ? '***' : ''}@${domain}`;
+};
 
 const hashResetCode = (email, code) => crypto
   .createHash('sha256')
@@ -151,7 +155,15 @@ const authService = {
 
     await prisma.loginChallenge.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
     const challenge = await prisma.loginChallenge.create({ data: { userId: user.id, expiresAt: new Date(Date.now() + LOGIN_CHALLENGE_MS) } });
-    return { challengeId: challenge.id, methods: user.totpSecret ? ['email', 'authenticator'] : ['email'], expiresInSeconds: 600 };
+    let authenticatorSetup = null;
+    if (!user.totpSecret) {
+      const setupCode = user.totpPendingSecret ? decryptSecret(user.totpPendingSecret) : generateSecret();
+      if (!user.totpPendingSecret) {
+        await prisma.user.update({ where: { id: user.id }, data: { totpPendingSecret: encryptSecret(setupCode) } });
+      }
+      authenticatorSetup = { setupCode, setupUri: setupUri(user.email, setupCode) };
+    }
+    return { challengeId: challenge.id, methods: ['email', 'authenticator'], authenticatorSetup, expiresInSeconds: 600 };
   },
 
   async sendLoginEmailCode({ challengeId }) {
@@ -171,10 +183,10 @@ const authService = {
     try {
       await transactionalEmailService.sendLoginCodeEmail(user, code);
     } catch (error) {
-      await prisma.loginChallenge.updateMany({ where: { id: challengeId, codeHash }, data: { codeHash: null, sentAt: null } });
+      await prisma.loginChallenge.updateMany({ where: { id: challengeId, codeHash }, data: { codeHash: null, sentAt: null, sendCount: { decrement: 1 } } });
       throw error;
     }
-    return { sent: true };
+    return { sent: true, destination: maskEmail(user.email) };
   },
 
   async verifyLogin({ challengeId, method, code }, context = {}) {
@@ -184,9 +196,11 @@ const authService = {
     let valid = false;
     let step = null;
     if (method === 'email') valid = Boolean(challenge.codeHash && crypto.timingSafeEqual(Buffer.from(challenge.codeHash), Buffer.from(hashLoginCode(challengeId, code))));
-    if (method === 'authenticator' && user.totpSecret) {
-      step = matchingStep(decryptSecret(user.totpSecret), code);
-      valid = step !== null && (user.totpLastStep === null || step > user.totpLastStep);
+    const isAuthenticatorSetup = method === 'authenticator' && !user.totpSecret && Boolean(user.totpPendingSecret);
+    const authenticatorSecret = user.totpSecret || user.totpPendingSecret;
+    if (method === 'authenticator' && authenticatorSecret) {
+      step = matchingStep(decryptSecret(authenticatorSecret), code);
+      valid = step !== null && (isAuthenticatorSetup || user.totpLastStep === null || step > user.totpLastStep);
     }
     if (!valid) {
       await prisma.loginChallenge.updateMany({ where: { id: challengeId, usedAt: null }, data: { attempts: { increment: 1 } } });
@@ -195,7 +209,9 @@ const authService = {
     }
     await prisma.$transaction(async (tx) => {
       if (method === 'authenticator') {
-        const claimed = await tx.user.updateMany({ where: { id: user.id, totpSecret: user.totpSecret, OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }] }, data: { totpLastStep: step } });
+        const claimed = isAuthenticatorSetup
+          ? await tx.user.updateMany({ where: { id: user.id, totpSecret: null, totpPendingSecret: user.totpPendingSecret }, data: { totpSecret: user.totpPendingSecret, totpPendingSecret: null, totpLastStep: step } })
+          : await tx.user.updateMany({ where: { id: user.id, totpSecret: user.totpSecret, OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }] }, data: { totpLastStep: step } });
         if (!claimed.count) throw new UnauthorizedError('Código ya utilizado');
       }
       const consumed = await tx.loginChallenge.updateMany({ where: { id: challengeId, usedAt: null, expiresAt: { gt: new Date() }, attempts: { lt: 5 }, ...(method === 'email' ? { codeHash: challenge.codeHash } : {}) }, data: { usedAt: new Date() } });

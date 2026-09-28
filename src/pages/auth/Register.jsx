@@ -6,6 +6,7 @@ import { confirmRegistrationAuthenticator, registerClient } from '../../services
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
+import AuthenticatorSetup from '../../components/auth/AuthenticatorSetup.jsx';
 import { useToast } from '../../hooks/useToast.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 import { registerSchema } from '../../utils/validators.js';
@@ -70,8 +71,7 @@ const Register = () => {
           </div>
           <Button type="submit" isLoading={isSubmitting}>Registrarme</Button>
         </form> : <div className="mt-8 grid gap-4">
-          <p className="text-sm text-neutral-700">En Google Authenticator, agrega una cuenta con clave de configuración e ingresa este código. Confirma con el código de 6 dígitos de la app.</p>
-          <code className="break-all rounded-md bg-neutral-100 p-3 text-center text-base font-bold tracking-widest text-neutral-900">{setup.setupCode}</code>
+          <AuthenticatorSetup setupCode={setup.setupCode} setupUri={setup.setupUri} />
           <form noValidate className="grid gap-3" onSubmit={confirmSetup}>
             <FormInput label="Contraseña de la cuenta" name="setupPassword" type="password" autoComplete="new-password" register={() => ({ value: confirmation.password, onChange: (event) => setConfirmation((current) => ({ ...current, password: event.target.value })) })} />
             <label className="grid gap-1 text-sm font-medium text-neutral-700" htmlFor="setup-code">Código de Authenticator</label>

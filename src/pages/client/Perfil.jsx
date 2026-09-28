@@ -6,6 +6,7 @@ import { z } from 'zod';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
+import AuthenticatorSetup from '../../components/auth/AuthenticatorSetup.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
 import { beginAuthenticatorSetup, changePassword, confirmAuthenticatorSetup, getAuthenticatorStatus } from '../../services/auth.client.service.js';
@@ -214,8 +215,7 @@ const Perfil = () => {
             <label className="grid gap-1 text-sm font-medium text-neutral-700" htmlFor="authenticator-password">Contraseña actual</label>
             <input id="authenticator-password" type="password" autoComplete="current-password" className="min-h-10 rounded-md border border-neutral-200 px-3" value={authenticatorPassword} onChange={(event) => setAuthenticatorPassword(event.target.value)} />
             {!authenticatorSetup ? <Button onClick={startAuthenticator} disabled={!authenticatorPassword} isLoading={authenticatorBusy}>{authenticatorEnabled ? 'Generar nueva clave' : 'Generar clave de configuración'}</Button> : <>
-              <p className="text-sm text-neutral-700">En Google Authenticator, agrega una cuenta con clave de configuración e ingresa:</p>
-              <code className="break-all rounded-md bg-neutral-100 p-3 text-center text-base font-bold tracking-widest">{authenticatorSetup.setupCode}</code>
+              <AuthenticatorSetup setupCode={authenticatorSetup.setupCode} setupUri={authenticatorSetup.setupUri} />
               <p className="text-xs text-neutral-500">La clave actual seguirá funcionando hasta que confirmes la nueva.</p>
               <label className="grid gap-1 text-sm font-medium text-neutral-700" htmlFor="authenticator-code">Código de 6 dígitos de la app</label>
               <input id="authenticator-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="min-h-10 rounded-md border border-neutral-200 px-3" value={authenticatorCode} onChange={(event) => setAuthenticatorCode(event.target.value.replace(/\D/g, ''))} />

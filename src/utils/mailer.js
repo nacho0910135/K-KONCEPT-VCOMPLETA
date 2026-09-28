@@ -114,7 +114,7 @@ const mailer = {
     }
 
     if (!transporter) {
-      return { skipped: true, reason: 'SMTP no configurado' };
+      throw new Error('El servicio de correo no está configurado');
     }
 
     return transporter.sendMail({
