@@ -34,6 +34,9 @@ const Login = () => {
   const onSubmit = async (values) => {
     try {
       const nextChallenge = await login(values);
+      if (!nextChallenge?.challengeId || !Array.isArray(nextChallenge.methods)) {
+        throw new Error('El servidor todavía no tiene activa la verificación en dos pasos. Intenta de nuevo cuando termine el despliegue.');
+      }
       setChallenge(nextChallenge);
       setMethod('');
       setCode('');
@@ -99,7 +102,7 @@ const Login = () => {
           <p className="text-sm text-neutral-700">Elige cómo confirmar tu identidad.</p>
           <div className="grid gap-2 sm:grid-cols-2">
             <Button variant={method === 'email' ? 'primary' : 'secondary'} onClick={() => selectMethod('email')} disabled={busy}>Código por correo</Button>
-            {challenge.methods.includes('authenticator') && <Button variant={method === 'authenticator' ? 'primary' : 'secondary'} onClick={() => selectMethod('authenticator')} disabled={busy}>Google Authenticator</Button>}
+            {challenge.methods?.includes('authenticator') && <Button variant={method === 'authenticator' ? 'primary' : 'secondary'} onClick={() => selectMethod('authenticator')} disabled={busy}>Google Authenticator</Button>}
           </div>
           {method && <form noValidate className="grid gap-3" onSubmit={verify}>
             <label className="grid gap-1 text-sm font-medium text-neutral-700" htmlFor="login-code">Código de 6 dígitos</label>
