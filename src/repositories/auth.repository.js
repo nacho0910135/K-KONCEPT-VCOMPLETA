@@ -5,6 +5,9 @@ const userSelect = {
   name: true,
   email: true,
   password: true,
+  totpSecret: true,
+  totpPendingSecret: true,
+  totpLastStep: true,
   role: true,
   phone: true,
   company: true,
@@ -33,8 +36,8 @@ const publicUserSelect = {
 
 const authRepository = {
   findByEmail(email) {
-    return prisma.user.findUnique({
-      where: { email },
+    return prisma.user.findFirst({
+      where: { OR: [{ email }, { loginAlias: email }] },
       select: userSelect
     });
   },

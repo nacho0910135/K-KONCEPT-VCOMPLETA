@@ -82,7 +82,7 @@ const changeStatusSchema = z.union([
   z.object({ status: z.literal('WAITING_CUSTOMER'), comment: z.string().trim().min(1), returnItemRequested: z.boolean().optional() }),
   z.object({ status: z.literal('CANCELLED'), comment: z.string().trim().min(1) }),
   resolvedCloseSchema
-]);
+]).and(z.object({ expectedUpdatedAt: z.coerce.date() }));
 
 const confirmSolutionSchema = z.object({
   rating: z.coerce.number().int().min(1).max(5),
@@ -106,7 +106,8 @@ const updatePrioritySchema = z.object({
 });
 
 const updateDiagnosisSchema = z.object({
-  diagnosis: z.string().trim().min(1)
+  diagnosis: z.string().trim().min(1),
+  expectedUpdatedAt: z.coerce.date()
 });
 
 const assignmentSettingsSchema = z.object({

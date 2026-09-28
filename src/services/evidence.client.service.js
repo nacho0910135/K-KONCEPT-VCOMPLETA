@@ -14,3 +14,4 @@ export const uploadTicketEvidence = async (ticketId, files) => {
 };
 
 export const listTicketEvidence = async (ticketId) => unwrap(await api.get(`/tickets/${ticketId}/evidence`));
+export const deleteTicketEvidence = async (id) => unwrap(await api.delete(`/evidence/${id}`));

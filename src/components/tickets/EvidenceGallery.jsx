@@ -1,4 +1,4 @@
-import { FileText, Image as ImageIcon, Play, ExternalLink } from 'lucide-react';
+import { FileText, Image as ImageIcon, Play, ExternalLink, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import clsx from 'clsx';
 import Modal from '../common/Modal.jsx';
@@ -41,7 +41,7 @@ const Preview = ({ item, large = false }) => {
   );
 };
 
-const EvidenceGallery = ({ evidences = [], emptyText = 'No hay evidencias adjuntas registradas.', columns = 'sm:grid-cols-2' }) => {
+const EvidenceGallery = ({ evidences = [], emptyText = 'No hay evidencias adjuntas registradas.', columns = 'sm:grid-cols-2', canDelete, onDelete }) => {
   const [selectedEvidence, setSelectedEvidence] = useState(null);
   const selectedUrl = selectedEvidence ? getEvidenceUrl(selectedEvidence) : '';
 
@@ -53,10 +53,10 @@ const EvidenceGallery = ({ evidences = [], emptyText = 'No hay evidencias adjunt
     <>
       <div className={clsx('mt-4 grid gap-3', columns)}>
         {evidences.map((item) => (
+          <div key={item.id || getEvidenceName(item)} className="overflow-hidden rounded-lg border border-neutral-200 bg-white p-2">
           <button
-            key={item.id || getEvidenceName(item)}
             type="button"
-            className="group overflow-hidden rounded-lg border border-neutral-200 bg-white p-2 text-left transition hover:border-primary-200 hover:bg-neutral-50 hover:shadow-sm"
+            className="group w-full text-left transition hover:bg-neutral-50"
             onClick={() => getEvidenceUrl(item) && setSelectedEvidence(item)}
           >
             <Preview item={item} />
@@ -65,6 +65,8 @@ const EvidenceGallery = ({ evidences = [], emptyText = 'No hay evidencias adjunt
               {getEvidenceUrl(item) && <ExternalLink className="h-3.5 w-3.5 shrink-0 text-neutral-400 group-hover:text-primary-600" />}
             </div>
           </button>
+          {canDelete?.(item) && <button type="button" className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-md px-2 text-xs font-semibold text-danger hover:bg-red-50" onClick={() => onDelete(item)}><Trash2 className="h-4 w-4" />Eliminar evidencia</button>}
+          </div>
         ))}
       </div>
 

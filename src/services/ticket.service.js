@@ -5,12 +5,13 @@ const { userRepository } = require('../repositories/user.repository');
 const { replacementRepository } = require('../repositories/replacement.repository');
 const { refundService } = require('./refund.service');
 const { auditService } = require('./audit.service');
+const { auditRepository } = require('../repositories/audit.repository');
 const { deleteFromCloudinary } = require('./cloudinary.service');
 const { notificationService } = require('./notification.service');
 const { slaService } = require('./sla.service');
 const { ticketAssignmentService } = require('./ticketAssignment.service');
 const { warrantyService } = require('./warranty.service');
-const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/errors');
+const { BadRequestError, ConflictError, ForbiddenError, NotFoundError } = require('../utils/errors');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
 const { canTransition } = require('../utils/ticketTransitions.util');
 const { sanitizePayloadText, sanitizePlainText } = require('../utils/textSanitizer.util');
@@ -68,7 +69,7 @@ const translateHistoryText = (value = '') => String(value)
   .replace(/resuelto se aplicara un remplazo/gi, 'Resuelto: se aplicará un reemplazo')
   .replace(/resuelto se aplicara un reemplazo/gi, 'Resuelto: se aplicará un reemplazo');
 
-const buildTimeline = ({ statuses, replacements, refunds }) => {
+const buildTimeline = ({ statuses, replacements, refunds, auditEvents = [] }) => {
   const statusEvents = statuses.map((event) => ({
     id: event.id,
     type: 'STATUS',
@@ -108,10 +109,18 @@ const buildTimeline = ({ statuses, replacements, refunds }) => {
 
   return [
     ...statusEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+    ...auditEvents.map((event) => ({
+      id: event.id,
+      type: event.action,
+      title: event.action === 'EVIDENCE_DELETED' ? 'Evidencia eliminada' : 'Diagnóstico actualizado',
+      description: event.action === 'EVIDENCE_DELETED' ? event.details?.fileName : event.newValue?.diagnosis,
+      actor: event.user,
+      createdAt: event.createdAt
+    })),
     ...replacementProductEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
     ...refundEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
     ...replacementDeliveryEvents.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
-  ];
+  ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 };
 
 const resourceTypeForEvidence = (evidence) => {
@@ -375,6 +384,7 @@ const ticketService = {
   async changeStatus(id, payload, user) {
     const ticket = await ensureTicketExists(id);
     assertTechnicianAssigned(ticket, user);
+    if (ticket.updatedAt.getTime() !== payload.expectedUpdatedAt.getTime()) throw new ConflictError('El caso cambió en otra sesión. Recarga antes de guardar.');
 
     assertAllowedTransition(ticket, payload.status, user.role);
 
@@ -406,6 +416,9 @@ const ticketService = {
       newStatus: payload.status,
       changedById: user.id,
       comment
+    }, payload.expectedUpdatedAt).catch((err) => {
+      if (err.code === 'P2025') throw new ConflictError('El caso cambió en otra sesión. Recarga antes de guardar.');
+      throw err;
     });
 
     await auditService.record({
@@ -643,10 +656,14 @@ const ticketService = {
   async updateDiagnosis(id, payload, user) {
     const ticket = await ensureTicketExists(id);
     assertTechnicianAssigned(ticket, user);
+    if (ticket.updatedAt.getTime() !== payload.expectedUpdatedAt.getTime()) throw new ConflictError('El caso cambió en otra sesión. Recarga antes de guardar.');
 
-    const updated = await ticketRepository.update(id, { diagnosis: sanitizePlainText(payload.diagnosis) });
+    const updated = await ticketRepository.update(id, { diagnosis: sanitizePlainText(payload.diagnosis) }, payload.expectedUpdatedAt).catch((err) => {
+      if (err.code === 'P2025') throw new ConflictError('El caso cambió en otra sesión. Recarga antes de guardar.');
+      throw err;
+    });
 
-    await auditService.record({
+    await auditService.recordNow({
       userId: user.id,
       action: 'TICKET_UPDATED',
       entity: 'Ticket',
@@ -741,9 +758,12 @@ const ticketService = {
 
   async getHistory(id, user, context) {
     const ticket = await this.getById(id, user, context);
-    const [statuses, comments, evidence, replacements, refunds] = await ticketRepository.getChronologicalHistory(ticket.id);
+    const [[statuses, comments, evidence, replacements, refunds], auditEvents] = await Promise.all([
+      ticketRepository.getChronologicalHistory(ticket.id),
+      auditRepository.findTicketEvents(ticket.id)
+    ]);
 
-    return { statuses, comments, evidence, replacements, refunds, timeline: buildTimeline({ statuses, replacements, refunds }) };
+    return { statuses, comments, evidence, replacements, refunds, timeline: buildTimeline({ statuses, replacements, refunds, auditEvents }) };
   },
 
   async search(query, user) {

@@ -148,7 +148,7 @@ const Reemplazos = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">Reemplazos</h1>
-          <p className="mt-1 text-sm text-neutral-500">Validacion, trazabilidad, entrega y constancias.</p>
+          <p className="mt-1 text-sm text-neutral-500">Los reemplazos se solicitan desde el caso. Cuando estén aprobados, registra aquí la serie del producto nuevo.</p>
         </div>
         <Badge tone={pendingDeliveryCount > 0 ? 'warning' : 'success'} className="mr-auto">
           {pendingDeliveryCount} {pendingDeliveryCount === 1 ? 'entrega pendiente' : 'entregas pendientes'}
@@ -194,7 +194,7 @@ const Reemplazos = () => {
             </dl>
             <div className="mt-4 flex flex-wrap gap-2">
               {replacement.status === 'PENDING_APPROVAL' && <Button variant="secondary" onClick={() => openAction(replacement, 'validate')}><ClipboardCheck className="h-4 w-4" />Validar</Button>}
-              {replacement.status === 'APPROVED' && !replacement.deliveryDate && <Button variant="ghost" onClick={() => openAction(replacement, 'product')}><PackageCheck className="h-4 w-4" />Producto nuevo</Button>}
+              {replacement.status === 'APPROVED' && !replacement.deliveryDate && <Button variant="ghost" onClick={() => openAction(replacement, 'product')}><PackageCheck className="h-4 w-4" />{replacement.replacementSerialNumber ? 'Editar serie y producto' : 'Registrar serie y producto'}</Button>}
               {replacement.status === 'APPROVED' && replacement.replacementSerialNumber && !replacement.deliveryDate && <Button onClick={() => openAction(replacement, 'delivery')}><Truck className="h-4 w-4" />Registrar entrega</Button>}
               {replacement.status === 'DELIVERED' && <Button variant="ghost" onClick={() => downloadReplacementCertificate(replacement.id)}><FileText className="h-4 w-4" />Constancia</Button>}
             </div>
@@ -203,7 +203,7 @@ const Reemplazos = () => {
       </div>
 
       <Modal isOpen={action === 'validate'} title="Validar condiciones de reemplazo" onClose={closeAction}>
-        <form className="grid gap-4" onSubmit={validationForm.handleSubmit((values) => submitValidation(true, values))}>
+        <form noValidate className="grid gap-4" onSubmit={validationForm.handleSubmit((values) => submitValidation(true, values))}>
           <FormTextarea register={validationForm.register} name="validationNotes" label="Condiciones y politica aplicada" error={validationForm.formState.errors.validationNotes} />
           <div className="flex justify-end gap-2">
             <Button variant="danger" onClick={validationForm.handleSubmit((values) => submitValidation(false, values))}>Rechazar</Button>
@@ -213,7 +213,7 @@ const Reemplazos = () => {
       </Modal>
 
       <Modal isOpen={action === 'product'} title="Registrar producto nuevo" onClose={closeAction}>
-        <form className="grid gap-4" onSubmit={productForm.handleSubmit(submitProduct)}>
+        <form noValidate className="grid gap-4" onSubmit={productForm.handleSubmit(submitProduct)}>
           <FormInput register={productForm.register} name="replacementSerialNumber" label="Numero de serie" error={productForm.formState.errors.replacementSerialNumber} />
           <FormInput register={productForm.register} name="replacementBrand" label="Marca" error={productForm.formState.errors.replacementBrand} />
           <FormInput register={productForm.register} name="replacementModel" label="Modelo" error={productForm.formState.errors.replacementModel} />
@@ -223,7 +223,7 @@ const Reemplazos = () => {
       </Modal>
 
       <Modal isOpen={action === 'delivery'} title="Registrar entrega al cliente" onClose={closeAction}>
-        <form className="grid gap-4" onSubmit={deliveryForm.handleSubmit(submitDelivery)}>
+        <form noValidate className="grid gap-4" onSubmit={deliveryForm.handleSubmit(submitDelivery)}>
           <FormInput register={deliveryForm.register} name="deliveryDate" label="Fecha de entrega" type="date" error={deliveryForm.formState.errors.deliveryDate} />
           <label className="grid gap-1.5 text-sm font-medium text-neutral-700" htmlFor="deliveryType">
             <span>Tipo de entrega</span>

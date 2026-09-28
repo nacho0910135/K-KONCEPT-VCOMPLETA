@@ -7,6 +7,7 @@ const { asyncHandler } = require('../utils/asyncHandler');
 const {
   createUserSchema,
   updateUserSchema,
+  updateMeSchema,
   updateUserRoleSchema,
   userQuerySchema
 } = require('../validators/user.validator');
@@ -15,7 +16,7 @@ const router = Router();
 
 router.use(verifyToken);
 
-router.put('/me', validate(updateUserSchema), asyncHandler(userController.updateMe));
+router.put('/me', validate(updateMeSchema), asyncHandler(userController.updateMe));
 
 router.use(authorizeRoles('ADMIN'));
 

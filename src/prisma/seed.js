@@ -3,9 +3,9 @@ const bcrypt = require('bcrypt');
 const { prisma } = require('../config/database');
 const { logger } = require('../utils/logger');
 
-const ADMIN_EMAIL = 'admin@kollabkoncepts.com';
-const TECHNICIAN_EMAIL = 'tecnico@kollabkoncepts.com';
-const CLIENT_EMAIL = 'cliente@kollabkoncepts.com';
+const ADMIN_EMAIL = '1josemendezporras@gmail.com';
+const TECHNICIAN_EMAIL = '2josemendezporras@gmail.com';
+const CLIENT_EMAIL = '3josemendezporras@gmail.com';
 const SYSTEM_EMAIL = 'system@kollabkoncepts.internal';
 
 const notificationEvents = [
@@ -191,19 +191,15 @@ const inAppTemplateCopy = {
   SLA_BREACH: templateCopy.SLA_BREACH
 };
 
-async function upsertUser({ email, name, password, role, active }) {
+async function upsertUser({ email, loginAlias, name, password, role, active }) {
   const hashedPassword = await bcrypt.hash(password, 12);
 
   return prisma.user.upsert({
-    where: { email },
-    update: {
-      name,
-      password: hashedPassword,
-      role,
-      active
-    },
+    where: loginAlias ? { loginAlias } : { email },
+    update: loginAlias ? { loginAlias } : {},
     create: {
       email,
+      loginAlias,
       name,
       password: hashedPassword,
       role,
@@ -220,6 +216,7 @@ async function seedUsers() {
 
   const admin = await upsertUser({
     email: ADMIN_EMAIL,
+    loginAlias: 'admin@kollabkoncepts.com',
     name: 'Administrador Kollab Koncepts',
     password: adminPassword,
     role: 'ADMIN',
@@ -228,6 +225,7 @@ async function seedUsers() {
 
   const technician = await upsertUser({
     email: TECHNICIAN_EMAIL,
+    loginAlias: 'tecnico@kollabkoncepts.com',
     name: 'Tecnico Kollab',
     password: technicianPassword,
     role: 'TECHNICIAN',
@@ -236,6 +234,7 @@ async function seedUsers() {
 
   const client = await upsertUser({
     email: CLIENT_EMAIL,
+    loginAlias: 'cliente@kollabkoncepts.com',
     name: 'Cliente Kollab',
     password: clientPassword,
     role: 'CLIENT',

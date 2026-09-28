@@ -57,6 +57,14 @@ const auditRepository = {
     });
   },
 
+  findTicketEvents(ticketId) {
+    return prisma.auditLog.findMany({
+      where: { entity: 'Ticket', entityId: ticketId, action: { in: ['TICKET_UPDATED', 'EVIDENCE_DELETED'] }, result: 'SUCCESS' },
+      orderBy: { createdAt: 'asc' },
+      include: auditInclude
+    });
+  },
+
   findCorrelated({ userId, createdAt, excludeId, minutes = 5 }) {
     if (!userId || !createdAt) return [];
 

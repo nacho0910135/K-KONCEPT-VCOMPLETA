@@ -38,8 +38,8 @@ const userRepository = {
   },
 
   findByEmail(email) {
-    return prisma.user.findUnique({
-      where: { email },
+    return prisma.user.findFirst({
+      where: { OR: [{ email }, { loginAlias: email }] },
       select: publicUserSelect
     });
   },
@@ -120,12 +120,18 @@ const userRepository = {
     ]);
   },
 
-  update(id, data) {
-    return prisma.user.update({
+  async update(id, data, invalidateChallenges = false) {
+    const update = prisma.user.update({
       where: { id },
       data,
       select: publicUserSelect
     });
+    if (!invalidateChallenges) return update;
+    const [user] = await prisma.$transaction([
+      update,
+      prisma.loginChallenge.updateMany({ where: { userId: id, usedAt: null }, data: { usedAt: new Date() } })
+    ]);
+    return user;
   }
 };
 

@@ -67,6 +67,18 @@ const sendSafely = async (options, context) => {
 };
 
 const transactionalEmailService = {
+  async sendLoginCodeEmail(user, code) {
+    return sendSafely({
+      to: user.email,
+      subject: 'Código de inicio de sesión',
+      html: layout({
+        title: 'Confirma tu inicio de sesión',
+        preview: 'Tu código de seguridad vence en 10 minutos.',
+        body: `<p>Hola ${escapeHtml(getRecipientName(user))},</p><p>Ingresa este código para acceder a tu cuenta:</p><p style="font-size:28px;letter-spacing:6px;font-weight:700">${escapeHtml(code)}</p><p>Vence en 10 minutos. Si no intentaste ingresar, ignora este correo.</p>`
+      }),
+      text: `Tu código de inicio de sesión es ${code}. Vence en 10 minutos. Si no intentaste ingresar, ignora este correo.`
+    }, { type: 'LOGIN_CODE_EMAIL', userId: user.id });
+  },
   async sendWelcomeEmail(user) {
     const loginUrl = `${env.appUrl.replace(/\/$/, '')}/login`;
 

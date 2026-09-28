@@ -1,16 +1,16 @@
-import { BrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { ToastProvider } from './contexts/ToastContext.jsx';
 import AppRouter from './routes/AppRouter.jsx';
 
-const App = () => (
-  <BrowserRouter>
+const router = createBrowserRouter([{ path: '*', element: (
     <ToastProvider>
       <AuthProvider>
         <AppRouter />
       </AuthProvider>
     </ToastProvider>
-  </BrowserRouter>
-);
+  ) }]);
+
+const App = () => <RouterProvider router={router} />;
 
 export default App;

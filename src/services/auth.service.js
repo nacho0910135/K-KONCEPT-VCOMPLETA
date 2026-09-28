@@ -4,6 +4,10 @@ const { refreshTokenRepository } = require('../repositories/refreshToken.reposit
 const { auditService } = require('./audit.service');
 const { BadRequestError, ConflictError, UnauthorizedError } = require('../utils/errors');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const { prisma } = require('../config/database');
+const { env } = require('../config/env');
+const { generateSecret, encryptSecret, decryptSecret, matchingStep, setupUri } = require('../utils/totp.util');
 const {
   signAccessToken,
   generateRefreshToken,
@@ -15,6 +19,13 @@ const { logger } = require('../utils/logger');
 const { transactionalEmailService } = require('./transactionalEmail.service');
 
 const PASSWORD_RESET_CODE_TTL_MINUTES = 15;
+const LOGIN_CHALLENGE_MS = 10 * 60 * 1000;
+const hashLoginCode = (challengeId, code) => crypto.createHmac('sha256', env.jwt.secret).update(`${challengeId}:${code}`).digest('hex');
+const getChallenge = async (id) => {
+  const challenge = await prisma.loginChallenge.findUnique({ where: { id } });
+  if (!challenge || challenge.usedAt || challenge.expiresAt <= new Date() || challenge.attempts >= 5) throw new UnauthorizedError('Código expirado. Inicia sesión de nuevo.');
+  return challenge;
+};
 
 const generateResetCode = () => crypto.randomInt(100000, 1000000).toString();
 
@@ -26,7 +37,7 @@ const hashResetCode = (email, code) => crypto
 const sanitizeUser = (user) => {
   if (!user) return null;
 
-  const { password, ...safeUser } = user;
+  const { password, totpSecret, totpPendingSecret, totpLastStep, ...safeUser } = user;
   return safeUser;
 };
 
@@ -69,13 +80,15 @@ const authService = {
 
     const password = await hashPassword(payload.password);
 
+    const setupCode = generateSecret();
     const user = await authRepository.createClientUser({
       name: payload.name,
       email: payload.email,
       password,
       phone: payload.phone || null,
       company: payload.company || null,
-      active: true
+      active: true,
+      totpPendingSecret: encryptSecret(setupCode)
     });
 
     await auditService.record({
@@ -93,7 +106,7 @@ const authService = {
       logger.error({ error, userId: user.id }, 'No se pudo enviar correo de bienvenida');
     });
 
-    return user;
+    return { user, setupCode, setupUri: setupUri(user.email, setupCode), setupToken: jwt.sign({ sub: user.id, type: 'totp-setup' }, env.jwt.secret, { expiresIn: '15m' }) };
   },
 
   async login({ email, password }, context) {
@@ -136,22 +149,94 @@ const authService = {
       throw new UnauthorizedError('Credenciales incorrectas');
     }
 
+    await prisma.loginChallenge.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } });
+    const challenge = await prisma.loginChallenge.create({ data: { userId: user.id, expiresAt: new Date(Date.now() + LOGIN_CHALLENGE_MS) } });
+    return { challengeId: challenge.id, methods: user.totpSecret ? ['email', 'authenticator'] : ['email'], expiresInSeconds: 600 };
+  },
+
+  async sendLoginEmailCode({ challengeId }) {
+    const challenge = await getChallenge(challengeId);
+    if (challenge.sendCount >= 3 || (challenge.sentAt && Date.now() - challenge.sentAt.getTime() < 60000)) throw new BadRequestError('Espera antes de solicitar otro código.');
+    const recentSends = await prisma.loginChallenge.aggregate({ where: { userId: challenge.userId, sentAt: { gt: new Date(Date.now() - 15 * 60 * 1000) } }, _sum: { sendCount: true } });
+    if ((recentSends._sum.sendCount || 0) >= 3) throw new BadRequestError('Se alcanzó el límite de códigos por correo. Intenta más tarde.');
+    const user = await authRepository.findByIdWithPassword(challenge.userId);
+    if (!user?.active) throw new UnauthorizedError('Usuario inactivo');
+    const code = crypto.randomInt(100000, 1000000).toString();
+    const codeHash = hashLoginCode(challengeId, code);
+    const claimed = await prisma.loginChallenge.updateMany({
+      where: { id: challengeId, usedAt: null, expiresAt: { gt: new Date() }, sendCount: { lt: 3 }, ...(challenge.sentAt ? { sentAt: challenge.sentAt } : { sentAt: null }) },
+      data: { codeHash, sentAt: new Date(), sendCount: { increment: 1 } }
+    });
+    if (!claimed.count) throw new BadRequestError('Espera antes de solicitar otro código.');
+    try {
+      await transactionalEmailService.sendLoginCodeEmail(user, code);
+    } catch (error) {
+      await prisma.loginChallenge.updateMany({ where: { id: challengeId, codeHash }, data: { codeHash: null, sentAt: null } });
+      throw error;
+    }
+    return { sent: true };
+  },
+
+  async verifyLogin({ challengeId, method, code }, context = {}) {
+    const challenge = await getChallenge(challengeId);
+    const user = await authRepository.findByIdWithPassword(challenge.userId);
+    if (!user?.active) throw new UnauthorizedError('Usuario inactivo');
+    let valid = false;
+    let step = null;
+    if (method === 'email') valid = Boolean(challenge.codeHash && crypto.timingSafeEqual(Buffer.from(challenge.codeHash), Buffer.from(hashLoginCode(challengeId, code))));
+    if (method === 'authenticator' && user.totpSecret) {
+      step = matchingStep(decryptSecret(user.totpSecret), code);
+      valid = step !== null && (user.totpLastStep === null || step > user.totpLastStep);
+    }
+    if (!valid) {
+      await prisma.loginChallenge.updateMany({ where: { id: challengeId, usedAt: null }, data: { attempts: { increment: 1 } } });
+      await auditLogin({ userId: user.id, email: user.email, success: false, ...context, reason: 'INVALID_SECOND_FACTOR' });
+      throw new UnauthorizedError('Código incorrecto o vencido');
+    }
+    await prisma.$transaction(async (tx) => {
+      if (method === 'authenticator') {
+        const claimed = await tx.user.updateMany({ where: { id: user.id, totpSecret: user.totpSecret, OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }] }, data: { totpLastStep: step } });
+        if (!claimed.count) throw new UnauthorizedError('Código ya utilizado');
+      }
+      const consumed = await tx.loginChallenge.updateMany({ where: { id: challengeId, usedAt: null, expiresAt: { gt: new Date() }, attempts: { lt: 5 }, ...(method === 'email' ? { codeHash: challenge.codeHash } : {}) }, data: { usedAt: new Date() } });
+      if (!consumed.count) throw new UnauthorizedError('Código expirado. Inicia sesión de nuevo.');
+    });
     const updatedUser = await authRepository.updateLastLogin(user.id);
     const tokens = await buildTokenPair(updatedUser);
+    await auditLogin({ userId: user.id, email: user.email, success: true, ...context, reason: `SECOND_FACTOR_${method.toUpperCase()}` });
+    return { user: updatedUser, ...tokens };
+  },
 
-    await auditLogin({
-      userId: user.id,
-      email,
-      success: true,
-      ipAddress: context.ipAddress,
-      userAgent: context.userAgent,
-      reason: 'OK'
-    });
+  async confirmRegistrationTotp({ setupToken, password, code }) {
+    let payload;
+    try { payload = jwt.verify(setupToken, env.jwt.secret); } catch { throw new UnauthorizedError('La configuración venció. Ingresa y actívala desde Perfil.'); }
+    if (payload.type !== 'totp-setup') throw new UnauthorizedError('Token inválido');
+    return this.confirmTotpSetup(payload.sub, { currentPassword: password, code });
+  },
 
-    return {
-      user: updatedUser,
-      ...tokens
-    };
+  async totpStatus(userId) {
+    const user = await authRepository.findByIdWithPassword(userId);
+    if (!user?.active) throw new UnauthorizedError('Usuario inactivo');
+    return { enabled: Boolean(user.totpSecret) };
+  },
+
+  async beginTotpSetup(userId, { currentPassword }) {
+    const user = await authRepository.findByIdWithPassword(userId);
+    if (!user?.active || !(await comparePassword(currentPassword, user.password))) throw new BadRequestError('Contraseña actual incorrecta');
+    const setupCode = generateSecret();
+    await prisma.user.update({ where: { id: userId }, data: { totpPendingSecret: encryptSecret(setupCode) } });
+    return { setupCode, setupUri: setupUri(user.email, setupCode) };
+  },
+
+  async confirmTotpSetup(userId, { currentPassword, code }) {
+    const user = await authRepository.findByIdWithPassword(userId);
+    if (!user?.active || !(await comparePassword(currentPassword, user.password))) throw new BadRequestError('Contraseña actual incorrecta');
+    const step = user.totpPendingSecret ? matchingStep(decryptSecret(user.totpPendingSecret), code) : null;
+    if (step === null) throw new BadRequestError('Código de Authenticator incorrecto');
+    const activated = await prisma.user.updateMany({ where: { id: userId, totpPendingSecret: user.totpPendingSecret }, data: { totpSecret: user.totpPendingSecret, totpPendingSecret: null, totpLastStep: step } });
+    if (!activated.count) throw new ConflictError('La clave de configuración cambió. Genera una nueva.');
+    await auditService.record({ userId, action: 'AUTHENTICATOR_ENABLED', entity: 'User', entityId: userId });
+    return { enabled: true };
   },
 
   async requestPasswordReset({ email }, context = {}) {

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { FileUp, Mail, Phone, RefreshCw, Save, Send, X } from 'lucide-react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { useBlocker, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import Badge from '../../components/common/Badge.jsx';
 import Button from '../../components/common/Button.jsx';
@@ -12,7 +12,7 @@ import Modal from '../../components/common/Modal.jsx';
 import FormSelect from '../../components/forms/FormSelect.jsx';
 import FormTextarea from '../../components/forms/FormTextarea.jsx';
 import { addComment, getTicketById, getTicketHistory, saveTicketDiagnosis, updateTicketStatus } from '../../services/tickets.service.js';
-import { uploadTicketEvidence } from '../../services/evidence.client.service.js';
+import { deleteTicketEvidence, uploadTicketEvidence } from '../../services/evidence.client.service.js';
 import { getTicketEmails } from '../../services/notifications.service.js';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
@@ -66,10 +66,13 @@ const DetalleTicket = () => {
   const [ticket, setTicket] = useState(null);
   const [history, setHistory] = useState({ statuses: [], comments: [], evidence: [] });
   const [evidenceFiles, setEvidenceFiles] = useState([]);
+  const [evidenceToDelete, setEvidenceToDelete] = useState(null);
+  const [isDeletingEvidence, setIsDeletingEvidence] = useState(false);
   const [emails, setEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const manualNavRef = useRef(null);
   const manualMessagesRef = useRef(null);
+  const statusSavingRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [error, setError] = useState('');
@@ -80,6 +83,21 @@ const DetalleTicket = () => {
   const watchedStatus = useWatch({ control: statusForm.control, name: 'status' });
   const watchedCloseType = useWatch({ control: statusForm.control, name: 'closeType' });
   const watchedResolutionAction = useWatch({ control: statusForm.control, name: 'resolutionAction' });
+  const hasUnsavedChanges = statusForm.formState.isDirty || diagnosisForm.formState.isDirty || commentForm.formState.isDirty || evidenceFiles.length > 0;
+  const blocker = useBlocker(hasUnsavedChanges);
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return;
+    if (window.confirm('Hay cambios sin guardar. ¿Quieres salir y descartarlos?')) blocker.proceed();
+    else blocker.reset();
+  }, [blocker]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return undefined;
+    const warn = (event) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsavedChanges]);
 
   const load = async () => {
     setIsLoading(true);
@@ -127,9 +145,12 @@ const DetalleTicket = () => {
   }, [manualMessages.length]);
 
   const saveStatus = async (values) => {
+    if (statusSavingRef.current) return;
+    statusSavingRef.current = true;
     try {
       await updateTicketStatus(ticket.id, {
         ...values,
+        expectedUpdatedAt: ticket.updatedAt,
         status: values.status === 'RETURN_ITEM_REQUEST' ? 'WAITING_CUSTOMER' : values.status,
         returnItemRequested: values.status === 'RETURN_ITEM_REQUEST',
         refundAmount: values.refundAmount || undefined,
@@ -140,12 +161,14 @@ const DetalleTicket = () => {
       showToast({ type: 'success', title: 'Estado actualizado', message: values.status === 'RESOLVED' ? 'El cliente debera confirmar y calificar para cerrar.' : undefined });
     } catch (err) {
       showToast({ type: 'error', title: 'No se pudo actualizar', message: getErrorMessage(err) });
+    } finally {
+      statusSavingRef.current = false;
     }
   };
 
   const saveDiagnosis = async ({ diagnosis }) => {
     try {
-      await saveTicketDiagnosis(ticket.id, { diagnosis });
+      await saveTicketDiagnosis(ticket.id, { diagnosis, expectedUpdatedAt: ticket.updatedAt });
       await load();
       showToast({ type: 'success', title: 'Diagnostico guardado' });
     } catch (err) {
@@ -172,6 +195,23 @@ const DetalleTicket = () => {
 
   const removeEvidence = (index) => {
     setEvidenceFiles((current) => current.filter((_, fileIndex) => fileIndex !== index));
+  };
+
+  const canDeleteEvidence = (evidence) => user?.role === 'ADMIN' || (evidence.uploadedById === user?.id && Date.now() - new Date(evidence.createdAt).getTime() <= 60 * 60 * 1000);
+
+  const confirmDeleteEvidence = async () => {
+    if (!evidenceToDelete || isDeletingEvidence) return;
+    setIsDeletingEvidence(true);
+    try {
+      await deleteTicketEvidence(evidenceToDelete.id);
+      setEvidenceToDelete(null);
+      await load();
+      showToast({ type: 'success', title: 'Evidencia eliminada' });
+    } catch (err) {
+      showToast({ type: 'error', title: 'No se pudo eliminar', message: getErrorMessage(err) });
+    } finally {
+      setIsDeletingEvidence(false);
+    }
   };
 
   const uploadEvidence = async () => {
@@ -258,7 +298,7 @@ const DetalleTicket = () => {
         <div className="grid content-start gap-6 xl:grid-cols-2">
           <Card className="p-5 xl:col-span-2">
             <h2 className="text-sm font-semibold text-neutral-900">Actualizar estado</h2>
-            <form className="mt-4 grid gap-4" onSubmit={statusForm.handleSubmit(saveStatus)}>
+            <form noValidate className="mt-4 grid gap-4" onSubmit={statusForm.handleSubmit(saveStatus)}>
               <FormSelect register={statusForm.register} name="status" label="Nuevo estado" error={statusForm.formState.errors.status} options={transitionOptions} />
               <FormTextarea register={statusForm.register} name="comment" label="Comentario del cambio" error={statusForm.formState.errors.comment} />
               {watchedStatus === 'RESOLVED' && (
@@ -320,7 +360,7 @@ const DetalleTicket = () => {
 
           <Card className="p-5">
             <h2 className="text-sm font-semibold text-neutral-900">Diagnostico</h2>
-            <form className="mt-4 grid gap-3" onSubmit={diagnosisForm.handleSubmit(saveDiagnosis)}>
+            <form noValidate className="mt-4 grid gap-3" onSubmit={diagnosisForm.handleSubmit(saveDiagnosis)}>
               <FormTextarea register={diagnosisForm.register} name="diagnosis" label="Diagnostico actual" error={diagnosisForm.formState.errors.diagnosis} rows={5} />
               <Button type="submit" isLoading={diagnosisForm.formState.isSubmitting}><Save className="h-4 w-4" />Guardar diagnostico</Button>
             </form>
@@ -354,7 +394,7 @@ const DetalleTicket = () => {
                 </div>
               )}
             </div>
-            <EvidenceGallery evidences={evidences} />
+            <EvidenceGallery evidences={evidences} canDelete={canDeleteEvidence} onDelete={setEvidenceToDelete} />
           </Card>
 
           <Card className="p-5">
@@ -399,7 +439,7 @@ const DetalleTicket = () => {
                 ))}
               </div>
             </div>
-            <form className="mt-4 grid gap-3" onSubmit={commentForm.handleSubmit(publishComment)}>
+            <form noValidate className="mt-4 grid gap-3" onSubmit={commentForm.handleSubmit(publishComment)}>
               <FormTextarea register={commentForm.register} name="body" label="Mensaje" error={commentForm.formState.errors.body} />
               <Button type="submit" variant="danger" isLoading={commentForm.formState.isSubmitting}><Send className="h-4 w-4" />Enviar</Button>
             </form>
@@ -424,6 +464,13 @@ const DetalleTicket = () => {
         <div className="grid gap-3 text-sm text-neutral-700">
           <p className="text-xs font-semibold uppercase text-neutral-500">{formatDateTime(selectedEmail?.sentAt || selectedEmail?.createdAt)}</p>
           <div className="whitespace-pre-wrap rounded-lg border border-neutral-200 bg-neutral-50 p-4 leading-6">{cleanNotificationText(selectedEmail?.message)}</div>
+        </div>
+      </Modal>
+      <Modal isOpen={Boolean(evidenceToDelete)} title="Eliminar evidencia" onClose={() => !isDeletingEvidence && setEvidenceToDelete(null)}>
+        <p className="text-sm text-neutral-700">Se eliminará {evidenceToDelete?.fileName || 'este archivo'} del caso. La acción quedará registrada en el historial.</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setEvidenceToDelete(null)} disabled={isDeletingEvidence}>Cancelar</Button>
+          <Button variant="danger" onClick={confirmDeleteEvidence} isLoading={isDeletingEvidence}>Eliminar evidencia</Button>
         </div>
       </Modal>
     </div>

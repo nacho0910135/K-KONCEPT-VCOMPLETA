@@ -1,8 +1,9 @@
 const { userRepository } = require('../repositories/user.repository');
+const { authRepository } = require('../repositories/auth.repository');
 const { auditService } = require('./audit.service');
 const { notificationService } = require('./notification.service');
-const { ConflictError, NotFoundError } = require('../utils/errors');
-const { hashPassword } = require('../utils/password.util');
+const { BadRequestError, ConflictError, NotFoundError } = require('../utils/errors');
+const { comparePassword, hashPassword } = require('../utils/password.util');
 const { buildPagination, buildPaginationMeta } = require('../utils/pagination.util');
 
 const userService = {
@@ -60,9 +61,9 @@ const userService = {
     return user;
   },
 
-  async update(id, payload, actor) {
+  async update(id, payload, actor, invalidateChallenges = false) {
     const previous = await this.getById(id);
-    const updated = await userRepository.update(id, payload);
+    const updated = await userRepository.update(id, payload, invalidateChallenges);
 
     await auditService.record({
       userId: actor?.id || null,
@@ -76,8 +77,19 @@ const userService = {
     return updated;
   },
 
-  updateMe(payload, actor) {
-    return this.update(actor.id, payload, actor);
+  async updateMe({ currentPassword, ...payload }, actor) {
+    if (payload.email && payload.email !== actor.email) {
+      const user = await authRepository.findByIdWithPassword(actor.id);
+      if (!currentPassword || !(await comparePassword(currentPassword, user.password))) throw new BadRequestError('Ingresa tu contraseña actual para cambiar el correo');
+      const existing = await userRepository.findByEmail(payload.email);
+      if (existing) throw new ConflictError('El correo ya está registrado');
+    }
+    try {
+      return await this.update(actor.id, payload, actor, Boolean(payload.email && payload.email !== actor.email));
+    } catch (error) {
+      if (error.code === 'P2002') throw new ConflictError('El correo ya está registrado');
+      throw error;
+    }
   },
 
   async updateRole(id, role, actor) {

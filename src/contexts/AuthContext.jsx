@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { clearAccessToken, clearStoredRefreshToken, getStoredRefreshToken, setAccessToken, setStoredRefreshToken, setUnauthorizedHandler } from '../services/api.js';
-import { getCurrentUser, loginRequest, logoutRequest, refreshRequest } from '../services/auth.client.service.js';
+import { getCurrentUser, loginRequest, logoutRequest, refreshRequest, verifyLoginCode } from '../services/auth.client.service.js';
 import { ChatProvider } from './ChatContext.jsx';
 import { NotificationProvider } from './NotificationContext.jsx';
 
@@ -30,7 +30,11 @@ export const AuthProvider = ({ children }) => {
   }, [persistAccessToken]);
 
   const login = useCallback(async (credentials) => {
-    const data = await loginRequest(credentials);
+    return loginRequest(credentials);
+  }, []);
+
+  const completeLogin = useCallback(async (challenge) => {
+    const data = await verifyLoginCode(challenge);
     const nextToken = data?.accessToken;
     persistAccessToken(nextToken);
     setStoredRefreshToken(data?.refreshToken);
@@ -91,10 +95,11 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: Boolean(user),
       isLoading,
       login,
+      completeLogin,
       logout,
       refreshUser
     }),
-    [user, token, isLoading, login, logout, refreshUser]
+    [user, token, isLoading, login, completeLogin, logout, refreshUser]
   );
 
   return (

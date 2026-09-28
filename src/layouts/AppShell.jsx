@@ -134,13 +134,14 @@ const AppShell = ({ navItems, roleLabel }) => {
       </main>
       <footer className="border-t border-white/10 bg-[#722F37] px-4 py-4 text-center text-xs text-white/70 lg:ml-72">Kollab Koncepts</footer>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex overflow-x-auto border-t border-neutral-200 bg-white lg:hidden">
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} end={to === ''} className={({ isActive }) => clsx('grid min-w-20 flex-1 place-items-center gap-1 px-2 py-2 text-[11px] font-semibold', isActive ? 'text-primary-700' : 'text-neutral-500')}>
+      <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-neutral-200 bg-white lg:hidden" aria-label="Navegacion principal">
+        {navItems.slice(0, 3).map(({ to, label, icon: Icon }) => (
+          <NavLink key={to} to={to} end={to === ''} className={({ isActive }) => clsx('grid min-w-0 flex-1 place-items-center gap-1 px-1 py-2 text-[11px] font-semibold', isActive ? 'text-primary-700' : 'text-neutral-500')}>
             <Icon className="h-5 w-5" />
             <span className="max-w-full truncate">{label}</span>
           </NavLink>
         ))}
+        <button type="button" className="grid min-w-0 flex-1 place-items-center gap-1 px-1 py-2 text-[11px] font-semibold text-neutral-500" onClick={() => setSidebarOpen(true)} aria-label="Ver todas las secciones"><Menu className="h-5 w-5" /><span>Más</span></button>
       </nav>
       <EnterpriseChat />
     </div>

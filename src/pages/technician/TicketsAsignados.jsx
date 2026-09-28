@@ -13,9 +13,9 @@ const priorityWeight = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
 const completedStatuses = ['RESOLVED', 'CLOSED', 'CANCELLED'];
 const activeAppeal = (ticket) => Boolean(ticket.appealedAt) && !completedStatuses.includes(ticket.status);
 const tabs = {
-  attention: { label: 'Pendientes', statuses: ['OPEN', 'PENDING', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'REOPENED'] },
+  attention: { label: 'Pendientes', statuses: ['PENDING'] },
   appeals: { label: 'Apelaciones', predicate: activeAppeal },
-  waiting: { label: 'En espera', statuses: ['WAITING_CUSTOMER', 'PENDING'] },
+  waiting: { label: 'En espera', statuses: ['WAITING_CUSTOMER'] },
   completed: { label: 'Completados', statuses: completedStatuses }
 };
 const tabIncludes = (tab, ticket) => (tab.predicate ? tab.predicate(ticket) : tab.statuses.includes(ticket.status));
@@ -175,6 +175,7 @@ const TicketsAsignados = () => {
       </Card>
 
       <DataTable
+        mobileCards
         data={rows}
         loading={isLoading}
         error={error}

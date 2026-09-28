@@ -18,6 +18,12 @@ const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('Email invalido'),
   password: z.string().min(1, 'La contrasena es obligatoria')
 });
+const sixDigitCode = z.string().trim().regex(/^\d{6}$/, 'El código debe tener 6 dígitos');
+const challengeSchema = z.object({ challengeId: z.string().uuid() });
+const verifyLoginSchema = challengeSchema.extend({ method: z.enum(['email', 'authenticator']), code: sixDigitCode });
+const beginTotpSchema = z.object({ currentPassword: z.string().min(1) });
+const confirmTotpSchema = beginTotpSchema.extend({ code: sixDigitCode });
+const confirmRegistrationTotpSchema = z.object({ setupToken: z.string().min(1), password: z.string().min(1), code: sixDigitCode });
 
 const passwordResetRequestSchema = z.object({
   email: z.string().trim().toLowerCase().email('Email invalido')
@@ -48,6 +54,11 @@ const logoutSchema = z.object({
 module.exports = {
   registerSchema,
   loginSchema,
+  challengeSchema,
+  verifyLoginSchema,
+  beginTotpSchema,
+  confirmTotpSchema,
+  confirmRegistrationTotpSchema,
   passwordResetRequestSchema,
   passwordResetSchema,
   changePasswordSchema,

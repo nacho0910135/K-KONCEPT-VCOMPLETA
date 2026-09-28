@@ -8,12 +8,14 @@ import Card from '../../components/common/Card.jsx';
 import FormInput from '../../components/forms/FormInput.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { useToast } from '../../hooks/useToast.js';
-import { changePassword } from '../../services/auth.client.service.js';
+import { beginAuthenticatorSetup, changePassword, confirmAuthenticatorSetup, getAuthenticatorStatus } from '../../services/auth.client.service.js';
 import { updateMyProfile } from '../../services/users.service.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
+  email: z.string().email('Ingresa un correo válido'),
+  currentPassword: z.string().optional(),
   phone: z.string().optional(),
   company: z.string().optional(),
   avatarUrl: z.string().optional()
@@ -62,12 +64,23 @@ const Perfil = () => {
   const { user, refreshUser } = useAuth();
   const { showToast } = useToast();
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || '');
-  const profileForm = useForm({ resolver: zodResolver(profileSchema), defaultValues: { name: '', phone: '', company: '', avatarUrl: '' } });
+  const [authenticatorEnabled, setAuthenticatorEnabled] = useState(false);
+  const [authenticatorSetup, setAuthenticatorSetup] = useState(null);
+  const [authenticatorPassword, setAuthenticatorPassword] = useState('');
+  const [authenticatorCode, setAuthenticatorCode] = useState('');
+  const [authenticatorBusy, setAuthenticatorBusy] = useState(false);
+  const profileForm = useForm({ resolver: zodResolver(profileSchema), defaultValues: { name: '', email: '', currentPassword: '', phone: '', company: '', avatarUrl: '' } });
   const passwordForm = useForm({ resolver: zodResolver(passwordSchema), defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' } });
+
+  useEffect(() => {
+    getAuthenticatorStatus().then((result) => setAuthenticatorEnabled(result.enabled)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     profileForm.reset({
       name: user?.name || '',
+      email: user?.email || '',
+      currentPassword: '',
       phone: user?.phone || '',
       company: user?.company || '',
       avatarUrl: user?.avatarUrl || ''
@@ -90,6 +103,10 @@ const Perfil = () => {
 
   const saveProfile = async (values) => {
     try {
+      if (values.email.trim().toLowerCase() !== user?.email && !values.currentPassword) {
+        profileForm.setError('currentPassword', { message: 'Ingresa tu contraseña actual para cambiar el correo' });
+        return;
+      }
       await updateMyProfile(values);
       await refreshUser();
       showToast({ type: 'success', title: 'Perfil actualizado' });
@@ -105,6 +122,35 @@ const Perfil = () => {
       showToast({ type: 'success', title: 'Contrasena actualizada' });
     } catch (error) {
       showToast({ type: 'error', title: 'No se pudo cambiar', message: getErrorMessage(error) });
+    }
+  };
+
+  const startAuthenticator = async () => {
+    setAuthenticatorBusy(true);
+    try {
+      const result = await beginAuthenticatorSetup(authenticatorPassword);
+      setAuthenticatorSetup(result);
+      setAuthenticatorCode('');
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo generar el código', message: getErrorMessage(error) });
+    } finally {
+      setAuthenticatorBusy(false);
+    }
+  };
+
+  const confirmAuthenticator = async () => {
+    setAuthenticatorBusy(true);
+    try {
+      await confirmAuthenticatorSetup({ currentPassword: authenticatorPassword, code: authenticatorCode });
+      setAuthenticatorEnabled(true);
+      setAuthenticatorSetup(null);
+      setAuthenticatorPassword('');
+      setAuthenticatorCode('');
+      showToast({ type: 'success', title: 'Google Authenticator vinculado' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo vincular', message: getErrorMessage(error) });
+    } finally {
+      setAuthenticatorBusy(false);
     }
   };
 
@@ -137,9 +183,10 @@ const Perfil = () => {
 
         <Card className="p-5">
           <h2 className="text-sm font-semibold text-neutral-900">Datos del usuario</h2>
-          <form className="mt-4 grid gap-4" onSubmit={profileForm.handleSubmit(saveProfile)}>
+          <form noValidate className="mt-4 grid gap-4" onSubmit={profileForm.handleSubmit(saveProfile)}>
             <FormInput register={profileForm.register} name="name" label="Nombre" error={profileForm.formState.errors.name} />
-            <FormInput register={() => ({ value: user?.email || '', readOnly: true })} name="email" label="Correo electronico" />
+            <FormInput register={profileForm.register} name="email" type="email" autoComplete="email" label="Correo electrónico" error={profileForm.formState.errors.email} />
+            {profileForm.watch('email')?.trim().toLowerCase() !== user?.email && <FormInput register={profileForm.register} name="currentPassword" type="password" autoComplete="current-password" label="Contraseña actual para cambiar el correo" error={profileForm.formState.errors.currentPassword} />}
             <div className="grid gap-4 sm:grid-cols-2">
               <FormInput register={profileForm.register} name="phone" label="Telefono" error={profileForm.formState.errors.phone} />
               <FormInput register={profileForm.register} name="company" label="Empresa" error={profileForm.formState.errors.company} />
@@ -151,7 +198,7 @@ const Perfil = () => {
 
         <Card className="p-5 xl:col-start-2">
           <h2 className="text-sm font-semibold text-neutral-900">Cambiar contrasena</h2>
-          <form className="mt-4 grid gap-4" onSubmit={passwordForm.handleSubmit(savePassword)}>
+          <form noValidate className="mt-4 grid gap-4" onSubmit={passwordForm.handleSubmit(savePassword)}>
             <FormInput register={passwordForm.register} name="currentPassword" type="password" autoComplete="current-password" label="Contrasena actual" error={passwordForm.formState.errors.currentPassword} />
             <div className="grid gap-4 sm:grid-cols-2">
               <FormInput register={passwordForm.register} name="newPassword" type="password" autoComplete="new-password" label="Nueva contrasena" error={passwordForm.formState.errors.newPassword} />
@@ -159,6 +206,22 @@ const Perfil = () => {
             </div>
             <Button className="w-full sm:w-auto" type="submit" isLoading={passwordForm.formState.isSubmitting}>Cambiar contrasena</Button>
           </form>
+        </Card>
+        <Card className="p-5 xl:col-start-2">
+          <h2 className="text-sm font-semibold text-neutral-900">Google Authenticator</h2>
+          <p className="mt-2 text-sm text-neutral-600">{authenticatorEnabled ? 'Vinculado. Puedes usar sus códigos al iniciar sesión o seguir usando un código por correo.' : 'Vincúlalo para elegir códigos de la app al iniciar sesión. El código por correo ya está disponible.'}</p>
+          <div className="mt-4 grid gap-3">
+            <label className="grid gap-1 text-sm font-medium text-neutral-700" htmlFor="authenticator-password">Contraseña actual</label>
+            <input id="authenticator-password" type="password" autoComplete="current-password" className="min-h-10 rounded-md border border-neutral-200 px-3" value={authenticatorPassword} onChange={(event) => setAuthenticatorPassword(event.target.value)} />
+            {!authenticatorSetup ? <Button onClick={startAuthenticator} disabled={!authenticatorPassword} isLoading={authenticatorBusy}>{authenticatorEnabled ? 'Generar nueva clave' : 'Generar clave de configuración'}</Button> : <>
+              <p className="text-sm text-neutral-700">En Google Authenticator, agrega una cuenta con clave de configuración e ingresa:</p>
+              <code className="break-all rounded-md bg-neutral-100 p-3 text-center text-base font-bold tracking-widest">{authenticatorSetup.setupCode}</code>
+              <p className="text-xs text-neutral-500">La clave actual seguirá funcionando hasta que confirmes la nueva.</p>
+              <label className="grid gap-1 text-sm font-medium text-neutral-700" htmlFor="authenticator-code">Código de 6 dígitos de la app</label>
+              <input id="authenticator-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="min-h-10 rounded-md border border-neutral-200 px-3" value={authenticatorCode} onChange={(event) => setAuthenticatorCode(event.target.value.replace(/\D/g, ''))} />
+              <Button onClick={confirmAuthenticator} disabled={!/^\d{6}$/.test(authenticatorCode)} isLoading={authenticatorBusy}>Confirmar vinculación</Button>
+            </>}
+          </div>
         </Card>
       </div>
     </div>

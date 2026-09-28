@@ -132,13 +132,14 @@ const evidenceService = {
     const deleted = await evidenceRepository.deleteById(id);
     await deleteFromCloudinary(evidence.publicId, resourceTypeForEvidence(evidence));
 
-    await auditService.record({
+    await auditService.recordNow({
       userId: user.id,
       action: 'EVIDENCE_DELETED',
-      entity: 'TicketEvidence',
-      entityId: evidence.id,
+      entity: 'Ticket',
+      entityId: evidence.ticketId,
       details: {
-        ticketId: evidence.ticketId,
+        evidenceId: evidence.id,
+        fileName: evidence.fileName,
         publicId: evidence.publicId
       }
     });

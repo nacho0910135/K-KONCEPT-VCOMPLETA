@@ -21,6 +21,10 @@ const updateUserSchema = z.object({
   company: z.string().trim().optional(),
   avatarUrl: z.string().trim().max(800000).optional()
 });
+const updateMeSchema = updateUserSchema.extend({
+  email: z.string().trim().toLowerCase().email('Correo inválido').optional(),
+  currentPassword: z.string().optional()
+});
 
 const updateUserRoleSchema = z.object({
   role: z.enum(['ADMIN', 'TECHNICIAN', 'CLIENT']),
@@ -40,6 +44,7 @@ const userQuerySchema = z.object({
 module.exports = {
   createUserSchema,
   updateUserSchema,
+  updateMeSchema,
   updateUserRoleSchema,
   userQuerySchema
 };

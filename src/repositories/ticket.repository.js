@@ -29,9 +29,9 @@ const ticketRepository = {
     return this.list({ where, orderBy, skip, take });
   },
 
-  update(id, data) {
+  update(id, data, expectedUpdatedAt) {
     return prisma.ticket.update({
-      where: { id },
+      where: { id, ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) },
       data,
       include: ticketInclude
     });
@@ -44,9 +44,9 @@ const ticketRepository = {
     });
   },
 
-  updateStatusWithHistory(id, data, history) {
+  updateStatusWithHistory(id, data, history, expectedUpdatedAt) {
     return prisma.ticket.update({
-      where: { id },
+      where: { id, ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) },
       data: {
         ...data,
         statusHistories: {

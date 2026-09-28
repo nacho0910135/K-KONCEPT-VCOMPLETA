@@ -30,7 +30,8 @@ const DataTable = ({
   emptyDescription = 'No encontramos datos para los filtros actuales.',
   searchValue,
   onSearchChange,
-  onRowClick
+  onRowClick,
+  mobileCards = false
 }) => {
   const [internalQuery, setInternalQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -79,7 +80,17 @@ const DataTable = ({
         </div>
       )}
       {error && <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-danger">{error}</div>}
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      {mobileCards && !loading && <div className="grid gap-3 sm:hidden">
+        {pageData.map((row, index) => <article key={row.id || index} className="min-w-0 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+          <dl className="grid gap-3">
+            {columns.map((column) => <div key={column.key} className="min-w-0">
+              <dt className="text-xs font-semibold text-neutral-500">{column.header}</dt>
+              <dd className="mt-1 break-words text-sm text-neutral-800">{column.render ? column.render(row) : row[column.key]}</dd>
+            </div>)}
+          </dl>
+        </article>)}
+      </div>}
+      <div className={`${mobileCards ? 'hidden sm:block' : ''} overflow-hidden rounded-lg border border-neutral-200 bg-white`}>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-neutral-200 text-sm">
             <thead className="bg-neutral-50">

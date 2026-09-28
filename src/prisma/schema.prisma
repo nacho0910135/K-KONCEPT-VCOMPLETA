@@ -92,7 +92,11 @@ model User {
   id                         String            @id @default(uuid())
   name                       String
   email                      String            @unique
+  loginAlias                 String?           @unique
   password                   String
+  totpSecret                 String?
+  totpPendingSecret          String?
+  totpLastStep               Int?
   role                       Role              @default(CLIENT)
   phone                      String?
   company                    String?
@@ -121,6 +125,7 @@ model User {
   scheduledReports           ScheduledReport[]
   refreshTokens              RefreshToken[]
   passwordResetCodes         PasswordResetCode[]
+  loginChallenges            LoginChallenge[]
   sentChatMessages           ChatMessage[]     @relation("ChatSender")
   receivedChatMessages       ChatMessage[]     @relation("ChatRecipient")
 
@@ -568,4 +573,19 @@ model PasswordResetCode {
   @@index([codeHash])
   @@index([expiresAt])
   @@index([usedAt])
+}
+
+model LoginChallenge {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String?
+  expiresAt DateTime
+  sentAt    DateTime?
+  sendCount Int       @default(0)
+  attempts  Int       @default(0)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, expiresAt])
 }

@@ -42,6 +42,10 @@ const auditService = {
     return this.logEvent({ result: 'SUCCESS', ...entry });
   },
 
+  recordNow(entry) {
+    return auditRepository.create(normalizeEntry({ result: 'SUCCESS', ...entry }));
+  },
+
   recordFailure(entry) {
     return this.logEvent({ result: 'FAILURE', ...entry });
   },
