@@ -30,8 +30,14 @@ export const AuthProvider = ({ children }) => {
   }, [persistAccessToken]);
 
   const login = useCallback(async (credentials) => {
-    return loginRequest(credentials);
-  }, []);
+    const data = await loginRequest(credentials);
+    if (data?.accessToken) {
+      persistAccessToken(data.accessToken);
+      setStoredRefreshToken(data.refreshToken);
+      setUser(data.user || null);
+    }
+    return data;
+  }, [persistAccessToken]);
 
   const completeLogin = useCallback(async (challenge) => {
     const data = await verifyLoginCode(challenge);

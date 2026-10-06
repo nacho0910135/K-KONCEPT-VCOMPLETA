@@ -4,6 +4,7 @@ const userSelect = {
   id: true,
   name: true,
   email: true,
+  loginAlias: true,
   password: true,
   totpSecret: true,
   totpPendingSecret: true,

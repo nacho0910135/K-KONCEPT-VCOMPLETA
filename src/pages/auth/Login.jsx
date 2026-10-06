@@ -32,9 +32,19 @@ const Login = () => {
     defaultValues: { email: '', password: '' }
   });
 
+  const enterSession = (session) => {
+    const roleHome = ROLE_HOME[session.user?.role] || '/';
+    const fromPath = location.state?.from?.pathname;
+    navigate(fromPath?.startsWith(roleHome) ? fromPath : roleHome, { replace: true });
+  };
+
   const onSubmit = async (values) => {
     try {
       const nextChallenge = await login(values);
+      if (nextChallenge?.accessToken && nextChallenge?.user) {
+        enterSession(nextChallenge);
+        return;
+      }
       if (!nextChallenge?.challengeId || !Array.isArray(nextChallenge.methods)) {
         throw new Error('El servidor todavía no tiene activa la verificación en dos pasos. Intenta de nuevo cuando termine el despliegue.');
       }
@@ -69,10 +79,7 @@ const Login = () => {
     setBusy(true);
     try {
       const session = await completeLogin({ challengeId: challenge.challengeId, method, code });
-      const roleHome = ROLE_HOME[session.user?.role] || '/';
-      const fromPath = location.state?.from?.pathname;
-      const destination = fromPath?.startsWith(roleHome) ? fromPath : roleHome;
-      navigate(destination, { replace: true });
+      enterSession(session);
     } catch (error) {
       showToast({ type: 'error', title: 'Código no válido', message: getErrorMessage(error) });
     } finally {
