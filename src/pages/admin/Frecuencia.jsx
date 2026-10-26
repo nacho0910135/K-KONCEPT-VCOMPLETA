@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/errorHandler.js';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Edit, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -16,8 +17,8 @@ import { eventLabel } from './adminUtils.jsx';
 
 const frequencySchema = z.object({
   event: z.string().min(1, 'Evento requerido'),
-  maxPerUserPerHour: z.coerce.number().min(1, 'Minimo 1'),
-  maxPerUserPerDay: z.coerce.number().min(1, 'Minimo 1')
+  maxPerUserPerHour: z.coerce.number().int('Usa un numero entero').min(1, 'Minimo 1'),
+  maxPerUserPerDay: z.coerce.number().int('Usa un numero entero').min(1, 'Minimo 1')
 }).superRefine((value, ctx) => {
   if (value.maxPerUserPerHour > value.maxPerUserPerDay) {
     ctx.addIssue({
@@ -28,7 +29,7 @@ const frequencySchema = z.object({
   }
 });
 
-const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
+const eventOptions = ['TICKET_CREATED', 'TICKET_ASSIGNED', 'STATUS_CHANGED', 'NEW_COMMENT', 'TICKET_RESOLVED', 'TICKET_CLOSED', 'USER_ROLE_CHANGED', 'APPOINTMENT_RESCHEDULED', 'REPLACEMENT_APPROVED', 'REFUND_REGISTERED', 'SLA_BREACH'].map((value) => ({ value, label: eventLabel[value] || value }));
 
 const Frecuencia = () => {
   const { data, setData, isLoading, error } = useAdminResource(listNotificationFrequencyRules, []);
@@ -42,26 +43,34 @@ const Frecuencia = () => {
   };
 
   const save = async (values) => {
-    const payload = {
-      event: values.event,
-      maxPerUserPerHour: values.maxPerUserPerHour,
-      maxPerUserPerDay: values.maxPerUserPerDay
-    };
-    if (editing?.id) {
-      const updated = await updateNotificationFrequencyRule(editing.id, payload);
-      setData((current) => current.map((item) => item.id === editing.id ? updated : item));
-    } else {
-      const created = await createNotificationFrequencyRule(payload);
-      setData((current) => [created, ...current]);
+    try {
+      const payload = {
+        event: values.event,
+        maxPerUserPerHour: values.maxPerUserPerHour,
+        maxPerUserPerDay: values.maxPerUserPerDay
+      };
+      if (editing?.id) {
+        const updated = await updateNotificationFrequencyRule(editing.id, payload);
+        setData((current) => current.map((item) => item.id === editing.id ? updated : item));
+      } else {
+        const created = await createNotificationFrequencyRule(payload);
+        setData((current) => [created, ...current]);
+      }
+      setEditing(null);
+      showToast({ type: 'success', title: 'Regla guardada' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
     }
-    setEditing(null);
-    showToast({ type: 'success', title: 'Regla guardada' });
   };
 
   const toggle = async (rule) => {
-    const updated = await toggleNotificationFrequencyRule(rule.id);
-    setData((current) => current.map((item) => item.id === rule.id ? updated : item));
-    showToast({ type: 'info', title: 'Estado actualizado' });
+    try {
+      const updated = await toggleNotificationFrequencyRule(rule.id);
+      setData((current) => current.map((item) => item.id === rule.id ? updated : item));
+      showToast({ type: 'info', title: 'Estado actualizado' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
+    }
   };
 
   return (

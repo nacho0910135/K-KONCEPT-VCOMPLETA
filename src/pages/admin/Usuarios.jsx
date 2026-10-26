@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/errorHandler.js';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Edit, Plus, ShieldAlert, ToggleLeft } from 'lucide-react';
 import { useState } from 'react';
@@ -14,11 +15,12 @@ import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
 import { activateUser, createUser, deactivateUser, getUsers, updateUser, updateUserRole } from '../../services/users.service.js';
 import { RoleBadge, roleLabel } from './adminUtils.jsx';
+import { passwordResetSchema } from '../../utils/validators.js';
 
 const userSchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
   email: z.string().email('Correo invalido'),
-  password: z.string().min(8, 'Minimo 8 caracteres').optional().or(z.literal('')),
+  password: z.string().optional(),
   phone: z.string().optional(),
   company: z.string().optional()
 });
@@ -40,7 +42,7 @@ const Usuarios = () => {
   const [roleUser, setRoleUser] = useState(null);
   const { showToast } = useToast();
 
-  const userForm = useForm({ resolver: zodResolver(userSchema), defaultValues: { name: '', email: '', password: '', phone: '', company: '' } });
+  const userForm = useForm({ resolver: zodResolver(creatingTech ? userSchema.extend({ password: passwordResetSchema.shape.password }) : userSchema), defaultValues: { name: '', email: '', password: '', phone: '', company: '' } });
   const roleForm = useForm({ resolver: zodResolver(roleSchema), defaultValues: { role: 'TECHNICIAN', confirmation: '' } });
 
   const openEdit = (user) => {
@@ -59,37 +61,49 @@ const Usuarios = () => {
   ));
 
   const saveUser = async (values) => {
-    if (editingUser) {
-      const updated = await updateUser(editingUser.id, {
-        name: values.name,
-        phone: values.phone || undefined,
-        company: values.company || undefined
-      });
-      setData((current) => current.map((user) => user.id === editingUser.id ? updated : user));
-      setEditingUser(null);
-      showToast({ type: 'success', title: 'Usuario actualizado' });
-      return;
-    }
+    try {
+      if (editingUser) {
+        const updated = await updateUser(editingUser.id, {
+          name: values.name,
+          phone: values.phone || undefined,
+          company: values.company || undefined
+        });
+        setData((current) => current.map((user) => user.id === editingUser.id ? updated : user));
+        setEditingUser(null);
+        showToast({ type: 'success', title: 'Usuario actualizado' });
+        return;
+      }
 
-    const created = await createUser({ ...values, role: 'TECHNICIAN' });
-    setData((current) => [created, ...current]);
-    setCreatingTech(false);
-    showToast({ type: 'success', title: 'Tecnico creado', message: values.email });
+      const created = await createUser({ ...values, role: 'TECHNICIAN' });
+      setData((current) => [created, ...current]);
+      setCreatingTech(false);
+      showToast({ type: 'success', title: 'Tecnico creado', message: values.email });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
+    }
   };
 
   const confirmToggle = async () => {
-    const updated = toggleUser.active ? await deactivateUser(toggleUser.id) : await activateUser(toggleUser.id);
-    setData((current) => current.map((user) => user.id === toggleUser.id ? updated : user));
-    showToast({ type: 'success', title: toggleUser.active ? 'Usuario desactivado' : 'Usuario activado' });
-    setToggleUser(null);
+    try {
+      const updated = toggleUser.active ? await deactivateUser(toggleUser.id) : await activateUser(toggleUser.id);
+      setData((current) => current.map((user) => user.id === toggleUser.id ? updated : user));
+      showToast({ type: 'success', title: toggleUser.active ? 'Usuario desactivado' : 'Usuario activado' });
+      setToggleUser(null);
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
+    }
   };
 
   const changeRole = async ({ role }) => {
-    const updated = await updateUserRole(roleUser.id, role);
-    setData((current) => current.map((user) => user.id === roleUser.id ? updated : user));
-    showToast({ type: 'warning', title: 'Rol cambiado', message: `${roleUser.email} ahora es ${roleLabel[role] || role}.` });
-    setRoleUser(null);
-    roleForm.reset();
+    try {
+      const updated = await updateUserRole(roleUser.id, role);
+      setData((current) => current.map((user) => user.id === roleUser.id ? updated : user));
+      showToast({ type: 'warning', title: 'Rol cambiado', message: `${roleUser.email} ahora es ${roleLabel[role] || role}.` });
+      setRoleUser(null);
+      roleForm.reset();
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
+    }
   };
 
   return (
@@ -134,7 +148,7 @@ const Usuarios = () => {
               <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" onClick={() => openEdit(row)}><Edit className="h-4 w-4" />Editar</Button>
                 <Button variant="ghost" onClick={() => setToggleUser(row)}><ToggleLeft className="h-4 w-4" />{row.active ? 'Desactivar' : 'Activar'}</Button>
-                <Button variant="ghost" onClick={() => setRoleUser(row)}><ShieldAlert className="h-4 w-4" />Rol</Button>
+                <Button variant="ghost" onClick={() => { roleForm.reset({ role: row.role, confirmation: '' }); setRoleUser(row); }}><ShieldAlert className="h-4 w-4" />Rol</Button>
               </div>
             )
           }
@@ -144,8 +158,8 @@ const Usuarios = () => {
       <Modal isOpen={creatingTech || Boolean(editingUser)} title={editingUser ? 'Editar usuario' : 'Crear tecnico'} onClose={() => { setCreatingTech(false); setEditingUser(null); }}>
         <form className="grid gap-4" onSubmit={userForm.handleSubmit(saveUser)}>
           <FormInput register={userForm.register} name="name" label="Nombre" error={userForm.formState.errors.name} />
-          <FormInput register={userForm.register} name="email" label="Correo electronico" error={userForm.formState.errors.email} />
-          <FormInput register={userForm.register} name="password" type="password" label="Contrasena inicial" error={userForm.formState.errors.password} />
+          <FormInput register={userForm.register} name="email" label="Correo electronico" readOnly={Boolean(editingUser)} error={userForm.formState.errors.email} />
+          {!editingUser && <FormInput register={userForm.register} name="password" type="password" label="Contrasena inicial" error={userForm.formState.errors.password} />}
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput register={userForm.register} name="phone" label="Telefono" error={userForm.formState.errors.phone} />
             <FormInput register={userForm.register} name="company" label="Empresa" error={userForm.formState.errors.company} />

@@ -33,9 +33,9 @@ export const updateNotificationFrequencyRule = async (id, payload) => unwrap(awa
 export const toggleNotificationFrequencyRule = async (id) => unwrap(await api.patch(`/notification-frequency-rules/${id}/toggle`)).data?.rule;
 
 export const listSlas = async (params) => unwrap(await api.get('/slas', { params }));
-export const updateSla = async (id, payload) => unwrap(await api.put(`/slas/${id}`, payload)).data;
-export const createSla = async (payload) => unwrap(await api.post('/slas', payload)).data;
-export const deleteSla = async (id) => unwrap(await api.delete(`/slas/${id}`)).data;
+export const updateSla = async (id, payload) => unwrap(await api.put(`/slas/${id}`, payload)).data.sla;
+export const createSla = async (payload) => unwrap(await api.post('/slas', payload)).data.sla;
+export const deleteSla = async (id) => unwrap(await api.delete(`/slas/${id}`)).data.sla;
 
 export const getKpiOverview = async (params) => unwrap(await api.get('/reports/kpi/overview', { params })).data;
 export const getTicketsByStatus = async (params) => unwrap(await api.get('/reports/kpi/tickets-by-status', { params })).data;
@@ -45,7 +45,7 @@ export const getMonthlyVolume = async (params) => unwrap(await api.get('/reports
 export const exportReport = async (payload) => api.post('/reports/export', payload, { responseType: 'blob' });
 
 export const listScheduledReports = async (params) => unwrap(await api.get('/scheduled-reports', { params }));
-export const createScheduledReport = async (payload) => unwrap(await api.post('/scheduled-reports', payload)).data;
-export const updateScheduledReport = async (id, payload) => unwrap(await api.put(`/scheduled-reports/${id}`, payload)).data;
-export const toggleScheduledReport = async (id) => unwrap(await api.patch(`/scheduled-reports/${id}/toggle`)).data;
-export const deleteScheduledReport = async (id) => unwrap(await api.delete(`/scheduled-reports/${id}`)).data;
+export const createScheduledReport = async (payload) => unwrap(await api.post('/scheduled-reports', payload)).data.scheduledReport;
+export const updateScheduledReport = async (id, payload) => unwrap(await api.put(`/scheduled-reports/${id}`, payload)).data.scheduledReport;
+export const toggleScheduledReport = async (id) => unwrap(await api.patch(`/scheduled-reports/${id}/toggle`)).data.scheduledReport;
+export const deleteScheduledReport = async (id) => unwrap(await api.delete(`/scheduled-reports/${id}`)).data.scheduledReport;

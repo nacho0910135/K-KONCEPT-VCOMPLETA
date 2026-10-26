@@ -2,13 +2,30 @@ import { useMemo, useState } from 'react';
 import Button from '../../components/common/Button.jsx';
 import Card from '../../components/common/Card.jsx';
 import Drawer from '../../components/common/Drawer.jsx';
-import JsonViewer from '../../components/common/JsonViewer.jsx';
 import DataTable from '../../components/tables/DataTable.jsx';
 import DateRangePicker from '../../components/forms/DateRangePicker.jsx';
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { exportAuditLogsCsv, listAuditLogs } from '../../services/admin.client.service.js';
 import { formatDateTime } from '../../utils/formatDate.js';
 import { entityLabel, eventLabel, resultLabel } from './adminUtils.jsx';
+
+const detailLabels = { previousValue: 'Antes', newValue: 'Despues', from: 'Antes', to: 'Despues', added: 'Agregado', removed: 'Eliminado', modified: 'Modificado', name: 'Nombre', email: 'Correo', role: 'Rol', active: 'Activo', status: 'Estado', amount: 'Monto', reason: 'Motivo', userId: 'Usuario', ticketId: 'Ticket', createdAt: 'Fecha de creacion', updatedAt: 'Fecha de actualizacion' };
+
+const AuditDetail = ({ value }) => {
+  if (value == null) return <span>Sin datos</span>;
+  if (typeof value === 'boolean') return <span>{value ? 'Si' : 'No'}</span>;
+  if (typeof value !== 'object') return <span className="break-words">{eventLabel[value] || resultLabel[value] || String(value)}</span>;
+  return (
+    <dl className="grid gap-3 border-l border-neutral-200 pl-4 text-sm">
+      {Object.entries(value).map(([key, item]) => (
+        <div key={key}>
+          <dt className="font-semibold text-neutral-600">{detailLabels[key] || key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/_/g, ' ')}</dt>
+          <dd><AuditDetail value={item} /></dd>
+        </div>
+      ))}
+    </dl>
+  );
+};
 
 const Auditoria = () => {
   const [selected, setSelected] = useState(null);
@@ -92,7 +109,7 @@ const Auditoria = () => {
             </div>
             <div>
               <h3 className="mb-2 text-sm font-semibold text-neutral-900">Detalle</h3>
-              <JsonViewer value={selected.details || selected.newValue || selected.previousValue || selected} />
+              <AuditDetail value={{ previousValue: selected.previousValue, newValue: selected.newValue, details: selected.details }} />
             </div>
             <Button variant="ghost" onClick={() => setSelected(null)}>Cerrar</Button>
           </div>

@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/errorHandler.js';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Bar, BarChart, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, Award, CheckCircle2, Clock3, Download, Edit, PackageCheck, Plus, Star, TicketCheck, TicketPlus, Trash2, WalletCards } from 'lucide-react';
@@ -18,6 +19,7 @@ import { createScheduledReport, deleteScheduledReport, exportReport, getKpiOverv
 import { useAdminResource } from '../../hooks/useAdminResource.js';
 import { useToast } from '../../hooks/useToast.js';
 import { frequencyLabel, priorityLabel, reportTypeLabel } from './adminUtils.jsx';
+import { dateRangeSchema } from '../../utils/validators.js';
 
 const scheduledSchema = z.object({
   name: z.string().min(2, 'Nombre requerido'),
@@ -77,8 +79,8 @@ const Reportes = () => {
     };
   }, [filters.dateFrom, filters.dateTo]);
   const form = useForm({ resolver: zodResolver(scheduledSchema), defaultValues: { name: '', reportType: 'KPI_OVERVIEW', parameters: '', frequency: 'WEEKLY', recipients: [], format: 'PDF' } });
-  const filterForm = useForm({ defaultValues: filters });
-  const exportForm = useForm({ defaultValues: { reportType: 'KPI_OVERVIEW', format: 'PDF', dateFrom: monthStart, dateTo: today } });
+  const filterForm = useForm({ resolver: zodResolver(dateRangeSchema), defaultValues: filters });
+  const exportForm = useForm({ resolver: zodResolver(dateRangeSchema), defaultValues: { reportType: 'KPI_OVERVIEW', format: 'PDF', dateFrom: monthStart, dateTo: today } });
 
   const openScheduled = (row = null) => {
     setEditing(row || { mode: 'new' });
@@ -96,29 +98,41 @@ const Reportes = () => {
       return;
     }
 
-    const payload = { ...values, parameters };
-    if (editing?.id) {
-      const updated = await updateScheduledReport(editing.id, payload);
-      setData((current) => ({ ...current, scheduled: current.scheduled.map((item) => item.id === editing.id ? updated : item) }));
-    } else {
-      const created = await createScheduledReport(payload);
-      setData((current) => ({ ...current, scheduled: [created, ...current.scheduled] }));
+    try {
+      const payload = { ...values, parameters };
+      if (editing?.id) {
+        const updated = await updateScheduledReport(editing.id, payload);
+        setData((current) => ({ ...current, scheduled: current.scheduled.map((item) => item.id === editing.id ? updated : item) }));
+      } else {
+        const created = await createScheduledReport(payload);
+        setData((current) => ({ ...current, scheduled: [created, ...current.scheduled] }));
+      }
+      setEditing(null);
+      showToast({ type: 'success', title: 'Reporte programado guardado' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
     }
-    setEditing(null);
-    showToast({ type: 'success', title: 'Reporte programado guardado' });
   };
 
   const deleteSelected = async () => {
-    await deleteScheduledReport(deleting.id);
-    setData((current) => ({ ...current, scheduled: current.scheduled.filter((item) => item.id !== deleting.id) }));
-    setDeleting(null);
-    showToast({ type: 'success', title: 'Reporte eliminado' });
+    try {
+      await deleteScheduledReport(deleting.id);
+      setData((current) => ({ ...current, scheduled: current.scheduled.filter((item) => item.id !== deleting.id) }));
+      setDeleting(null);
+      showToast({ type: 'success', title: 'Reporte eliminado' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
+    }
   };
 
   const toggleScheduled = async (row) => {
-    const updated = await toggleScheduledReport(row.id);
-    setData((current) => ({ ...current, scheduled: current.scheduled.map((item) => item.id === row.id ? updated : item) }));
-    showToast({ type: 'info', title: 'Estado actualizado' });
+    try {
+      const updated = await toggleScheduledReport(row.id);
+      setData((current) => ({ ...current, scheduled: current.scheduled.map((item) => item.id === row.id ? updated : item) }));
+      showToast({ type: 'info', title: 'Estado actualizado' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
+    }
   };
 
   const applyFilters = (values) => setFilters({ dateFrom: values.dateFrom || undefined, dateTo: values.dateTo || undefined });
@@ -133,6 +147,8 @@ const Reportes = () => {
       });
       downloadFile(response, `${values.reportType.toLowerCase()}.${values.format.toLowerCase()}`);
       showToast({ type: 'success', title: 'Reporte exportado' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo exportar', message: getErrorMessage(error) });
     } finally {
       setExporting(false);
     }
@@ -168,7 +184,7 @@ const Reportes = () => {
       <Card className="p-4">
         <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={filterForm.handleSubmit(applyFilters)}>
           <FormInput register={filterForm.register} name="dateFrom" id="kpi-date-from" type="date" label="Desde" />
-          <FormInput register={filterForm.register} name="dateTo" id="kpi-date-to" type="date" label="Hasta" />
+          <FormInput register={filterForm.register} name="dateTo" id="kpi-date-to" type="date" label="Hasta" error={filterForm.formState.errors.dateTo} />
           <Button type="submit" className="md:self-end">Actualizar KPIs</Button>
         </form>
       </Card>
@@ -303,7 +319,7 @@ const Reportes = () => {
           <FormSelect register={exportForm.register} name="reportType" label="Reporte" options={reportTypes} />
           <FormSelect register={exportForm.register} name="format" label="Formato" options={[{ value: 'CSV', label: 'CSV' }, { value: 'EXCEL', label: 'Excel' }, { value: 'PDF', label: 'PDF' }]} />
           <FormInput register={exportForm.register} name="dateFrom" id="export-date-from" type="date" label="Desde" />
-          <FormInput register={exportForm.register} name="dateTo" id="export-date-to" type="date" label="Hasta" />
+          <FormInput register={exportForm.register} name="dateTo" id="export-date-to" type="date" label="Hasta" error={exportForm.formState.errors.dateTo} />
           <Button type="submit" className="md:self-end" isLoading={exporting}><Download className="h-4 w-4" />Exportar</Button>
         </form>
       </Card>

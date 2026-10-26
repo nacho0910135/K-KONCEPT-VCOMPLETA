@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../../utils/errorHandler.js';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Settings2 } from 'lucide-react';
 import { useState } from 'react';
@@ -64,25 +65,29 @@ const SLAs = () => {
   };
 
   const save = async (values) => {
-    if (editing?.id) {
-      const updated = await updateSla(editing.id, {
-        maxResponseHours: values.maxResponseHours,
-        maxResolutionHours: values.maxResolutionHours,
-        scope: values.scope || 'NEW_ONLY'
-      });
-      setData((current) => current.map((item) => item.id === editing.id ? updated : item));
-      showToast({ type: 'success', title: 'SLA actualizado' });
-    } else {
-      const created = await createSla({
-        name: values.name,
-        priority: values.priority,
-        maxResponseHours: values.maxResponseHours,
-        maxResolutionHours: values.maxResolutionHours
-      });
-      setData((current) => [created, ...current]);
-      showToast({ type: 'success', title: 'SLA creado' });
+    try {
+      if (editing?.id) {
+        const updated = await updateSla(editing.id, {
+          maxResponseHours: values.maxResponseHours,
+          maxResolutionHours: values.maxResolutionHours,
+          scope: values.scope || 'NEW_ONLY'
+        });
+        setData((current) => current.map((item) => item.id === editing.id ? updated : item));
+        showToast({ type: 'success', title: 'SLA actualizado' });
+      } else {
+        const created = await createSla({
+          name: values.name,
+          priority: values.priority,
+          maxResponseHours: values.maxResponseHours,
+          maxResolutionHours: values.maxResolutionHours
+        });
+        setData((current) => [created, ...current]);
+        showToast({ type: 'success', title: 'SLA creado' });
+      }
+      setEditing(null);
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo guardar el cambio', message: getErrorMessage(error) });
     }
-    setEditing(null);
   };
 
   return (

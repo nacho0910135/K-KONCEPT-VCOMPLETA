@@ -8,6 +8,7 @@ import EmptyState from '../../components/common/EmptyState.jsx';
 import { useAuth } from '../../hooks/useAuth.js';
 import { downloadRefundCertificate, exportRefunds, listRefunds } from '../../services/refunds.client.service.js';
 import { getErrorMessage } from '../../utils/errorHandler.js';
+import { useToast } from '../../hooks/useToast.js';
 
 const refundLabel = {
   REFUND_TOTAL: 'Reembolso total',
@@ -29,6 +30,15 @@ const Reembolsos = () => {
   const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const exportCsv = async () => {
+    try {
+      await exportRefunds('csv');
+      showToast({ type: 'success', title: 'Reembolsos exportados' });
+    } catch (error) {
+      showToast({ type: 'error', title: 'No se pudo exportar', message: getErrorMessage(error) });
+    }
+  };
   const ticketBasePath = user?.role === 'ADMIN' ? '/admin/tickets' : '/technician/tickets';
   const filteredRefunds = useMemo(() => refunds.filter((refund) => {
     const q = query.trim().toLowerCase();
@@ -71,7 +81,7 @@ const Reembolsos = () => {
           <h1 className="text-2xl font-bold text-neutral-900">Reembolsos</h1>
           <p className="mt-1 text-sm text-neutral-500">Reembolsos registrados desde resoluciones de tickets.</p>
         </div>
-        <Button variant="danger" onClick={() => exportRefunds('csv')}>Exportar CSV</Button>
+        <Button variant="danger" onClick={exportCsv}>Exportar CSV</Button>
       </div>
       <Card className="p-4">
         <input
@@ -97,7 +107,7 @@ const Reembolsos = () => {
                   <p className="text-xs font-bold uppercase text-neutral-500">{refund.ticket?.code}</p>
                   <h2 className="mt-1 font-semibold text-neutral-900">{refundLabel[refund.type] || refund.type}</h2>
                   <p className="mt-1 text-sm text-neutral-500">{refund.ticket?.client?.company || refund.ticket?.client?.name || 'Cliente'}</p>
-                  {refund.amount && <p className="mt-1 text-sm font-semibold text-neutral-900">Monto: {money(refund.amount)}</p>}
+                  <p className="mt-1 text-sm font-semibold text-neutral-900">Monto: {refund.amount == null ? 'No registrado' : money(refund.amount)}</p>
                 </div>
                 <Badge tone="warning">{statusLabel[refund.status] || refund.status}</Badge>
               </div>

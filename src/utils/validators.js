@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+export const dateRangeSchema = z.object({
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional()
+}).passthrough().refine((value) => !value.dateFrom || !value.dateTo || value.dateFrom <= value.dateTo, {
+  path: ['dateTo'], message: 'Desde no puede ser posterior a Hasta'
+});
+
 export const loginSchema = z.object({
   email: z.string().email('Ingresa un email valido'),
   password: z.string().min(6, 'La contrasena debe tener al menos 6 caracteres')
